@@ -104,7 +104,6 @@ async def generate_festival_playlist(
         # Step 3: Generate the playlist using the playlist generator service
         playlist = await playlist_generator.generate_festival_playlist(
             festival_id=festival_id,
-            artist_setlist_data=artist_setlist_data,
             user_id=user_id,
         )
 

@@ -54,19 +54,22 @@ def get_streaming_integration_service() -> StreamingIntegrationService:
 @lru_cache()
 def get_recommendation_engine() -> RecommendationEngine:
     """Get Recommendation Engine instance."""
-    return RecommendationEngine()
+    # Note: This returns a factory function, actual instance created per request
+    return RecommendationEngine  # type: ignore
 
 
 @lru_cache()
 def get_notification_service() -> NotificationService:
     """Get Notification Service instance."""
-    return NotificationService()
+    # Note: This returns a factory function, actual instance created per request
+    return NotificationService  # type: ignore
 
 
 @lru_cache()
 def get_service_orchestrator() -> ServiceOrchestrator:
     """Get Service Orchestrator instance."""
-    return ServiceOrchestrator()
+    # Note: This returns a factory function, actual instance created per request
+    return ServiceOrchestrator  # type: ignore
 
 
 # Service dependencies for FastAPI
