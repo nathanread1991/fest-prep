@@ -549,7 +549,7 @@ class SongDeduplicator:
 
     def deduplicate_songs(
         self, songs: List[str], artist_name: str
-    ) -> List[Dict[str, any]]:
+    ) -> List[Dict[str, Any]]:
         """
         Deduplicate a list of songs and identify covers.
 
@@ -617,7 +617,7 @@ class SongFrequencyAnalyzer:
 
     def analyze_song_frequency(
         self, setlists: List[SetlistData]
-    ) -> Dict[str, Dict[str, any]]:
+    ) -> Dict[str, Dict[str, Any]]:
         """
         Analyze song frequency across multiple setlists.
 
@@ -688,8 +688,8 @@ class SongFrequencyAnalyzer:
         return song_frequency
 
     def rank_songs_by_frequency(
-        self, song_frequency: Dict[str, Dict[str, any]]
-    ) -> List[Dict[str, any]]:
+        self, song_frequency: Dict[str, Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
         """
         Rank songs by performance frequency.
 

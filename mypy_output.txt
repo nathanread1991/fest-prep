@@ -1,0 +1,1294 @@
+services/api/festival_playlist_generator/services/color_analyzer.py:165: error:
+Incompatible types in assignment (expression has type "int", variable has type
+"str")  [assignment]
+                        int(rgb_match.group(1)),
+                        ^~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/color_analyzer.py:166: error:
+Incompatible types in assignment (expression has type "int", variable has type
+"str")  [assignment]
+                        int(rgb_match.group(2)),
+                        ^~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/color_analyzer.py:167: error:
+Incompatible types in assignment (expression has type "int", variable has type
+"str")  [assignment]
+                        int(rgb_match.group(3)),
+                        ^~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/color_analyzer.py:170: error:
+Incompatible types in assignment (expression has type
+"int | SupportsDunderLT[Any] | SupportsDunderGT[Any]", variable has type "str") 
+[assignment]
+                    r = max(0, min(255, r))
+                        ^~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/color_analyzer.py:171: error:
+Incompatible types in assignment (expression has type
+"int | SupportsDunderLT[Any] | SupportsDunderGT[Any]", variable has type "str") 
+[assignment]
+                    g = max(0, min(255, g))
+                        ^~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/color_analyzer.py:172: error:
+Incompatible types in assignment (expression has type
+"int | SupportsDunderLT[Any] | SupportsDunderGT[Any]", variable has type "str") 
+[assignment]
+                    b = max(0, min(255, b))
+                        ^~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/color_analyzer.py:316: error:
+Returning Any from function declared to return "float"  [no-any-return]
+            return 0.2126 * r + 0.7152 * g + 0.0722 * b
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/repositories/base_repository.py:56: error:
+Returning Any from function declared to return "T | None"  [no-any-return]
+            return result.scalar_one_or_none()
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/repositories/base_repository.py:136: error:
+Returning Any from function declared to return "bool"  [no-any-return]
+            return result.rowcount > 0
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/repositories/base_repository.py:151: error:
+Returning Any from function declared to return "int"  [no-any-return]
+            return result.rowcount
+            ^~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/repositories/base_repository.py:166: error:
+Returning Any from function declared to return "bool"  [no-any-return]
+            return result.scalar() > 0
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/repositories/base_repository.py:176: error:
+Returning Any from function declared to return "int"  [no-any-return]
+            return result.scalar()
+            ^~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/api/compression.py:18: error:
+Incompatible default for argument "compressible_types" (default has type "None",
+argument has type "set[Any]")  [assignment]
+    ... app: ASGIApp, minimum_size: int = 500, compressible_types: set = None
+                                                                         ^~~~
+services/api/festival_playlist_generator/api/compression.py:18: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
+services/api/festival_playlist_generator/api/compression.py:18: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
+services/api/festival_playlist_generator/web/utils.py:13: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+services/api/festival_playlist_generator/api/response_formatter.py:199: error:
+Unsupported target for indexed assignment ("object")  [index]
+                response["meta"]["count"] = len(data)
+                ^~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/api/response_formatter.py:201: error:
+Unsupported target for indexed assignment ("object")  [index]
+                response["meta"]["count"] = len(data["items"])
+                ^~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/api/versioning.py:64: error: Function
+"builtins.any" is not valid as a type  [valid-type]
+        request: Request, data: any, message: str = None
+                                ^
+services/api/festival_playlist_generator/api/versioning.py:64: note: Perhaps you meant "typing.Any" instead of "any"?
+services/api/festival_playlist_generator/api/versioning.py:64: error:
+Incompatible default for argument "message" (default has type "None", argument
+has type "str")  [assignment]
+        request: Request, data: any, message: str = None
+                                                    ^~~~
+services/api/festival_playlist_generator/api/versioning.py:64: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
+services/api/festival_playlist_generator/api/versioning.py:64: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
+services/api/festival_playlist_generator/services/spotify_artist_service.py:38: error:
+Returning Any from function declared to return "str | None"  [no-any-return]
+            return sorted_images[0].get("url")
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/spotify_artist_service.py:51: error:
+Returning Any from function declared to return "str | None"  [no-any-return]
+            return best_image.get("url")
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/spotify_artist_service.py:64: error:
+Returning Any from function declared to return "str | None"  [no-any-return]
+            return best_image.get("url")
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/spotify_artist_service.py:69: error:
+Returning Any from function declared to return "str | None"  [no-any-return]
+            return self.external_urls.get("spotify")
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/spotify_artist_service.py:173: error:
+Returning Any from function declared to return "list[dict[str, Any]]" 
+[no-any-return]
+                return results.get("tracks", [])
+                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/festival_enrichment.py:120: error:
+Incompatible types in assignment (expression has type "list[str]", target has
+type "str")  [assignment]
+                enriched_data["dates"] = dates
+                                         ^~~~~
+services/api/festival_playlist_generator/services/festival_enrichment.py:124: error:
+Incompatible types in assignment (expression has type "list[str]", target has
+type "str")  [assignment]
+                enriched_data["artists"] = artists
+                                           ^~~~~~~
+services/api/festival_playlist_generator/services/festival_enrichment.py:130: error:
+Incompatible types in assignment (expression has type "Any | list[Any]", target
+has type "str")  [assignment]
+                enriched_data["genres"] = genres
+                                          ^~~~~~
+services/api/festival_playlist_generator/services/festival_enrichment.py:142: error:
+Incompatible types in assignment (expression has type "int", target has type
+"str")  [assignment]
+                enriched_data["artist_count"] = len(artists)
+                                                ^~~~~~~~~~~~
+services/api/festival_playlist_generator/services/cache_service.py:123: error:
+Returning Any from function declared to return "bool"  [no-any-return]
+                return result > 0
+                ^~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/cache_service.py:152: error:
+Returning Any from function declared to return "int"  [no-any-return]
+                return result
+                ^~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/cache_service.py:170: error:
+Returning Any from function declared to return "bool"  [no-any-return]
+                return result > 0
+                ^~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/cache_service.py:189: error:
+Need type annotation for "results" (hint: "results: list[<type>] = ...") 
+[var-annotated]
+                results = []
+                ^~~~~~~
+services/api/festival_playlist_generator/services/cache_service.py:245: error:
+Returning Any from function declared to return "int | None"  [no-any-return]
+                return result
+                ^~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/cache_service.py:264: error:
+Returning Any from function declared to return "bool"  [no-any-return]
+                return result
+                ^~~~~~~~~~~~~
+services/api/festival_playlist_generator/core/logging_config.py:73: error: Item
+"None" of "type[BaseException] | None" has no attribute "__name__"  [union-attr]
+                    "type": record.exc_info[0].__name__,
+                            ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/core/logging_config.py:248: error:
+Incompatible default for argument "user_id" (default has type "None", argument
+has type "str")  [assignment]
+    ...f __init__(self, request_id: str, endpoint: str, user_id: str = None):
+                                                                       ^~~~
+services/api/festival_playlist_generator/core/logging_config.py:248: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
+services/api/festival_playlist_generator/core/logging_config.py:248: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
+services/api/festival_playlist_generator/services/push_notifications.py:105: error:
+Returning Any from function declared to return "dict[Any, Any] | None" 
+[no-any-return]
+                    return json.loads(subscription_data)
+                    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/core/caching.py:85: error: Returning
+Any from function declared to return "bool"  [no-any-return]
+                return result > 0
+                ^~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/core/caching.py:98: error: Returning
+Any from function declared to return "bool"  [no-any-return]
+                return result > 0
+                ^~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/core/caching.py:112: error: Returning
+Any from function declared to return "int"  [no-any-return]
+                    return await redis.delete(*keys)
+                    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/core/caching.py:175: error: Function
+"builtins.callable" is not valid as a type  [valid-type]
+    ... 3600, namespace: str = "default", key_func: Optional[callable] = None
+                                                             ^
+services/api/festival_playlist_generator/core/caching.py:175: note: Perhaps you meant "typing.Callable" instead of "callable"?
+services/api/festival_playlist_generator/core/caching.py:290: error: Returning
+Any from function declared to return "bool"  [no-any-return]
+            return await self.cache_manager.set(
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/core/caching.py:316: error: Returning
+Any from function declared to return "int"  [no-any-return]
+            return await self.cache_manager.invalidate_pattern(pattern, na...
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+services/api/festival_playlist_generator/services/user_preferences.py:83: error:
+Returning Any from function declared to return "UserSongPreference" 
+[no-any-return]
+            return UserSongPreferenceSchema.model_validate(preference)
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/smart_artist_search.py:12: error:
+Module "festival_playlist_generator.services.name_normalization_service" has no
+attribute "normalize_artist_name"  [attr-defined]
+    from festival_playlist_generator.services.name_normalization_service i...
+    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+services/api/festival_playlist_generator/services/smart_artist_search.py:98: error:
+Argument "key" to "sorted" has incompatible type
+"Callable[[dict[str, object]], object]"; expected
+"Callable[[dict[str, object]], SupportsDunderLT[Any] | SupportsDunderGT[Any]]" 
+[arg-type]
+                results.values(), key=lambda x: x["score"], reverse=True
+                                      ^
+services/api/festival_playlist_generator/services/smart_artist_search.py:98: error:
+Incompatible return value type (got "object", expected
+"SupportsDunderLT[Any] | SupportsDunderGT[Any]")  [return-value]
+                results.values(), key=lambda x: x["score"], reverse=True
+                                                ^~~~~~~~~~
+services/api/festival_playlist_generator/services/smart_artist_search.py:104: error:
+Incompatible types in assignment (expression has type "object", variable has
+type "Artist")  [assignment]
+                artist = result["artist"]
+                         ^~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/smart_artist_search.py:135: error:
+Returning Any from function declared to return "list[Artist]"  [no-any-return]
+            return result.scalars().all()
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/smart_artist_search.py:168: error:
+Returning Any from function declared to return "list[Artist]"  [no-any-return]
+            return result.scalars().all()
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/recommendation_engine.py:90: error:
+Need type annotation for "genre_counter"  [var-annotated]
+            genre_counter = Counter()
+                            ^~~~~~~~~
+services/api/festival_playlist_generator/services/recommendation_engine.py:91: error:
+Need type annotation for "artist_counter"  [var-annotated]
+            artist_counter = Counter()
+                             ^~~~~~~~~
+services/api/festival_playlist_generator/services/recommendation_engine.py:124: error:
+Incompatible types in assignment (expression has type "float", target has type
+"int")  [assignment]
+                        artist_counter[artist.id] += 0.5  # Lower weight f...
+                        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/recommendation_engine.py:126: error:
+Incompatible types in assignment (expression has type "float", target has type
+"int")  [assignment]
+                            genre_counter[genre] += 0.5
+                            ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/oauth_service.py:289: error:
+Returning Any from function declared to return "dict[str, Any]"  [no-any-return]
+                return response.json()
+                ^~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/oauth_service.py:350: error:
+Returning Any from function declared to return "dict[str, Any]"  [no-any-return]
+                return user_data
+                ^~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/oauth_service.py:446: error:
+Returning Any from function declared to return "dict[str, Any] | None" 
+[no-any-return]
+            return session_data
+            ^~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/oauth_service.py:452: error:
+Returning Any from function declared to return "bool"  [no-any-return]
+            return result > 0
+            ^~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/oauth_service.py:470: error:
+Returning Any from function declared to return "User | None"  [no-any-return]
+            return UserSchema.model_validate(db_user)
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/notification_service.py:287: error:
+Returning Any from function declared to return "dict[Any, Any]"  [no-any-return]
+            return user.preferences.get("notifications", self._get_default...
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+services/api/festival_playlist_generator/services/notification_service.py:425: error:
+Returning Any from function declared to return "list[User]"  [no-any-return]
+            return self.db.query(User).limit(100).all()
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/notification_service.py:431: error:
+Returning Any from function declared to return "list[User]"  [no-any-return]
+            return self.db.query(User).limit(100).all()
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/enhanced_fuzzy_search.py:12: error:
+Module "festival_playlist_generator.services.name_normalization_service" has no
+attribute "normalize_artist_name"  [attr-defined]
+    from festival_playlist_generator.services.name_normalization_service i...
+    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+services/api/festival_playlist_generator/services/enhanced_fuzzy_search.py:39: error:
+Incompatible types in assignment (expression has type "list[int]", variable has
+type "range")  [assignment]
+            previous_row = current_row
+                           ^~~~~~~~~~~
+services/api/festival_playlist_generator/services/enhanced_fuzzy_search.py:372: error:
+Incompatible types in assignment (expression has type "float", variable has type
+"int")  [assignment]
+                        best_match = 1.0
+                                     ^~~
+services/api/festival_playlist_generator/services/enhanced_fuzzy_search.py:377: error:
+Incompatible types in assignment (expression has type "float", variable has type
+"int")  [assignment]
+                        best_match = max(best_match, 0.7)
+                                     ^~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/enhanced_fuzzy_search.py:382: error:
+Incompatible types in assignment (expression has type "float", variable has type
+"int")  [assignment]
+                        best_match = sim
+                                     ^~~
+services/api/festival_playlist_generator/services/data_export_service.py:33: error:
+Incompatible default for argument "requester_ip" (default has type "None",
+argument has type "str")  [assignment]
+            requester_ip: str = None,
+                                ^~~~
+services/api/festival_playlist_generator/services/data_export_service.py:33: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
+services/api/festival_playlist_generator/services/data_export_service.py:33: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
+services/api/festival_playlist_generator/services/data_export_service.py:85: error:
+Incompatible return value type (got "str", expected "dict[str, Any]") 
+[return-value]
+                    return self._convert_to_xml_format(export_data)
+                           ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/data_export_service.py:103: error:
+Incompatible default for argument "requester_ip" (default has type "None",
+argument has type "str")  [assignment]
+    ...       self, db: AsyncSession, user_id: UUID, requester_ip: str = None
+                                                                         ^~~~
+services/api/festival_playlist_generator/services/data_export_service.py:103: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
+services/api/festival_playlist_generator/services/data_export_service.py:103: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
+services/api/festival_playlist_generator/services/data_export_service.py:133: error:
+Unsupported target for indexed assignment ("Collection[str]")  [index]
+                deletion_summary["deleted_records"][
+                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/data_export_service.py:141: error:
+Unsupported target for indexed assignment ("Collection[str]")  [index]
+                deletion_summary["deleted_records"]["playlists"] = playlis...
+                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/data_export_service.py:145: error:
+Unsupported target for indexed assignment ("Collection[str]")  [index]
+                deletion_summary["deleted_records"]["user_profile"] = user...
+                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/data_export_service.py:307: error:
+Incompatible default for argument "resource_type" (default has type "None",
+argument has type "str")  [assignment]
+            resource_type: str = None,
+                                 ^~~~
+services/api/festival_playlist_generator/services/data_export_service.py:307: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
+services/api/festival_playlist_generator/services/data_export_service.py:307: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
+services/api/festival_playlist_generator/services/data_export_service.py:308: error:
+Incompatible default for argument "resource_id" (default has type "None",
+argument has type "str")  [assignment]
+            resource_id: str = None,
+                               ^~~~
+services/api/festival_playlist_generator/services/data_export_service.py:308: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
+services/api/festival_playlist_generator/services/data_export_service.py:308: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
+services/api/festival_playlist_generator/services/data_export_service.py:309: error:
+Incompatible default for argument "details" (default has type "None", argument
+has type "dict[str, Any]")  [assignment]
+            details: Dict[str, Any] = None,
+                                      ^~~~
+services/api/festival_playlist_generator/services/data_export_service.py:309: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
+services/api/festival_playlist_generator/services/data_export_service.py:309: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
+services/api/festival_playlist_generator/services/data_export_service.py:436: error:
+Returning Any from function declared to return "str"  [no-any-return]
+            return dict_to_xml(data, "user_data_export")
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/auth.py:80: error: Returning
+Any from function declared to return "User"  [no-any-return]
+            return UserSchema.model_validate(db_user)
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/auth.py:99: error: Returning
+Any from function declared to return "User | None"  [no-any-return]
+            return UserSchema.model_validate(db_user)
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/auth.py:134: error: Returning
+Any from function declared to return "dict[str, Any] | None"  [no-any-return]
+            return session_data
+            ^~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/auth.py:140: error: Returning
+Any from function declared to return "bool"  [no-any-return]
+            return result
+            ^~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/auth.py:158: error: Returning
+Any from function declared to return "User | None"  [no-any-return]
+            return UserSchema.model_validate(db_user)
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/artist_enrichment_service.py:144: error:
+Returning Any from function declared to return "Artist | None"  [no-any-return]
+                    return artist
+                    ^~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/artist_enrichment_service.py:164: error:
+Returning Any from function declared to return "Artist | None"  [no-any-return]
+                        return artist
+                        ^~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/artist_enrichment_service.py:175: error:
+Returning Any from function declared to return "Artist | None"  [no-any-return]
+                    return artist
+                    ^~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/artist_enrichment_service.py:178: error:
+Returning Any from function declared to return "Artist | None"  [no-any-return]
+                    return artist
+                    ^~~~~~~~~~~~~
+services/api/festival_playlist_generator/repositories/user_repository.py:48: error:
+Returning Any from function declared to return "User | None"  [no-any-return]
+            return result.scalar_one_or_none()
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/repositories/user_repository.py:63: error:
+Returning Any from function declared to return "User | None"  [no-any-return]
+            return result.scalar_one_or_none()
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/repositories/user_repository.py:78: error:
+Returning Any from function declared to return "User | None"  [no-any-return]
+            return result.scalar_one_or_none()
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/repositories/user_repository.py:98: error:
+Returning Any from function declared to return "User | None"  [no-any-return]
+            return result.scalar_one_or_none()
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/repositories/user_repository.py:125: error:
+Returning Any from function declared to return "bool"  [no-any-return]
+            return result.scalar() > 0
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/repositories/user_repository.py:143: error:
+Returning Any from function declared to return "bool"  [no-any-return]
+            return result.scalar() > 0
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/repositories/user_repository.py:158: error:
+Returning Any from function declared to return "bool"  [no-any-return]
+            return result.rowcount > 0
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/repositories/user_repository.py:174: error:
+Returning Any from function declared to return "bool"  [no-any-return]
+            return result.rowcount > 0
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/repositories/user_repository.py:282: error:
+Returning Any from function declared to return "int"  [no-any-return]
+            return result.scalar()
+            ^~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/repositories/user_repository.py:294: error:
+Returning Any from function declared to return "int"  [no-any-return]
+            return result.scalar()
+            ^~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/repositories/setlist_repository.py:46: error:
+Returning Any from function declared to return "Setlist | None"  [no-any-return]
+            return result.scalar_one_or_none()
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/repositories/setlist_repository.py:116: error:
+Returning Any from function declared to return "Setlist | None"  [no-any-return]
+            return result.scalar_one_or_none()
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/repositories/setlist_repository.py:236: error:
+Returning Any from function declared to return "int"  [no-any-return]
+            return result.scalar()
+            ^~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/repositories/setlist_repository.py:253: error:
+Returning Any from function declared to return "int"  [no-any-return]
+            return result.scalar()
+            ^~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/repositories/playlist_repository.py:50: error:
+Returning Any from function declared to return "Playlist | None" 
+[no-any-return]
+            return result.scalar_one_or_none()
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/repositories/playlist_repository.py:140: error:
+Returning Any from function declared to return "Playlist | None" 
+[no-any-return]
+            return result.scalar_one_or_none()
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/repositories/playlist_repository.py:160: error:
+Returning Any from function declared to return "Playlist | None" 
+[no-any-return]
+            return result.scalar_one_or_none()
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/repositories/playlist_repository.py:180: error:
+Returning Any from function declared to return "Playlist | None" 
+[no-any-return]
+            return result.scalar_one_or_none()
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/repositories/playlist_repository.py:195: error:
+Returning Any from function declared to return "int"  [no-any-return]
+            return result.scalar()
+            ^~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/repositories/playlist_repository.py:210: error:
+Returning Any from function declared to return "int"  [no-any-return]
+            return result.scalar()
+            ^~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/repositories/playlist_repository.py:225: error:
+Returning Any from function declared to return "int"  [no-any-return]
+            return result.scalar()
+            ^~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/repositories/playlist_repository.py:245: error:
+Returning Any from function declared to return "bool"  [no-any-return]
+            return result.scalar() > 0
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/repositories/festival_repository.py:48: error:
+Returning Any from function declared to return "Festival | None" 
+[no-any-return]
+            return result.scalar_one_or_none()
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/repositories/festival_repository.py:61: error:
+Returning Any from function declared to return "Festival | None" 
+[no-any-return]
+            return result.scalar_one_or_none()
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/repositories/festival_repository.py:236: error:
+Returning Any from function declared to return "bool"  [no-any-return]
+            return result.scalar() > 0
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/repositories/festival_repository.py:253: error:
+Returning Any from function declared to return "int"  [no-any-return]
+            return result.scalar()
+            ^~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/repositories/artist_repository.py:42: error:
+Returning Any from function declared to return "Artist | None"  [no-any-return]
+            return result.scalar_one_or_none()
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/repositories/artist_repository.py:47: error:
+Returning Any from function declared to return "Artist | None"  [no-any-return]
+            return result.scalar_one_or_none()
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/repositories/artist_repository.py:54: error:
+Returning Any from function declared to return "Artist | None"  [no-any-return]
+            return result.scalar_one_or_none()
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/repositories/artist_repository.py:171: error:
+Returning Any from function declared to return "bool"  [no-any-return]
+            return result.rowcount > 0
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/repositories/artist_repository.py:181: error:
+Returning Any from function declared to return "int"  [no-any-return]
+            return result.rowcount
+            ^~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/repositories/artist_repository.py:188: error:
+Returning Any from function declared to return "bool"  [no-any-return]
+            return result.scalar() > 0
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/repositories/artist_repository.py:195: error:
+Returning Any from function declared to return "bool"  [no-any-return]
+            return result.scalar() > 0
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/repositories/artist_repository.py:205: error:
+Returning Any from function declared to return "int"  [no-any-return]
+            return result.scalar()
+            ^~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/repositories/artist_repository.py:221: error:
+Returning Any from function declared to return "int"  [no-any-return]
+            return result.scalar()
+            ^~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/api/exception_handlers.py:71: error:
+Incompatible default for argument "message" (default has type "None", argument
+has type "str")  [assignment]
+        def __init__(self, service_name: str, message: str = None):
+                                                             ^~~~
+services/api/festival_playlist_generator/api/exception_handlers.py:71: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
+services/api/festival_playlist_generator/api/exception_handlers.py:71: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
+services/api/festival_playlist_generator/services/festival_scraper.py:459: error:
+Returning Any from function declared to return "dict[str, Any] | None" 
+[no-any-return]
+                    return festival_data
+                    ^~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/festival_scraper.py:553: error:
+Returning Any from function declared to return "dict[str, Any] | None" 
+[no-any-return]
+                    return festival_data
+                    ^~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/festival_scraper.py:699: error:
+Returning Any from function declared to return "str | None"  [no-any-return]
+                                    return link
+                                    ^~~~~~~~~~~
+services/api/festival_playlist_generator/web/auth_middleware.py:115: error:
+Returning Any from function declared to return "User"  [no-any-return]
+        return user
+        ^~~~~~~~~~~
+services/api/festival_playlist_generator/api/auth.py:20: error: Incompatible
+return value type (got "Literal[''] | bool | None", expected "bool") 
+[return-value]
+        return valid_api_key and api_key == valid_api_key
+               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/api/auth.py:50: error: Item "None" of
+"datetime | None" has no attribute "isoformat"  [union-attr]
+            "last_login": user.last_login.isoformat(),
+                          ^~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/web/auth_routes.py:467: error:
+Argument 4 to "export_user_data" of "DataExportService" has incompatible type
+"Any | None"; expected "str"  [arg-type]
+                db, user.id, format, client_ip
+                                     ^~~~~~~~~
+services/api/festival_playlist_generator/web/auth_routes.py:555: error:
+Argument 3 to "delete_user_account" of "DataExportService" has incompatible type
+"Any | None"; expected "str"  [arg-type]
+                db, user.id, client_ip
+                             ^~~~~~~~~
+services/api/festival_playlist_generator/api/endpoints/data_export.py:61: error:
+Argument 4 to "export_user_data" of "DataExportService" has incompatible type
+"Any | None"; expected "str"  [arg-type]
+                db, current_user.id, format, client_ip
+                                             ^~~~~~~~~
+services/api/festival_playlist_generator/api/endpoints/data_export.py:129: error:
+Argument 3 to "delete_user_account" of "DataExportService" has incompatible type
+"Any | None"; expected "str"  [arg-type]
+                db, current_user.id, client_ip
+                                     ^~~~~~~~~
+services/api/festival_playlist_generator/services/user_service.py:54: error:
+Returning Any from function declared to return "User | None"  [no-any-return]
+                return cached
+                ^~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/user_service.py:81: error:
+Returning Any from function declared to return "User | None"  [no-any-return]
+                return cached
+                ^~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/user_service.py:107: error:
+Returning Any from function declared to return "User | None"  [no-any-return]
+                return cached
+                ^~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/user_service.py:133: error:
+Returning Any from function declared to return "User | None"  [no-any-return]
+                return cached
+                ^~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/user_service.py:215: error:
+Returning Any from function declared to return "bool"  [no-any-return]
+            return await self.user_repo.verify_password(user, password)
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/user_service.py:215: error:
+"UserRepository" has no attribute "verify_password"  [attr-defined]
+            return await self.user_repo.verify_password(user, password)
+                         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/user_service.py:229: error:
+"UserRepository" has no attribute "update_password"  [attr-defined]
+            updated_user = await self.user_repo.update_password(user, new_...
+                                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/user_service.py:235: error:
+Returning Any from function declared to return "User"  [no-any-return]
+            return updated_user
+            ^~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/playlist_service.py:38: error:
+Name "SpotifyService" is not defined  [name-defined]
+            spotify_service: Optional["SpotifyService"] = None,
+                                      ^
+services/api/festival_playlist_generator/services/playlist_service.py:74: error:
+Returning Any from function declared to return "Playlist | None" 
+[no-any-return]
+                return cached
+                ^~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/playlist_service.py:101: error:
+Returning Any from function declared to return "Playlist | None" 
+[no-any-return]
+                return cached
+                ^~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/playlist_service.py:131: error:
+Returning Any from function declared to return "list[Playlist]"  [no-any-return]
+                return cached
+                ^~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/playlist_service.py:160: error:
+Returning Any from function declared to return "list[Playlist]"  [no-any-return]
+                return cached
+                ^~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/playlist_service.py:322: error:
+Returning Any from function declared to return "str | None"  [no-any-return]
+                return spotify_playlist_id
+                ^~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/festival_service.py:69: error:
+Returning Any from function declared to return "Festival | None" 
+[no-any-return]
+                return cached
+                ^~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/festival_service.py:96: error:
+Returning Any from function declared to return "Festival | None" 
+[no-any-return]
+                return cached
+                ^~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/festival_service.py:125: error:
+Returning Any from function declared to return "list[Festival]"  [no-any-return]
+                return cached
+                ^~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/festival_service.py:129: error:
+Argument 2 to "get_upcoming_festivals" of "FestivalRepository" has incompatible
+type "bool"; expected "datetime | None"  [arg-type]
+                limit, load_relationships
+                       ^~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/festival_service.py:369: error:
+Returning Any from function declared to return "int"  [no-any-return]
+                return cached
+                ^~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/festival_service.py:372: error:
+"FestivalRepository" has no attribute "count_total"  [attr-defined]
+            count = await self.festival_repo.count_total()
+                          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/festival_service.py:377: error:
+Returning Any from function declared to return "int"  [no-any-return]
+            return count
+            ^~~~~~~~~~~~
+services/api/festival_playlist_generator/services/artist_service.py:62: error:
+Returning Any from function declared to return "Artist | None"  [no-any-return]
+                    return cached
+                    ^~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/artist_service.py:90: error:
+Returning Any from function declared to return "Artist | None"  [no-any-return]
+                return cached
+                ^~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/artist_service.py:116: error:
+Returning Any from function declared to return "Artist | None"  [no-any-return]
+                return cached
+                ^~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/artist_service.py:285: error:
+Returning Any from function declared to return "int"  [no-any-return]
+                return cached
+                ^~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/artist_service.py:306: error:
+Returning Any from function declared to return "int"  [no-any-return]
+                return cached
+                ^~~~~~~~~~~~~
+services/api/festival_playlist_generator/api/middleware.py:94: error:
+"Exception" has no attribute "detail"  [attr-defined]
+                        content=e.detail,
+                                ^~~~~~~~
+services/api/festival_playlist_generator/services/festival_collector.py:33: error:
+Incompatible types in assignment (expression has type "None", variable has type
+"list[str]")  [assignment]
+        artists: List[str] = None
+                             ^~~~
+services/api/festival_playlist_generator/services/festival_collector.py:34: error:
+Incompatible types in assignment (expression has type "None", variable has type
+"list[str]")  [assignment]
+        genres: List[str] = None
+                            ^~~~
+services/api/festival_playlist_generator/services/festival_collector.py:36: error:
+Incompatible types in assignment (expression has type "None", variable has type
+"dict[str, Any]")  [assignment]
+        raw_data: Dict[str, Any] = None
+                                   ^~~~
+services/api/festival_playlist_generator/services/festival_collector.py:129: error:
+Incompatible default for argument "additional_params" (default has type "None",
+argument has type "dict[str, str]")  [assignment]
+            additional_params: Dict[str, str] = None,
+                                                ^~~~
+services/api/festival_playlist_generator/services/festival_collector.py:129: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
+services/api/festival_playlist_generator/services/festival_collector.py:129: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
+services/api/festival_playlist_generator/services/festival_collector.py:168: error:
+"None" has no attribute "get"  [attr-defined]
+                response = await self.session.get(api_url, params=params)
+                                 ^~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/festival_collector.py:172: error:
+Returning Any from function declared to return "dict[str, Any] | None" 
+[no-any-return]
+                        return response.json()
+                        ^~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/festival_collector.py:605: error:
+Name "BeautifulSoup" is not defined  [name-defined]
+                        soup = BeautifulSoup(response.text, "html.parser")
+                               ^~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/festival_collector.py:647: error:
+Incompatible types in assignment (expression has type "datetime | None",
+variable has type "datetime")  [assignment]
+                                        date = self._parse_date_string(dat...
+                                               ^~~~~~~~~~~~~~~~~~~~~~~~~~~...
+services/api/festival_playlist_generator/services/festival_collector.py:686: error:
+Name "BeautifulSoup" is not defined  [name-defined]
+                        soup = BeautifulSoup(response.text, "html.parser")
+                               ^~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/festival_collector.py:759: error:
+Name "BeautifulSoup" is not defined  [name-defined]
+                        soup = BeautifulSoup(response.text, "html.parser")
+                               ^~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/festival_collector.py:839: error:
+Name "BeautifulSoup" is not defined  [name-defined]
+                        soup = BeautifulSoup(response.text, "html.parser")
+                               ^~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/festival_collector.py:1086: error:
+Need type annotation for "festivals" (hint: "festivals: list[<type>] = ...") 
+[var-annotated]
+            festivals = []
+            ^~~~~~~~~
+services/api/festival_playlist_generator/services/festival_collector.py:1171: error:
+Need type annotation for "festivals" (hint: "festivals: list[<type>] = ...") 
+[var-annotated]
+            festivals = []
+            ^~~~~~~~~
+services/api/festival_playlist_generator/services/festival_collector.py:1395: error:
+Incompatible return value type (got "list[datetime] | Literal[False] | str",
+expected "bool")  [return-value]
+                raw_data.name
+                ^~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/festival_collector.py:1413: error:
+Statement is unreachable  [unreachable]
+                    self.logger.warning(f"Invalid date format: {date}")
+                    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/festival_collector.py:1767: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+services/api/festival_playlist_generator/services/festival_collector.py:1940: error:
+Returning Any from function declared to return "Festival | None" 
+[no-any-return]
+            return result.scalar_one_or_none()
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/streaming_integration.py:181: error:
+Returning Any from function declared to return "str"  [no-any-return]
+                return playlist["id"]
+                ^~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/streaming_integration.py:283: error:
+Returning Any from function declared to return "str"  [no-any-return]
+                return playlist_id
+                ^~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/spotify_service.py:192: error:
+Returning Any from function declared to return "list[dict[str, Any]]" 
+[no-any-return]
+                return await self.circuit_breaker.call(_search)
+                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/spotify_service.py:236: error:
+Returning Any from function declared to return "str"  [no-any-return]
+            return await self.circuit_breaker.call(_create)
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/spotify_service.py:314: error:
+Returning Any from function declared to return "dict[str, Any] | None" 
+[no-any-return]
+                return await self.circuit_breaker.call(_refresh)
+                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/spotify_service.py:344: error:
+Returning Any from function declared to return "dict[str, Any] | None" 
+[no-any-return]
+                return await self.circuit_breaker.call(_get)
+                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/spotify_service.py:382: error:
+Returning Any from function declared to return "list[dict[str, Any]]" 
+[no-any-return]
+                return await self.circuit_breaker.call(_search)
+                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/spotify_service.py:405: error:
+Returning Any from function declared to return "str"  [no-any-return]
+            return data["id"]
+            ^~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/artist_analyzer.py:87: error:
+"None" has no attribute "get"  [attr-defined]
+                response = await self.session.get(
+                                 ^~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/artist_analyzer.py:115: error:
+Returning Any from function declared to return "dict[Any, Any] | None" 
+[no-any-return]
+                                return exact_matches[0]
+                                ^~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/artist_analyzer.py:128: error:
+Returning Any from function declared to return "dict[Any, Any] | None" 
+[no-any-return]
+                                return artists[0]
+                                ^~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/artist_analyzer.py:195: error:
+"None" has no attribute "get"  [attr-defined]
+                setlist_response = await self.session.get(
+                                         ^~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/artist_analyzer.py:309: error:
+"None" has no attribute "get"  [attr-defined]
+                response = await self.session.get(
+                                 ^~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/artist_analyzer.py:552: error:
+Function "builtins.any" is not valid as a type  [valid-type]
+        ) -> List[Dict[str, any]]:
+                            ^
+services/api/festival_playlist_generator/services/artist_analyzer.py:552: note: Perhaps you meant "typing.Any" instead of "any"?
+services/api/festival_playlist_generator/services/artist_analyzer.py:620: error:
+Function "builtins.any" is not valid as a type  [valid-type]
+        ) -> Dict[str, Dict[str, any]]:
+                                 ^
+services/api/festival_playlist_generator/services/artist_analyzer.py:620: note: Perhaps you meant "typing.Any" instead of "any"?
+services/api/festival_playlist_generator/services/artist_analyzer.py:678: error:
+Unsupported operand types for + ("object" and "int")  [operator]
+                    song_data["frequency"] += 1
+                    ^
+services/api/festival_playlist_generator/services/artist_analyzer.py:679: error:
+No overload variant of "max" matches argument types "object", "datetime" 
+[call-overload]
+                    song_data["last_seen"] = max(song_data["last_seen"], s...
+                                             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+services/api/festival_playlist_generator/services/artist_analyzer.py:679: note: Possible overload variants:
+services/api/festival_playlist_generator/services/artist_analyzer.py:679: note:     def [SupportsRichComparisonT: SupportsDunderLT[Any] | SupportsDunderGT[Any]] max(SupportsRichComparisonT, SupportsRichComparisonT, /, *_args: SupportsRichComparisonT, key: None = ...) -> SupportsRichComparisonT
+services/api/festival_playlist_generator/services/artist_analyzer.py:679: note:     def [_T] max(_T, _T, /, *_args: _T, key: Callable[[_T], SupportsDunderLT[Any] | SupportsDunderGT[Any]]) -> _T
+services/api/festival_playlist_generator/services/artist_analyzer.py:679: note:     def [SupportsRichComparisonT: SupportsDunderLT[Any] | SupportsDunderGT[Any]] max(Iterable[SupportsRichComparisonT], /, *, key: None = ...) -> SupportsRichComparisonT
+services/api/festival_playlist_generator/services/artist_analyzer.py:679: note:     def [_T] max(Iterable[_T], /, *, key: Callable[[_T], SupportsDunderLT[Any] | SupportsDunderGT[Any]]) -> _T
+services/api/festival_playlist_generator/services/artist_analyzer.py:679: note:     def [SupportsRichComparisonT: SupportsDunderLT[Any] | SupportsDunderGT[Any], _T] max(Iterable[SupportsRichComparisonT], /, *, key: None = ..., default: _T) -> SupportsRichComparisonT | _T
+services/api/festival_playlist_generator/services/artist_analyzer.py:679: note:     def [_T1, _T2] max(Iterable[_T1], /, *, key: Callable[[_T1], SupportsDunderLT[Any] | SupportsDunderGT[Any]], default: _T2) -> _T1 | _T2
+services/api/festival_playlist_generator/services/artist_analyzer.py:680: error:
+No overload variant of "min" matches argument types "object", "datetime" 
+[call-overload]
+                    song_data["first_seen"] = min(song_data["first_seen"],...
+                                              ^~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+services/api/festival_playlist_generator/services/artist_analyzer.py:680: note: Possible overload variants:
+services/api/festival_playlist_generator/services/artist_analyzer.py:680: note:     def [SupportsRichComparisonT: SupportsDunderLT[Any] | SupportsDunderGT[Any]] min(SupportsRichComparisonT, SupportsRichComparisonT, /, *_args: SupportsRichComparisonT, key: None = ...) -> SupportsRichComparisonT
+services/api/festival_playlist_generator/services/artist_analyzer.py:680: note:     def [_T] min(_T, _T, /, *_args: _T, key: Callable[[_T], SupportsDunderLT[Any] | SupportsDunderGT[Any]]) -> _T
+services/api/festival_playlist_generator/services/artist_analyzer.py:680: note:     def [SupportsRichComparisonT: SupportsDunderLT[Any] | SupportsDunderGT[Any]] min(Iterable[SupportsRichComparisonT], /, *, key: None = ...) -> SupportsRichComparisonT
+services/api/festival_playlist_generator/services/artist_analyzer.py:680: note:     def [_T] min(Iterable[_T], /, *, key: Callable[[_T], SupportsDunderLT[Any] | SupportsDunderGT[Any]]) -> _T
+services/api/festival_playlist_generator/services/artist_analyzer.py:680: note:     def [SupportsRichComparisonT: SupportsDunderLT[Any] | SupportsDunderGT[Any], _T] min(Iterable[SupportsRichComparisonT], /, *, key: None = ..., default: _T) -> SupportsRichComparisonT | _T
+services/api/festival_playlist_generator/services/artist_analyzer.py:680: note:     def [_T1, _T2] min(Iterable[_T1], /, *, key: Callable[[_T1], SupportsDunderLT[Any] | SupportsDunderGT[Any]], default: _T2) -> _T1 | _T2
+services/api/festival_playlist_generator/services/artist_analyzer.py:682: error:
+Unsupported right operand type for in ("object")  [operator]
+                    if setlist.venue not in song_data["venues"]:
+                       ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/artist_analyzer.py:683: error:
+"object" has no attribute "append"  [attr-defined]
+                        song_data["venues"].append(setlist.venue)
+                        ^~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/artist_analyzer.py:691: error:
+Function "builtins.any" is not valid as a type  [valid-type]
+            self, song_frequency: Dict[str, Dict[str, any]]
+                                                      ^
+services/api/festival_playlist_generator/services/artist_analyzer.py:691: note: Perhaps you meant "typing.Any" instead of "any"?
+services/api/festival_playlist_generator/services/artist_analyzer.py:692: error:
+Function "builtins.any" is not valid as a type  [valid-type]
+        ) -> List[Dict[str, any]]:
+                            ^
+services/api/festival_playlist_generator/services/artist_analyzer.py:692: note: Perhaps you meant "typing.Any" instead of "any"?
+services/api/festival_playlist_generator/services/advanced_fuzzy_matcher.py:51: error:
+Incompatible types in assignment (expression has type "list[int]", variable has
+type "range")  [assignment]
+            previous_row = current_row
+                           ^~~~~~~~~~~
+services/api/festival_playlist_generator/services/advanced_fuzzy_matcher.py:438: error:
+Returning Any from function declared to return "list[float] | None" 
+[no-any-return]
+                return response.data[0].embedding
+                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/advanced_fuzzy_matcher.py:455: error:
+Returning Any from function declared to return "float"  [no-any-return]
+            return dot_product / (magnitude1 * magnitude2)
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/setlistfm_service.py:126: error:
+Returning Any from function declared to return "dict[str, Any] | None" 
+[no-any-return]
+                return await self._retry_with_backoff(_get)
+                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/setlistfm_service.py:156: error:
+Returning Any from function declared to return "dict[str, Any] | None" 
+[no-any-return]
+                return await self._retry_with_backoff(_get)
+                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/setlistfm_service.py:191: error:
+Returning Any from function declared to return "dict[str, Any] | None" 
+[no-any-return]
+                return await self._retry_with_backoff(_search)
+                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/setlistfm_service.py:242: error:
+Returning Any from function declared to return "dict[str, Any] | None" 
+[no-any-return]
+                return await self._retry_with_backoff(_search)
+                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/setlistfm_service.py:272: error:
+Returning Any from function declared to return "dict[str, Any] | None" 
+[no-any-return]
+                return await self._retry_with_backoff(_get)
+                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/playlist_generator.py:165: error:
+Need type annotation for "all_song_frequency" (hint:
+"all_song_frequency: dict[<type>, <type>] = ...")  [var-annotated]
+                all_song_frequency = {}
+                ^~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/services/playlist_generator.py:166: error:
+Need type annotation for "artist_song_mapping" (hint:
+"artist_song_mapping: dict[<type>, <type>] = ...")  [var-annotated]
+                artist_song_mapping = {}  # Track which artist performs ea...
+                ^~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/api/endpoints/setlists.py:53: error:
+Argument 2 to "not_found_response" of "ResponseFormatter" has incompatible type
+"UUID"; expected "str | int"  [arg-type]
+            return formatter.not_found_response("Artist", artist_id)
+                                                          ^~~~~~~~~
+services/api/festival_playlist_generator/api/endpoints/setlists.py:141: error:
+Argument 2 to "not_found_response" of "ResponseFormatter" has incompatible type
+"UUID"; expected "str | int"  [arg-type]
+    ...              return formatter.not_found_response("Artist", artist_id)
+                                                                   ^~~~~~~~~
+services/api/festival_playlist_generator/api/endpoints/setlists.py:275: error:
+Argument 2 to "not_found_response" of "ResponseFormatter" has incompatible type
+"UUID"; expected "str | int"  [arg-type]
+            return formatter.not_found_response("Setlist", setlist_id)
+                                                           ^~~~~~~~~~
+services/api/festival_playlist_generator/api/endpoints/setlists.py:312: error:
+Argument 2 to "not_found_response" of "ResponseFormatter" has incompatible type
+"UUID"; expected "str | int"  [arg-type]
+            return formatter.not_found_response("Artist", artist_id)
+                                                          ^~~~~~~~~
+services/api/festival_playlist_generator/web/admin.py:1651: error: Dict entry 1
+has incompatible type "str": "str"; expected "str": "bool"  [dict-item]
+                        "message": "Spotify data added successfully",
+                        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/web/admin.py:1656: error: Dict entry 1
+has incompatible type "str": "str"; expected "str": "bool"  [dict-item]
+                        "message": "Artist already has Spotify data",
+                        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/web/admin.py:1661: error: Dict entry 1
+has incompatible type "str": "str"; expected "str": "bool"  [dict-item]
+                        "message": "No Spotify data found",
+                        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/web/admin.py:1665: error: Dict entry 1
+has incompatible type "str": "str"; expected "str": "bool"  [dict-item]
+    ... enrichment_results["spotify"] = {"success": False, "message": str(e)}
+                                                           ^~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/web/admin.py:1675: error: Dict entry 1
+has incompatible type "str": "str"; expected "str": "bool"  [dict-item]
+                        "message": f"Added {setlist_result['enriched']} se...
+                        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+services/api/festival_playlist_generator/web/admin.py:1680: error: Dict entry 1
+has incompatible type "str": "str"; expected "str": "bool"  [dict-item]
+                        "message": "Artist already has setlist data",
+                        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/web/admin.py:1685: error: Dict entry 1
+has incompatible type "str": "str"; expected "str": "bool"  [dict-item]
+                        "message": "No setlist data found",
+                        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/web/admin.py:1689: error: Dict entry 1
+has incompatible type "str": "str"; expected "str": "bool"  [dict-item]
+    ...nrichment_results["setlistfm"] = {"success": False, "message": str(e)}
+                                                           ^~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/web/admin.py:1941: error: Statement is
+unreachable  [unreachable]
+            await db.execute(delete_setlists)
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/web/admin.py:2051: error: Name
+"selectinload" is not defined  [name-defined]
+                .options(selectinload(ArtistModel.festivals))
+                         ^~~~~~~~~~~~
+services/api/festival_playlist_generator/web/admin.py:2067: error: Incompatible
+types in assignment (expression has type "list[Any]", variable has type "str") 
+[assignment]
+            artist_names = [a.name for a in artists]
+                           ^~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/api/endpoints/users.py:316: error:
+Module "festival_playlist_generator.api.auth" has no attribute "create_api_key" 
+[attr-defined]
+        from festival_playlist_generator.api.auth import create_api_key
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/api/endpoints/users.py:330: error:
+Module "festival_playlist_generator.api.auth" has no attribute "api_keys" 
+[attr-defined]
+        from festival_playlist_generator.api.auth import api_keys
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/api/endpoints/users.py:352: error:
+Module "festival_playlist_generator.api.auth" has no attribute "api_keys" 
+[attr-defined]
+        from festival_playlist_generator.api.auth import api_keys
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/api/endpoints/playlists.py:74: error:
+Returning Any from function declared to return "User | None"  [no-any-return]
+            return user
+            ^~~~~~~~~~~
+services/api/festival_playlist_generator/api/endpoints/playlists.py:216: error:
+Argument 2 to "not_found_response" of "ResponseFormatter" has incompatible type
+"UUID"; expected "str | int"  [arg-type]
+            return formatter.not_found_response("User", playlist.user_id)
+                                                        ^~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/api/endpoints/playlists.py:226: error:
+Argument 2 to "not_found_response" of "ResponseFormatter" has incompatible type
+"UUID"; expected "str | int"  [arg-type]
+    ... return formatter.not_found_response("Festival", playlist.festival_id)
+                                                        ^~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/api/endpoints/playlists.py:234: error:
+Argument 2 to "not_found_response" of "ResponseFormatter" has incompatible type
+"UUID"; expected "str | int"  [arg-type]
+    ...     return formatter.not_found_response("Artist", playlist.artist_id)
+                                                          ^~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/api/endpoints/playlists.py:338: error:
+Name "query" is not defined  [name-defined]
+            total_count = query.count()
+                          ^~~~~
+services/api/festival_playlist_generator/api/endpoints/playlists.py:349: error:
+Incompatible types in assignment (expression has type "list[Any]", variable has
+type "dict[str, Collection[Any]]")  [assignment]
+            response_data = playlist_data
+                            ^~~~~~~~~~~~~
+services/api/festival_playlist_generator/api/endpoints/playlists.py:376: error:
+Argument 2 to "not_found_response" of "ResponseFormatter" has incompatible type
+"UUID"; expected "str | int"  [arg-type]
+            return formatter.not_found_response("Playlist", playlist_id)
+                                                            ^~~~~~~~~~~
+services/api/festival_playlist_generator/api/endpoints/festivals.py:187: error:
+"FestivalScraper" has no attribute "scrape_all_sources"  [attr-defined]
+            scraped_festivals = await festival_scraper.scrape_all_sources(...
+                                      ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/api/endpoints/festivals.py:488: error:
+Need type annotation for "artists_list" (hint:
+"artists_list: list[<type>] = ...")  [var-annotated]
+                artists_list = []
+                ^~~~~~~~~~~~
+services/api/festival_playlist_generator/api/endpoints/artists.py:132: error:
+Incompatible types in assignment (expression has type "list[Any]", variable has
+type "dict[str, Collection[Any]]")  [assignment]
+            response_data = artist_data
+                            ^~~~~~~~~~~
+services/api/festival_playlist_generator/api/endpoints/artists.py:154: error:
+Argument 2 to "not_found_response" of "ResponseFormatter" has incompatible type
+"UUID"; expected "str | int"  [arg-type]
+            return formatter.not_found_response("Artist", artist_id)
+                                                          ^~~~~~~~~
+services/api/festival_playlist_generator/api/endpoints/artists.py:186: error:
+Argument 2 to "not_found_response" of "ResponseFormatter" has incompatible type
+"UUID"; expected "str | int"  [arg-type]
+            return formatter.not_found_response("Artist", artist_id)
+                                                          ^~~~~~~~~
+services/api/festival_playlist_generator/api/endpoints/artists.py:226: error:
+Argument 2 to "not_found_response" of "ResponseFormatter" has incompatible type
+"UUID"; expected "str | int"  [arg-type]
+            return formatter.not_found_response("Artist", artist_id)
+                                                          ^~~~~~~~~
+services/api/festival_playlist_generator/api/endpoints/artists.py:278: error:
+Incompatible types in assignment (expression has type "list[Any]", variable has
+type "dict[str, Collection[Any]]")  [assignment]
+            response_data = artist_data
+                            ^~~~~~~~~~~
+services/api/festival_playlist_generator/api/endpoints/artists.py:300: error:
+Argument 2 to "not_found_response" of "ResponseFormatter" has incompatible type
+"UUID"; expected "str | int"  [arg-type]
+            return formatter.not_found_response("Artist", artist_id)
+                                                          ^~~~~~~~~
+services/api/festival_playlist_generator/core/service_orchestrator.py:142: error:
+Item "None" of "Playlist | None" has no attribute "id"  [union-attr]
+                    "id": str(playlist.id),
+                              ^~~~~~~~~~~
+services/api/festival_playlist_generator/core/service_orchestrator.py:143: error:
+Item "None" of "Playlist | None" has no attribute "name"  [union-attr]
+                    "name": playlist.name,
+                            ^~~~~~~~~~~~~
+services/api/festival_playlist_generator/core/service_orchestrator.py:144: error:
+Item "None" of "Playlist | None" has no attribute "songs"  [union-attr]
+                    "song_count": len(playlist.songs),
+                                      ^~~~~~~~~~~~~~
+services/api/festival_playlist_generator/core/service_orchestrator.py:145: error:
+Item "None" of "Playlist | None" has no attribute "created_at"  [union-attr]
+                    "created_at": playlist.created_at.isoformat(),
+                                  ^~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/core/service_orchestrator.py:150: error:
+Item "None" of "Playlist | None" has no attribute "songs"  [union-attr]
+    ...         if create_streaming_playlist and platform and playlist.songs:
+                                                              ^~~~~~~~~~~~~~
+services/api/festival_playlist_generator/core/service_orchestrator.py:155: error:
+Item "None" of "Playlist | None" has no attribute "id"  [union-attr]
+    ...         streaming_playlist_id = f"simulated_{platform}_{playlist.id}"
+                                                               ^~~~~~~~~~~~
+services/api/festival_playlist_generator/core/service_orchestrator.py:197: error:
+Item "None" of "Playlist | None" has no attribute "id"  [union-attr]
+                            playlist_id=str(playlist.id),
+                                            ^~~~~~~~~~~
+services/api/festival_playlist_generator/core/service_orchestrator.py:267: error:
+Item "None" of "Playlist | None" has no attribute "id"  [union-attr]
+                    "id": str(playlist.id),
+                              ^~~~~~~~~~~
+services/api/festival_playlist_generator/core/service_orchestrator.py:268: error:
+Item "None" of "Playlist | None" has no attribute "name"  [union-attr]
+                    "name": playlist.name,
+                            ^~~~~~~~~~~~~
+services/api/festival_playlist_generator/core/service_orchestrator.py:269: error:
+Item "None" of "Playlist | None" has no attribute "songs"  [union-attr]
+                    "song_count": len(playlist.songs),
+                                      ^~~~~~~~~~~~~~
+services/api/festival_playlist_generator/core/service_orchestrator.py:270: error:
+Item "None" of "Playlist | None" has no attribute "created_at"  [union-attr]
+                    "created_at": playlist.created_at.isoformat(),
+                                  ^~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/core/service_orchestrator.py:275: error:
+Item "None" of "Playlist | None" has no attribute "songs"  [union-attr]
+    ...         if create_streaming_playlist and platform and playlist.songs:
+                                                              ^~~~~~~~~~~~~~
+services/api/festival_playlist_generator/core/service_orchestrator.py:278: error:
+Item "None" of "Playlist | None" has no attribute "id"  [union-attr]
+    ...         streaming_playlist_id = f"simulated_{platform}_{playlist.id}"
+                                                               ^~~~~~~~~~~~
+services/api/festival_playlist_generator/tasks/festival_collector.py:214: error:
+Incompatible types in assignment (expression has type "APISource", variable has
+type "WebScrapingSource")  [assignment]
+                source = APISource(
+                         ^~~~~~~~~~
+services/api/festival_playlist_generator/core/dependencies.py:88: error:
+"FestivalCollectorService" has no attribute "db"  [attr-defined]
+        service.db = db
+        ^~~~~~~~~~
+services/api/festival_playlist_generator/core/dependencies.py:97: error:
+"ArtistAnalyzerService" has no attribute "db"  [attr-defined]
+        service.db = db
+        ^~~~~~~~~~
+services/api/festival_playlist_generator/core/dependencies.py:106: error:
+"PlaylistGeneratorService" has no attribute "db"  [attr-defined]
+        service.db = db
+        ^~~~~~~~~~
+services/api/festival_playlist_generator/core/dependencies.py:115: error:
+"StreamingIntegrationService" has no attribute "db"  [attr-defined]
+        service.db = db
+        ^~~~~~~~~~
+services/api/festival_playlist_generator/api/endpoints/playlist_generation.py:65: error:
+Argument 2 to "not_found_response" of "ResponseFormatter" has incompatible type
+"UUID"; expected "str | int"  [arg-type]
+    ...          return formatter.not_found_response("Festival", festival_id)
+                                                                 ^~~~~~~~~~~
+services/api/festival_playlist_generator/api/endpoints/playlist_generation.py:71: error:
+Argument 2 to "not_found_response" of "ResponseFormatter" has incompatible type
+"UUID"; expected "str | int"  [arg-type]
+                return formatter.not_found_response("User", user_id)
+                                                            ^~~~~~~
+services/api/festival_playlist_generator/api/endpoints/playlist_generation.py:78: error:
+"FestivalCollectorService" has no attribute "refresh_festival_data" 
+[attr-defined]
+            await festival_collector.refresh_festival_data(festival_id)
+                  ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/api/endpoints/playlist_generation.py:112: error:
+Item "None" of "Playlist | None" has no attribute "songs"  [union-attr]
+            if platform and playlist.songs:
+                            ^~~~~~~~~~~~~~
+services/api/festival_playlist_generator/api/endpoints/playlist_generation.py:117: error:
+Item "None" of "Playlist | None" has no attribute "songs"  [union-attr]
+    ... f"Would create playlist on {platform} with {len(playlist.songs)} song...
+                                                        ^~~~~~~~~~~~~~
+services/api/festival_playlist_generator/api/endpoints/playlist_generation.py:127: error:
+Item "None" of "Playlist | None" has no attribute "id"  [union-attr]
+                "id": playlist.id,
+                      ^~~~~~~~~~~
+services/api/festival_playlist_generator/api/endpoints/playlist_generation.py:128: error:
+Item "None" of "Playlist | None" has no attribute "name"  [union-attr]
+                "name": playlist.name,
+                        ^~~~~~~~~~~~~
+services/api/festival_playlist_generator/api/endpoints/playlist_generation.py:129: error:
+Item "None" of "Playlist | None" has no attribute "description"  [union-attr]
+                "description": playlist.description,
+                               ^~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/api/endpoints/playlist_generation.py:134: error:
+Item "None" of "Playlist | None" has no attribute "songs"  [union-attr]
+                "song_count": len(playlist.songs),
+                                  ^~~~~~~~~~~~~~
+services/api/festival_playlist_generator/api/endpoints/playlist_generation.py:136: error:
+Item "None" of "Playlist | None" has no attribute "created_at"  [union-attr]
+                "created_at": playlist.created_at.isoformat(),
+                              ^~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/api/endpoints/playlist_generation.py:145: error:
+Item "None" of "Playlist | None" has no attribute "songs"  [union-attr]
+                    for song in playlist.songs[:50]  # Limit response size
+                                ^~~~~~~~~~~~~~
+services/api/festival_playlist_generator/api/endpoints/playlist_generation.py:151: error:
+Item "None" of "Playlist | None" has no attribute "songs"  [union-attr]
+    ...stival playlist generated successfully with {len(playlist.songs)} song...
+                                                        ^~~~~~~~~~~~~~
+services/api/festival_playlist_generator/api/endpoints/playlist_generation.py:183: error:
+Argument 2 to "not_found_response" of "ResponseFormatter" has incompatible type
+"UUID"; expected "str | int"  [arg-type]
+                return formatter.not_found_response("Artist", artist_id)
+                                                              ^~~~~~~~~
+services/api/festival_playlist_generator/api/endpoints/playlist_generation.py:189: error:
+Argument 2 to "not_found_response" of "ResponseFormatter" has incompatible type
+"UUID"; expected "str | int"  [arg-type]
+                return formatter.not_found_response("User", user_id)
+                                                            ^~~~~~~
+services/api/festival_playlist_generator/api/endpoints/playlist_generation.py:209: error:
+Item "None" of "Playlist | None" has no attribute "songs"  [union-attr]
+            if platform and playlist.songs:
+                            ^~~~~~~~~~~~~~
+services/api/festival_playlist_generator/api/endpoints/playlist_generation.py:212: error:
+Item "None" of "Playlist | None" has no attribute "songs"  [union-attr]
+    ... f"Would create playlist on {platform} with {len(playlist.songs)} song...
+                                                        ^~~~~~~~~~~~~~
+services/api/festival_playlist_generator/api/endpoints/playlist_generation.py:222: error:
+Item "None" of "Playlist | None" has no attribute "id"  [union-attr]
+                "id": playlist.id,
+                      ^~~~~~~~~~~
+services/api/festival_playlist_generator/api/endpoints/playlist_generation.py:223: error:
+Item "None" of "Playlist | None" has no attribute "name"  [union-attr]
+                "name": playlist.name,
+                        ^~~~~~~~~~~~~
+services/api/festival_playlist_generator/api/endpoints/playlist_generation.py:224: error:
+Item "None" of "Playlist | None" has no attribute "description"  [union-attr]
+                "description": playlist.description,
+                               ^~~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/api/endpoints/playlist_generation.py:229: error:
+Item "None" of "Playlist | None" has no attribute "songs"  [union-attr]
+                "song_count": len(playlist.songs),
+                                  ^~~~~~~~~~~~~~
+services/api/festival_playlist_generator/api/endpoints/playlist_generation.py:231: error:
+Item "None" of "Playlist | None" has no attribute "created_at"  [union-attr]
+                "created_at": playlist.created_at.isoformat(),
+                              ^~~~~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/api/endpoints/playlist_generation.py:240: error:
+Item "None" of "Playlist | None" has no attribute "songs"  [union-attr]
+                    for song in playlist.songs
+                                ^~~~~~~~~~~~~~
+services/api/festival_playlist_generator/api/endpoints/playlist_generation.py:246: error:
+Item "None" of "Playlist | None" has no attribute "songs"  [union-attr]
+    ...Artist playlist generated successfully with {len(playlist.songs)} song...
+                                                        ^~~~~~~~~~~~~~
+services/api/festival_playlist_generator/api/endpoints/playlist_generation.py:273: error:
+Argument 2 to "not_found_response" of "ResponseFormatter" has incompatible type
+"UUID"; expected "str | int"  [arg-type]
+                return formatter.not_found_response("User", user_id)
+                                                            ^~~~~~~
+services/api/festival_playlist_generator/api/endpoints/playlist_generation.py:276: error:
+Argument 1 to "recommend_festivals" of "RecommendationEngine" has incompatible
+type "UUID"; expected "str"  [arg-type]
+    ...mmendations = await recommendation_engine.recommend_festivals(user_id)
+                                                                     ^~~~~~~
+services/api/festival_playlist_generator/api/endpoints/playlist_generation.py:287: error:
+"FestivalRecommendation" has no attribute "reason"  [attr-defined]
+                    "recommendation_reason": rec.reason,
+                                             ^~~~~~~~~~
+services/api/festival_playlist_generator/main.py:69: error:
+"AsyncGenerator[Any, None]" has no attribute "__aenter__"  [attr-defined]
+                async with get_db_session() as db:
+                           ^~~~~~~~~~~~~~~~
+services/api/festival_playlist_generator/main.py:69: error:
+"AsyncGenerator[Any, None]" has no attribute "__aexit__"; maybe "__anext__"? 
+[attr-defined]
+                async with get_db_session() as db:
+                           ^~~~~~~~~~~~~~~~
+Found 284 errors in 54 files (checked 104 source files)

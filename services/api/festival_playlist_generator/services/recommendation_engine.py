@@ -87,8 +87,8 @@ class RecommendationEngine:
         )
 
         # Analyze genre preferences from playlists and known songs
-        genre_counter = Counter()
-        artist_counter = Counter()
+        genre_counter: Dict[str, float] = defaultdict(float)
+        artist_counter: Dict[str, float] = defaultdict(float)
         known_songs_count = 0
         total_songs_count = 0
 

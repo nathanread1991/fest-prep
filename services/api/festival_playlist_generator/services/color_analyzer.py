@@ -161,11 +161,9 @@ class ColorAnalyzer:
         if color.startswith("rgb"):
             rgb_match = re.match(r"rgba?\s*\((\d+),(\d+),(\d+)", color)
             if rgb_match:
-                r, g, b = (
-                    int(rgb_match.group(1)),
-                    int(rgb_match.group(2)),
-                    int(rgb_match.group(3)),
-                )
+                r: int = int(rgb_match.group(1))
+                g: int = int(rgb_match.group(2))
+                b: int = int(rgb_match.group(3))
                 # Clamp values to 0-255
                 r = max(0, min(255, r))
                 g = max(0, min(255, g))

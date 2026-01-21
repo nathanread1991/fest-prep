@@ -9,6 +9,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Set
 
 import httpx
+from bs4 import BeautifulSoup
 from sqlalchemy import and_
 from sqlalchemy.orm import Session
 
@@ -573,7 +574,6 @@ class WebScrapingSource(FestivalDataSource):
             from datetime import datetime, timedelta
 
             import httpx
-            from bs4 import BeautifulSoup
 
             festivals = []
 
