@@ -1,21 +1,27 @@
 """Alembic environment configuration."""
 
-from logging.config import fileConfig
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
-from alembic import context
 import os
 import sys
+from logging.config import fileConfig
+
+from sqlalchemy import engine_from_config, pool
+
+from alembic import context
 
 # Add the project root to the Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from festival_playlist_generator.core.database import Base
 from festival_playlist_generator.core.config import settings
+from festival_playlist_generator.core.database import Base
 
 # Import all models to ensure they are registered
 from festival_playlist_generator.models import (
-    festival, artist, setlist, song, playlist, user
+    artist,
+    festival,
+    playlist,
+    setlist,
+    song,
+    user,
 )
 
 # this is the Alembic Config object, which provides
@@ -76,7 +82,7 @@ def run_migrations_online() -> None:
     """
     configuration = config.get_section(config.config_ini_section)
     configuration["sqlalchemy.url"] = get_url()
-    
+
     # Use sync engine for Alembic
     connectable = engine_from_config(
         configuration,
@@ -85,9 +91,7 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()

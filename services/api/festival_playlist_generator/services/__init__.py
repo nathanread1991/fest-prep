@@ -1,15 +1,24 @@
 """Services package for business logic components."""
 
-from .festival_collector import FestivalCollectorService
 from .artist_analyzer import ArtistAnalyzerService
+from .festival_collector import FestivalCollectorService
+from .notification_service import (
+    NotificationFrequency,
+    NotificationService,
+    NotificationType,
+)
 from .playlist_generator import PlaylistGeneratorService
-from .streaming_integration import StreamingIntegrationService, AuthToken, Track
-from .recommendation_engine import RecommendationEngine, UserProfile, FestivalRecommendation, ArtistRecommendation
-from .notification_service import NotificationService, NotificationType, NotificationFrequency
+from .recommendation_engine import (
+    ArtistRecommendation,
+    FestivalRecommendation,
+    RecommendationEngine,
+    UserProfile,
+)
+from .streaming_integration import AuthToken, StreamingIntegrationService, Track
 
 __all__ = [
     "FestivalCollectorService",
-    "ArtistAnalyzerService", 
+    "ArtistAnalyzerService",
     "PlaylistGeneratorService",
     "StreamingIntegrationService",
     "RecommendationEngine",
@@ -17,7 +26,7 @@ __all__ = [
     "AuthToken",
     "Track",
     "UserProfile",
-    "FestivalRecommendation", 
+    "FestivalRecommendation",
     "ArtistRecommendation",
     "NotificationType",
     "NotificationFrequency",

@@ -1,24 +1,24 @@
 """Centralized logging configuration for the application."""
 
+import json
 import logging
 import logging.config
 import sys
-import json
 import traceback
+from contextvars import ContextVar
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, Any, Optional
-from contextvars import ContextVar
+from typing import Any, Dict, Optional
 
 from festival_playlist_generator.core.config import settings
 
 # Context variable for request ID
-request_id_var: ContextVar[Optional[str]] = ContextVar('request_id', default=None)
+request_id_var: ContextVar[Optional[str]] = ContextVar("request_id", default=None)
 
 
 class JSONFormatter(logging.Formatter):
     """Custom JSON formatter for structured logging.
-    
+
     Outputs logs in JSON format with required fields:
     - timestamp: ISO 8601 formatted timestamp
     - level: Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
@@ -31,22 +31,22 @@ class JSONFormatter(logging.Formatter):
     - line: Line number
     - exception: Exception details with stack trace (if present)
     """
-    
+
     def __init__(self, service_name: str = "festival-playlist-generator"):
         """Initialize JSON formatter.
-        
+
         Args:
             service_name: Name of the service for identification
         """
         super().__init__()
         self.service_name = service_name
-    
+
     def format(self, record: logging.LogRecord) -> str:
         """Format log record as JSON.
-        
+
         Args:
             record: Log record to format
-            
+
         Returns:
             JSON formatted log string
         """
@@ -61,38 +61,38 @@ class JSONFormatter(logging.Formatter):
             "function": record.funcName,
             "line": record.lineno,
         }
-        
+
         # Add request ID from context if available
         request_id = request_id_var.get()
         if request_id:
             log_entry["request_id"] = request_id
-        
+
         # Add exception information if present
         if record.exc_info:
             log_entry["exception"] = {
                 "type": record.exc_info[0].__name__,
                 "message": str(record.exc_info[1]),
-                "stacktrace": traceback.format_exception(*record.exc_info)
+                "stacktrace": traceback.format_exception(*record.exc_info),
             }
-        
+
         # Add extra fields from record
         if hasattr(record, "extra_fields"):
             log_entry.update(record.extra_fields)
-        
+
         return json.dumps(log_entry)
 
 
 def setup_logging() -> None:
     """Configure application-wide logging."""
-    
+
     # Create logs directory if it doesn't exist
     log_dir = Path("logs")
     log_dir.mkdir(exist_ok=True)
-    
+
     # Determine environment
-    environment = getattr(settings, 'ENVIRONMENT', 'development')
-    is_production = environment == 'production'
-    
+    environment = getattr(settings, "ENVIRONMENT", "development")
+    is_production = environment == "production"
+
     # Configure log level based on environment
     if is_production:
         default_level = "INFO"
@@ -103,7 +103,7 @@ def setup_logging() -> None:
     else:
         default_level = "INFO"
         console_level = "INFO"
-    
+
     # Logging configuration
     logging_config: Dict[str, Any] = {
         "version": 1,
@@ -119,8 +119,8 @@ def setup_logging() -> None:
             },
             "json": {
                 "()": JSONFormatter,
-                "service_name": "festival-playlist-generator"
-            }
+                "service_name": "festival-playlist-generator",
+            },
         },
         "handlers": {
             "console": {
@@ -173,21 +173,21 @@ def setup_logging() -> None:
             "handlers": ["console", "file"],
         },
     }
-    
+
     # Apply configuration
     logging.config.dictConfig(logging_config)
-    
+
     # Set up specific loggers for different components
     setup_component_loggers()
 
 
 def setup_component_loggers() -> None:
     """Set up loggers for specific application components."""
-    
+
     # Determine environment
-    environment = getattr(settings, 'ENVIRONMENT', 'development')
-    is_production = environment == 'production'
-    
+    environment = getattr(settings, "ENVIRONMENT", "development")
+    is_production = environment == "production"
+
     # Set log level based on environment
     if is_production:
         component_level = logging.INFO
@@ -195,19 +195,19 @@ def setup_component_loggers() -> None:
         component_level = logging.DEBUG
     else:
         component_level = logging.INFO
-    
+
     # Service loggers
     service_logger = logging.getLogger("festival_playlist_generator.services")
     service_logger.setLevel(component_level)
-    
+
     # API loggers
     api_logger = logging.getLogger("festival_playlist_generator.api")
     api_logger.setLevel(component_level)
-    
+
     # Database loggers
     db_logger = logging.getLogger("festival_playlist_generator.database")
     db_logger.setLevel(logging.INFO)
-    
+
     # External API loggers
     external_logger = logging.getLogger("festival_playlist_generator.external")
     external_logger.setLevel(logging.INFO)
@@ -220,7 +220,7 @@ def get_logger(name: str) -> logging.Logger:
 
 def set_request_id(request_id: str) -> None:
     """Set the request ID in context for logging.
-    
+
     Args:
         request_id: Unique request identifier
     """
@@ -229,7 +229,7 @@ def set_request_id(request_id: str) -> None:
 
 def get_request_id() -> Optional[str]:
     """Get the current request ID from context.
-    
+
     Returns:
         Request ID if set, None otherwise
     """
@@ -244,19 +244,19 @@ def clear_request_id() -> None:
 # Context manager for request logging
 class RequestLoggingContext:
     """Context manager for request-specific logging."""
-    
+
     def __init__(self, request_id: str, endpoint: str, user_id: str = None):
         self.request_id = request_id
         self.endpoint = endpoint
         self.user_id = user_id
         self.logger = get_logger("api.requests")
-    
+
     def __enter__(self):
         self.logger.info(
             f"Request started - ID: {self.request_id}, Endpoint: {self.endpoint}, User: {self.user_id}"
         )
         return self
-    
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         if exc_type:
             self.logger.error(
@@ -269,6 +269,7 @@ class RequestLoggingContext:
 # Service operation logging decorator
 def log_service_operation(operation_name: str):
     """Decorator to log service operations."""
+
     def decorator(func):
         def wrapper(*args, **kwargs):
             logger = get_logger("services")
@@ -280,5 +281,7 @@ def log_service_operation(operation_name: str):
             except Exception as e:
                 logger.error(f"Failed {operation_name}: {e}")
                 raise
+
         return wrapper
+
     return decorator

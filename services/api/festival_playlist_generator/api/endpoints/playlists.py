@@ -1,29 +1,37 @@
 """Playlist API endpoints."""
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, Cookie
-from fastapi.responses import JSONResponse
-from sqlalchemy.orm import Session
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+import logging
 from typing import List, Optional
 from uuid import UUID
-from pydantic import BaseModel
-import spotipy
-from spotipy.oauth2 import SpotifyOAuth
-import logging
 
-from festival_playlist_generator.core.database import get_db
+import spotipy
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Query, Request
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel
+from spotipy.oauth2 import SpotifyOAuth
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
+
+from festival_playlist_generator.api.response_formatter import APIVersionManager
+from festival_playlist_generator.api.versioning import (
+    get_request_version,
+    version_compatible_response,
+)
+from festival_playlist_generator.core.config import settings
 from festival_playlist_generator.core.container import get_playlist_service
+from festival_playlist_generator.core.database import get_db
+from festival_playlist_generator.core.redis import cache
+from festival_playlist_generator.models.artist import Artist as ArtistModel
+from festival_playlist_generator.models.festival import Festival as FestivalModel
 from festival_playlist_generator.models.playlist import Playlist as PlaylistModel
 from festival_playlist_generator.models.song import Song as SongModel
 from festival_playlist_generator.models.user import User as UserModel
-from festival_playlist_generator.models.festival import Festival as FestivalModel
-from festival_playlist_generator.models.artist import Artist as ArtistModel
-from festival_playlist_generator.schemas.playlist import Playlist, PlaylistCreate, PlaylistUpdate
-from festival_playlist_generator.api.response_formatter import APIVersionManager
-from festival_playlist_generator.api.versioning import get_request_version, version_compatible_response
-from festival_playlist_generator.core.config import settings
-from festival_playlist_generator.core.redis import cache
+from festival_playlist_generator.schemas.playlist import (
+    Playlist,
+    PlaylistCreate,
+    PlaylistUpdate,
+)
 from festival_playlist_generator.services.playlist_service import PlaylistService
 
 router = APIRouter()
@@ -32,30 +40,36 @@ logger = logging.getLogger(__name__)
 
 class SongItem(BaseModel):
     """Song item for playlist creation."""
+
     title: str
     artist: str
 
 
 class CreatePlaylistRequest(BaseModel):
     """Request model for creating a playlist on streaming platform."""
+
     artist_name: str
     songs: List[SongItem]
     platform: str = "spotify"
 
 
-async def get_current_user_from_session(session_id: Optional[str] = Cookie(None), db: AsyncSession = Depends(get_db)) -> Optional[UserModel]:
+async def get_current_user_from_session(
+    session_id: Optional[str] = Cookie(None), db: AsyncSession = Depends(get_db)
+) -> Optional[UserModel]:
     """Get current user from session cookie."""
     if not session_id:
         return None
-    
+
     try:
         # Get user ID from Redis session
         user_id_str = await cache.get(f"session:{session_id}")
         if not user_id_str:
             return None
-        
+
         # Get user from database
-        result = await db.execute(select(UserModel).filter(UserModel.id == UUID(user_id_str)))
+        result = await db.execute(
+            select(UserModel).filter(UserModel.id == UUID(user_id_str))
+        )
         user = result.scalar_one_or_none()
         return user
     except Exception as e:
@@ -68,94 +82,97 @@ async def create_playlist_on_platform(
     request: Request,
     playlist_request: CreatePlaylistRequest,
     session_id: Optional[str] = Cookie(None),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """Create a playlist on a streaming platform (currently Spotify only)."""
     version = get_request_version(request)
     formatter = APIVersionManager.get_formatter(version)
-    
+
     # Check if user is authenticated
     user = await get_current_user_from_session(session_id, db)
     if not user:
         return formatter.error_response(
             error="Authentication required",
             message="You must be signed in to create playlists",
-            status_code=401
+            status_code=401,
         )
-    
+
     # Currently only Spotify is supported
     if playlist_request.platform != "spotify":
         return formatter.error_response(
             error="Platform not supported",
             message=f"Platform '{playlist_request.platform}' is not yet supported. Currently only Spotify is available.",
-            status_code=400
+            status_code=400,
         )
-    
+
     # Check if user has Spotify OAuth token
     spotify_token_key = f"spotify_token:{user.id}"
     spotify_token_data = await cache.get(spotify_token_key)
-    
+
     if not spotify_token_data:
         return formatter.error_response(
             error="Spotify not connected",
             message="Please connect your Spotify account to create playlists",
-            status_code=401
+            status_code=401,
         )
-    
+
     try:
         import json
+
         token_info = json.loads(spotify_token_data)
-        
+
         # Create Spotify client with user's access token
-        sp = spotipy.Spotify(auth=token_info.get('access_token'))
-        
+        sp = spotipy.Spotify(auth=token_info.get("access_token"))
+
         # Get user's Spotify ID
         spotify_user = sp.current_user()
-        spotify_user_id = spotify_user['id']
-        
+        spotify_user_id = spotify_user["id"]
+
         # Create playlist name
         playlist_name = f"{playlist_request.artist_name} - Festival Prep"
         playlist_description = f"Playlist generated for {playlist_request.artist_name} based on recent setlists"
-        
+
         # Create the playlist
         spotify_playlist = sp.user_playlist_create(
             user=spotify_user_id,
             name=playlist_name,
             public=True,
-            description=playlist_description
+            description=playlist_description,
         )
-        
-        playlist_id = spotify_playlist['id']
-        playlist_url = spotify_playlist['external_urls']['spotify']
-        
+
+        playlist_id = spotify_playlist["id"]
+        playlist_url = spotify_playlist["external_urls"]["spotify"]
+
         # Search for tracks and add them to the playlist
         track_uris = []
         tracks_found = 0
         tracks_not_found = []
-        
+
         for song in playlist_request.songs:
             try:
                 # Search for the track
                 query = f"track:{song.title} artist:{song.artist}"
-                results = sp.search(q=query, type='track', limit=1)
-                
-                if results['tracks']['items']:
-                    track = results['tracks']['items'][0]
-                    track_uris.append(track['uri'])
+                results = sp.search(q=query, type="track", limit=1)
+
+                if results["tracks"]["items"]:
+                    track = results["tracks"]["items"][0]
+                    track_uris.append(track["uri"])
                     tracks_found += 1
                 else:
                     tracks_not_found.append(f"{song.title} by {song.artist}")
-                    logger.warning(f"Track not found on Spotify: {song.title} by {song.artist}")
+                    logger.warning(
+                        f"Track not found on Spotify: {song.title} by {song.artist}"
+                    )
             except Exception as e:
                 logger.error(f"Error searching for track {song.title}: {e}")
                 tracks_not_found.append(f"{song.title} by {song.artist}")
-        
+
         # Add tracks to playlist in batches of 100 (Spotify API limit)
         if track_uris:
             for i in range(0, len(track_uris), 100):
-                batch = track_uris[i:i+100]
+                batch = track_uris[i : i + 100]
                 sp.playlist_add_items(playlist_id, batch)
-        
+
         # Return success response
         return formatter.success_response(
             data={
@@ -164,54 +181,58 @@ async def create_playlist_on_platform(
                 "playlist_name": playlist_name,
                 "tracks_added": tracks_found,
                 "tracks_requested": len(playlist_request.songs),
-                "tracks_not_found": tracks_not_found if tracks_not_found else None
+                "tracks_not_found": tracks_not_found if tracks_not_found else None,
             },
-            message=f"Playlist created successfully! Added {tracks_found} of {len(playlist_request.songs)} songs."
+            message=f"Playlist created successfully! Added {tracks_found} of {len(playlist_request.songs)} songs.",
         )
-        
+
     except spotipy.exceptions.SpotifyException as e:
         logger.error(f"Spotify API error: {e}")
         return formatter.error_response(
             error="Spotify API error",
             message=f"Failed to create playlist on Spotify: {str(e)}",
-            status_code=503
+            status_code=503,
         )
     except Exception as e:
         logger.error(f"Error creating playlist: {e}")
         return formatter.error_response(
             error="Playlist creation failed",
             message=f"An error occurred while creating the playlist: {str(e)}",
-            status_code=500
+            status_code=500,
         )
 
 
 @router.post("/", status_code=201)
 async def create_playlist(
-    request: Request,
-    playlist: PlaylistCreate,
-    db: AsyncSession = Depends(get_db)
+    request: Request, playlist: PlaylistCreate, db: AsyncSession = Depends(get_db)
 ):
     """Create a new playlist."""
     version = get_request_version(request)
     formatter = APIVersionManager.get_formatter(version)
-    
+
     # Verify user exists
     user = db.query(UserModel).filter(UserModel.id == playlist.user_id).first()
     if not user:
         return formatter.not_found_response("User", playlist.user_id)
-    
+
     # Verify festival exists if provided
     if playlist.festival_id:
-        festival = db.query(FestivalModel).filter(FestivalModel.id == playlist.festival_id).first()
+        festival = (
+            db.query(FestivalModel)
+            .filter(FestivalModel.id == playlist.festival_id)
+            .first()
+        )
         if not festival:
             return formatter.not_found_response("Festival", playlist.festival_id)
-    
+
     # Verify artist exists if provided
     if playlist.artist_id:
-        artist = db.query(ArtistModel).filter(ArtistModel.id == playlist.artist_id).first()
+        artist = (
+            db.query(ArtistModel).filter(ArtistModel.id == playlist.artist_id).first()
+        )
         if not artist:
             return formatter.not_found_response("Artist", playlist.artist_id)
-    
+
     # Create playlist
     db_playlist = PlaylistModel(
         name=playlist.name,
@@ -220,9 +241,9 @@ async def create_playlist(
         artist_id=playlist.artist_id,
         user_id=playlist.user_id,
         platform=playlist.platform,
-        external_id=playlist.external_id
+        external_id=playlist.external_id,
     )
-    
+
     # Add songs if provided
     if playlist.song_ids:
         songs = db.query(SongModel).filter(SongModel.id.in_(playlist.song_ids)).all()
@@ -230,14 +251,14 @@ async def create_playlist(
             return formatter.error_response(
                 error="Songs not found",
                 message="One or more songs not found",
-                status_code=404
+                status_code=404,
             )
         db_playlist.songs.extend(songs)
-    
+
     db.add(db_playlist)
     db.commit()
     db.refresh(db_playlist)
-    
+
     playlist_data = Playlist(
         id=db_playlist.id,
         name=db_playlist.name,
@@ -248,12 +269,11 @@ async def create_playlist(
         platform=db_playlist.platform,
         external_id=db_playlist.external_id,
         created_at=db_playlist.created_at,
-        updated_at=db_playlist.updated_at
+        updated_at=db_playlist.updated_at,
     )
-    
+
     return formatter.created_response(
-        data=playlist_data.model_dump(),
-        message="Playlist created successfully"
+        data=playlist_data.model_dump(), message="Playlist created successfully"
     )
 
 
@@ -266,37 +286,37 @@ async def list_playlists(
     festival_id: Optional[UUID] = Query(None, description="Filter by festival ID"),
     artist_id: Optional[UUID] = Query(None, description="Filter by artist ID"),
     platform: Optional[str] = Query(None, description="Filter by platform"),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """List playlists with optional filtering."""
     from sqlalchemy import select
-    
+
     version = get_request_version(request)
     formatter = APIVersionManager.get_formatter(version)
-    
+
     # Build query using select()
     stmt = select(PlaylistModel)
-    
+
     # Apply filters
     if user_id:
         stmt = stmt.where(PlaylistModel.user_id == user_id)
-    
+
     if festival_id:
         stmt = stmt.where(PlaylistModel.festival_id == festival_id)
-    
+
     if artist_id:
         stmt = stmt.where(PlaylistModel.artist_id == artist_id)
-    
+
     if platform:
         stmt = stmt.where(PlaylistModel.platform == platform)
-    
+
     # Apply pagination
     stmt = stmt.offset(skip).limit(limit)
-    
+
     # Execute query
     result = await db.execute(stmt)
     playlists = result.scalars().all()
-    
+
     playlist_data = [
         Playlist(
             id=playlist.id,
@@ -308,11 +328,11 @@ async def list_playlists(
             platform=playlist.platform,
             external_id=playlist.external_id,
             created_at=playlist.created_at,
-            updated_at=playlist.updated_at
+            updated_at=playlist.updated_at,
         ).model_dump()
         for playlist in playlists
     ]
-    
+
     # For v1.1, include pagination metadata
     if version == "1.1":
         total_count = query.count()
@@ -322,15 +342,17 @@ async def list_playlists(
                 "skip": skip,
                 "limit": limit,
                 "total": total_count,
-                "has_more": skip + limit < total_count
-            }
+                "has_more": skip + limit < total_count,
+            },
         }
     else:
         response_data = playlist_data
-    
+
     return JSONResponse(
-        content=version_compatible_response(request, response_data, "Playlists retrieved successfully"),
-        status_code=200
+        content=version_compatible_response(
+            request, response_data, "Playlists retrieved successfully"
+        ),
+        status_code=200,
     )
 
 
@@ -339,18 +361,20 @@ async def get_playlist(
     request: Request,
     playlist_id: UUID,
     db: AsyncSession = Depends(get_db),
-    playlist_service: PlaylistService = Depends(get_playlist_service)
+    playlist_service: PlaylistService = Depends(get_playlist_service),
 ):
     """Get a specific playlist by ID."""
     version = get_request_version(request)
     formatter = APIVersionManager.get_formatter(version)
-    
+
     # Get playlist via service
-    playlist = await playlist_service.get_playlist_by_id(playlist_id, load_relationships=False)
-    
+    playlist = await playlist_service.get_playlist_by_id(
+        playlist_id, load_relationships=False
+    )
+
     if not playlist:
         return formatter.not_found_response("Playlist", playlist_id)
-    
+
     playlist_data = Playlist(
         id=playlist.id,
         name=playlist.name,
@@ -361,12 +385,11 @@ async def get_playlist(
         platform=playlist.platform,
         external_id=playlist.external_id,
         created_at=playlist.created_at,
-        updated_at=playlist.updated_at
+        updated_at=playlist.updated_at,
     )
-    
+
     return formatter.success_response(
-        data=playlist_data.model_dump(),
-        message="Playlist retrieved successfully"
+        data=playlist_data.model_dump(), message="Playlist retrieved successfully"
     )
 
 
@@ -374,35 +397,37 @@ async def get_playlist(
 async def update_playlist(
     playlist_id: UUID,
     playlist_update: PlaylistUpdate,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """Update a playlist."""
     playlist = db.query(PlaylistModel).filter(PlaylistModel.id == playlist_id).first()
-    
+
     if not playlist:
         raise HTTPException(status_code=404, detail="Playlist not found")
-    
+
     # Update fields if provided
     update_data = playlist_update.model_dump(exclude_unset=True)
-    
+
     # Handle songs separately
     if "song_ids" in update_data:
         song_ids = update_data.pop("song_ids")
         playlist.songs.clear()
-        
+
         if song_ids:
             songs = db.query(SongModel).filter(SongModel.id.in_(song_ids)).all()
             if len(songs) != len(song_ids):
-                raise HTTPException(status_code=404, detail="One or more songs not found")
+                raise HTTPException(
+                    status_code=404, detail="One or more songs not found"
+                )
             playlist.songs.extend(songs)
-    
+
     # Update other fields
     for field, value in update_data.items():
         setattr(playlist, field, value)
-    
+
     db.commit()
     db.refresh(playlist)
-    
+
     return Playlist(
         id=playlist.id,
         name=playlist.name,
@@ -413,7 +438,7 @@ async def update_playlist(
         platform=playlist.platform,
         external_id=playlist.external_id,
         created_at=playlist.created_at,
-        updated_at=playlist.updated_at
+        updated_at=playlist.updated_at,
     )
 
 
@@ -421,27 +446,24 @@ async def update_playlist(
 async def delete_playlist(
     playlist_id: UUID,
     db: AsyncSession = Depends(get_db),
-    playlist_service: PlaylistService = Depends(get_playlist_service)
+    playlist_service: PlaylistService = Depends(get_playlist_service),
 ):
     """Delete a playlist."""
     # Delete via service
     deleted = await playlist_service.delete_playlist(playlist_id)
-    
+
     if not deleted:
         raise HTTPException(status_code=404, detail="Playlist not found")
 
 
 @router.get("/{playlist_id}/songs", response_model=List[dict])
-async def get_playlist_songs(
-    playlist_id: UUID,
-    db: AsyncSession = Depends(get_db)
-):
+async def get_playlist_songs(playlist_id: UUID, db: AsyncSession = Depends(get_db)):
     """Get songs in a playlist."""
     playlist = db.query(PlaylistModel).filter(PlaylistModel.id == playlist_id).first()
-    
+
     if not playlist:
         raise HTTPException(status_code=404, detail="Playlist not found")
-    
+
     return [
         {
             "id": song.id,
@@ -449,7 +471,7 @@ async def get_playlist_songs(
             "artist": song.artist,
             "original_artist": song.original_artist,
             "is_cover": song.is_cover,
-            "performance_count": song.performance_count
+            "performance_count": song.performance_count,
         }
         for song in playlist.songs
     ]
@@ -457,46 +479,42 @@ async def get_playlist_songs(
 
 @router.post("/{playlist_id}/songs/{song_id}", status_code=201)
 async def add_song_to_playlist(
-    playlist_id: UUID,
-    song_id: UUID,
-    db: AsyncSession = Depends(get_db)
+    playlist_id: UUID, song_id: UUID, db: AsyncSession = Depends(get_db)
 ):
     """Add a song to a playlist."""
     playlist = db.query(PlaylistModel).filter(PlaylistModel.id == playlist_id).first()
     if not playlist:
         raise HTTPException(status_code=404, detail="Playlist not found")
-    
+
     song = db.query(SongModel).filter(SongModel.id == song_id).first()
     if not song:
         raise HTTPException(status_code=404, detail="Song not found")
-    
+
     if song in playlist.songs:
         raise HTTPException(status_code=400, detail="Song already in playlist")
-    
+
     playlist.songs.append(song)
     db.commit()
-    
+
     return {"message": "Song added to playlist"}
 
 
 @router.delete("/{playlist_id}/songs/{song_id}", status_code=204)
 async def remove_song_from_playlist(
-    playlist_id: UUID,
-    song_id: UUID,
-    db: AsyncSession = Depends(get_db)
+    playlist_id: UUID, song_id: UUID, db: AsyncSession = Depends(get_db)
 ):
     """Remove a song from a playlist."""
     playlist = db.query(PlaylistModel).filter(PlaylistModel.id == playlist_id).first()
     if not playlist:
         raise HTTPException(status_code=404, detail="Playlist not found")
-    
+
     song = db.query(SongModel).filter(SongModel.id == song_id).first()
     if not song:
         raise HTTPException(status_code=404, detail="Song not found")
-    
+
     if song not in playlist.songs:
         raise HTTPException(status_code=404, detail="Song not in playlist")
-    
+
     playlist.songs.remove(song)
     db.commit()
 
@@ -507,7 +525,7 @@ async def get_user_playlists(
     skip: int = Query(0, ge=0, description="Number of playlists to skip"),
     limit: int = Query(100, ge=1, le=1000, description="Number of playlists to return"),
     db: AsyncSession = Depends(get_db),
-    playlist_service: PlaylistService = Depends(get_playlist_service)
+    playlist_service: PlaylistService = Depends(get_playlist_service),
 ):
     """Get all playlists for a specific user."""
     # Verify user exists (using direct DB query for now, will use UserService in task 5.5)
@@ -515,10 +533,10 @@ async def get_user_playlists(
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    
+
     # Get playlists via service
     playlists = await playlist_service.get_user_playlists(user_id, skip, limit)
-    
+
     return [
         Playlist(
             id=playlist.id,
@@ -530,7 +548,7 @@ async def get_user_playlists(
             platform=playlist.platform,
             external_id=playlist.external_id,
             created_at=playlist.created_at,
-            updated_at=playlist.updated_at
+            updated_at=playlist.updated_at,
         )
         for playlist in playlists
     ]

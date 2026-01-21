@@ -1,9 +1,10 @@
 """Redis connection and cache management."""
 
-import redis.asyncio as redis
-from typing import Optional, Any
 import json
 import logging
+from typing import Any, Optional
+
+import redis.asyncio as redis
 
 from festival_playlist_generator.core.config import settings
 
@@ -18,8 +19,7 @@ async def init_redis():
     global redis_pool
     try:
         redis_pool = redis.ConnectionPool.from_url(
-            settings.REDIS_URL,
-            decode_responses=True
+            settings.REDIS_URL, decode_responses=True
         )
         logger.info("Redis connection pool initialized")
     except Exception as e:
@@ -36,16 +36,16 @@ async def get_redis() -> redis.Redis:
 
 class CacheManager:
     """Redis cache management utilities."""
-    
+
     def __init__(self):
         self.redis_client = None
-    
+
     async def get_client(self) -> redis.Redis:
         """Get Redis client."""
         if self.redis_client is None:
             self.redis_client = await get_redis()
         return self.redis_client
-    
+
     async def get(self, key: str) -> Optional[Any]:
         """Get value from cache."""
         try:
@@ -57,7 +57,7 @@ class CacheManager:
         except Exception as e:
             logger.error(f"Error getting cache key {key}: {e}")
             return None
-    
+
     async def set(self, key: str, value: Any, expire: int = 3600) -> bool:
         """Set value in cache with expiration."""
         try:
@@ -68,7 +68,7 @@ class CacheManager:
         except Exception as e:
             logger.error(f"Error setting cache key {key}: {e}")
             return False
-    
+
     async def delete(self, key: str) -> bool:
         """Delete key from cache."""
         try:
