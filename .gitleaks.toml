@@ -25,6 +25,8 @@ paths = [
     '''terraform.tfvars.example''',
     '''.*test.*''',
     '''.*mock.*''',
+    '''ssl/localhost\.key''',
+    '''ssl/localhost\.crt''',
 ]
 
 # Stopwords to ignore
