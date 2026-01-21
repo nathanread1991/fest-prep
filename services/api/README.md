@@ -4,7 +4,7 @@ This directory contains the FastAPI application for the Festival Playlist Genera
 
 ## CI Pipeline Test
 
-Testing GitHub Actions workflow execution.
+Testing GitHub Actions workflow execution - retry after payment setup.
 
 ## Structure
 
