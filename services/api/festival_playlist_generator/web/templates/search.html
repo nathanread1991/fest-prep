@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block title %}Search Results{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="search-page">
+        <header class="search-header">
+            <h1>Search Results</h1>
+            {% if query %}
+                <p class="search-query">Results for: "{{ query }}"</p>
+            {% endif %}
+        </header>
+
+        <div class="search-filters">
+            <div class="filter-tabs">
+                <button class="filter-tab {% if not search_type or search_type == 'all' %}active{% endif %}" 
+                        onclick="filterResults('all')">All</button>
+                <button class="filter-tab {% if search_type == 'festivals' %}active{% endif %}" 
+                        onclick="filterResults('festivals')">Festivals</button>
+                <button class="filter-tab {% if search_type == 'artists' %}active{% endif %}" 
+                        onclick="filterResults('artists')">Artists</button>
+                <button class="filter-tab {% if search_type == 'playlists' %}active{% endif %}" 
+                        onclick="filterResults('playlists')">Playlists</button>
+            </div>
+        </div>
+
+        <div class="search-results">
+            <div id="results-container">
+                <div class="loading">
+                    <p>Searching...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentQuery = '{{ query or "" }}';
+let currentType = '{{ search_type or "all" }}';
+
+document.addEventListener('DOMContentLoaded', function() {
+    if (currentQuery) {
+        performSearch(currentQuery, currentType);
+    }
+});
+
+function filterResults(type) {
+    // Update active tab
+    document.querySelectorAll('.filter-tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    
+    // Perform search with new filter
+    currentType = type;
+    if (currentQuery) {
+        performSearch(currentQuery, type);
+    }
+}
+
+function performSearch(query, type = 'all') {
+    const resultsContainer = document.getElementById('results-container');
+    resultsContainer.innerHTML = '<div class="loading"><p>Searching...</p></div>';
+    
+    const searchParams = new URLSearchParams({
+        q: query,
+        type: type
+    });
+    
+    fetch(`/api/v1/search?${searchParams}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayResults(data.data);
+            } else {
+                resultsContainer.innerHTML = '<div class="error"><p>Search failed. Please try again.</p></div>';
+            }
+        })
+        .catch(error => {
+            console.error('Search error:', error);
+            resultsContainer.innerHTML = '<div class="error"><p>Search failed. Please try again.</p></div>';
+        });
+}
+
+function displayResults(results) {
+    const resultsContainer = document.getElementById('results-container');
+    
+    if (!results || (results.festivals?.length === 0 && results.artists?.length === 0 && results.playlists?.length === 0)) {
+        resultsContainer.innerHTML = '<div class="no-results"><p>No results found.</p></div>';
+        return;
+    }
+    
+    let html = '';
+    
+    // Display festivals
+    if (results.festivals && results.festivals.length > 0) {
+        html += '<div class="results-section"><h2>Festivals</h2><div class="results-grid">';
+        results.festivals.forEach(festival => {
+            html += `
+                <div class="result-card festival-card">
+                    <h3><a href="/festivals/${festival.id}">${festival.name}</a></h3>
+                    <p class="date">${festival.start_date} - ${festival.end_date}</p>
+                    <p class="location">${festival.location}</p>
+                </div>
+            `;
+        });
+        html += '</div></div>';
+    }
+    
+    // Display artists
+    if (results.artists && results.artists.length > 0) {
+        html += '<div class="results-section"><h2>Artists</h2><div class="results-grid">';
+        results.artists.forEach(artist => {
+            html += `
+                <div class="result-card artist-card">
+                    <h3><a href="/artists/${artist.id}">${artist.name}</a></h3>
+                    <p class="genre">${artist.genre || 'Genre not specified'}</p>
+                </div>
+            `;
+        });
+        html += '</div></div>';
+    }
+    
+    // Display playlists
+    if (results.playlists && results.playlists.length > 0) {
+        html += '<div class="results-section"><h2>Playlists</h2><div class="results-grid">';
+        results.playlists.forEach(playlist => {
+            html += `
+                <div class="result-card playlist-card">
+                    <h3><a href="/playlists/${playlist.id}">${playlist.name}</a></h3>
+                    <p class="description">${playlist.description || 'No description'}</p>
+                    <p class="song-count">${playlist.songs?.length || 0} songs</p>
+                </div>
+            `;
+        });
+        html += '</div></div>';
+    }
+    
+    resultsContainer.innerHTML = html;
+}
+</script>
+{% endblock %}

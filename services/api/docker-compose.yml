@@ -1,0 +1,121 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: festival_postgres
+    environment:
+      POSTGRES_DB: festival_db
+      POSTGRES_USER: festival_user
+      POSTGRES_PASSWORD: festival_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U festival_user -d festival_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache and Message Broker
+  redis:
+    image: redis:7-alpine
+    container_name: festival_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # nginx Reverse Proxy and Image Cache
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: festival_nginx
+    ports:
+      - "80:8080"
+    volumes:
+      - nginx_cache:/var/cache/nginx/images
+      - ./nginx/image-cache.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      app:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/nginx-health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+
+  # FastAPI Application
+  app:
+    build: .
+    container_name: festival_app
+    expose:
+      - "8000"
+    environment:
+      - DATABASE_URL=postgresql://festival_user:festival_pass@postgres:5432/festival_db
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+      - IMAGE_CACHE_ENABLED=true
+      - IMAGE_PROXY_URL=http://localhost
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      - ./ssl:/app/ssl:ro
+    command: python -m festival_playlist_generator.main
+
+  # Celery Worker
+  celery_worker:
+    build: .
+    container_name: festival_celery_worker
+    environment:
+      - DATABASE_URL=postgresql://festival_user:festival_pass@postgres:5432/festival_db
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - .:/app
+    command: celery -A festival_playlist_generator.core.celery_app worker --loglevel=info
+
+  # Celery Beat Scheduler
+  celery_beat:
+    build: .
+    container_name: festival_celery_beat
+    environment:
+      - DATABASE_URL=postgresql://festival_user:festival_pass@postgres:5432/festival_db
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - .:/app
+    command: celery -A festival_playlist_generator.core.celery_app beat --loglevel=info
+
+volumes:
+  postgres_data:
+  redis_data:
+  nginx_cache:

@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}Offline - Festival Playlist Generator{% endblock %}
+
+{% block content %}
+<div class="offline-page">
+    <div class="offline-content">
+        <div class="offline-icon">
+            📡
+        </div>
+        <h1>You're Offline</h1>
+        <p>It looks like you're not connected to the internet. Don't worry - you can still:</p>
+        
+        <div class="offline-features">
+            <div class="feature">
+                <span class="feature-icon">🎵</span>
+                <div class="feature-text">
+                    <h3>View Cached Playlists</h3>
+                    <p>Access your recently viewed playlists and festival information</p>
+                </div>
+            </div>
+            
+            <div class="feature">
+                <span class="feature-icon">✅</span>
+                <div class="feature-text">
+                    <h3>Mark Songs as Known</h3>
+                    <p>Continue managing your song preferences - changes will sync when you're back online</p>
+                </div>
+            </div>
+            
+            <div class="feature">
+                <span class="feature-icon">🔍</span>
+                <div class="feature-text">
+                    <h3>Browse Cached Content</h3>
+                    <p>Explore festivals and artists you've previously viewed</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="offline-actions">
+            <button onclick="window.location.reload()" class="btn btn-primary">
+                Try Again
+            </button>
+            <a href="/" class="btn btn-secondary">
+                Go to Home
+            </a>
+        </div>
+        
+        <div class="offline-status">
+            <p id="connection-status">Checking connection...</p>
+        </div>
+    </div>
+</div>
+
+<style>
+.offline-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    text-align: center;
+}
+
+.offline-content {
+    max-width: 500px;
+    padding: 2rem;
+}
+
+.offline-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.7;
+}
+
+.offline-page h1 {
+    color: #374151;
+    margin-bottom: 1rem;
+}
+
+.offline-page p {
+    color: #6b7280;
+    margin-bottom: 2rem;
+}
+
+.offline-features {
+    text-align: left;
+    margin: 2rem 0;
+}
+
+.feature {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: #f9fafb;
+    border-radius: 8px;
+}
+
+.feature-icon {
+    font-size: 1.5rem;
+    margin-right: 1rem;
+    margin-top: 0.25rem;
+}
+
+.feature-text h3 {
+    margin: 0 0 0.5rem 0;
+    color: #374151;
+    font-size: 1rem;
+}
+
+.feature-text p {
+    margin: 0;
+    color: #6b7280;
+    font-size: 0.9rem;
+}
+
+.offline-actions {
+    margin: 2rem 0;
+}
+
+.offline-actions .btn {
+    margin: 0 0.5rem;
+}
+
+.offline-status {
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+#connection-status {
+    font-size: 0.9rem;
+    color: #6b7280;
+    margin: 0;
+}
+
+.connection-online {
+    color: #059669 !important;
+}
+
+.connection-offline {
+    color: #dc2626 !important;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Monitor connection status
+function updateConnectionStatus() {
+    const statusElement = document.getElementById('connection-status');
+    
+    if (navigator.onLine) {
+        statusElement.textContent = '✅ Connection restored! You can now access all features.';
+        statusElement.className = 'connection-online';
+        
+        // Show reload option
+        setTimeout(() => {
+            if (confirm('Connection restored! Would you like to reload the page to access all features?')) {
+                window.location.reload();
+            }
+        }, 1000);
+    } else {
+        statusElement.textContent = '❌ Still offline. Some features may be limited.';
+        statusElement.className = 'connection-offline';
+    }
+}
+
+// Check connection status on load
+updateConnectionStatus();
+
+// Listen for connection changes
+window.addEventListener('online', updateConnectionStatus);
+window.addEventListener('offline', updateConnectionStatus);
+
+// Check connection periodically
+setInterval(updateConnectionStatus, 5000);
+</script>
+{% endblock %}

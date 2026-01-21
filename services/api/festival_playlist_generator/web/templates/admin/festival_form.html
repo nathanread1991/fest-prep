@@ -1,0 +1,1186 @@
+{% extends "base.html" %}
+
+{% block title %}{{ action }} Festival - Admin{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="admin-header">
+        <h1>{{ action }} Festival</h1>
+        <div class="header-actions">
+            <a href="/admin/festivals" class="btn btn-secondary">← Back to Festivals</a>
+        </div>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-error">
+        <div class="alert-icon">⚠️</div>
+        <div class="alert-content">
+            <strong>Unable to create festival:</strong>
+            <p>{{ error }}</p>
+            {% if "already exists" in error %}
+            <div class="alert-suggestions">
+                <strong>Suggestions:</strong>
+                <ul>
+                    <li>Check the <a href="/admin/festivals" target="_blank">existing festivals list</a> to see if this festival is already there</li>
+                    <li>Try using a slightly different name if this is a different festival</li>
+                    <li>If this is the same festival, consider updating the existing entry instead</li>
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="form-container">
+        <!-- AI Web Scraping Section -->
+        <div class="enrichment-section">
+            <h3>🤖 AI-Powered Festival Scraping</h3>
+            <p>Let AI automatically find and extract festival lineup information from the web!</p>
+            
+            <div id="enrichment-status" class="enrichment-status" style="display: none;"></div>
+            
+            <!-- Search by Name -->
+            <div class="enrichment-form">
+                <div class="enrichment-inputs">
+                    <input type="text" id="festival-search-name" placeholder="Festival name (e.g., Download Festival)" class="enrichment-input">
+                    <input type="text" id="festival-search-year" placeholder="Year (optional)" class="enrichment-input-small">
+                </div>
+                <button type="button" id="scrape-web-btn" class="btn btn-enrichment">
+                    <span class="btn-text">🔍 Search & Scrape</span>
+                    <span class="btn-loading" style="display: none;">⏳ Searching...</span>
+                </button>
+            </div>
+            
+            <div class="enrichment-divider">OR</div>
+            
+            <!-- Direct URL Scraping -->
+            <div class="enrichment-form">
+                <input type="url" id="festival-url" placeholder="Paste festival website URL (e.g., https://downloadfestival.co.uk/artists-a-z/)" class="enrichment-input-full">
+                <button type="button" id="scrape-url-btn" class="btn btn-enrichment">
+                    <span class="btn-text">🌐 Scrape URL</span>
+                    <span class="btn-loading" style="display: none;">⏳ Scraping...</span>
+                </button>
+            </div>
+            
+            <div class="quick-tips">
+                <strong>💡 How it works:</strong>
+                <ul>
+                    <li><strong>Search & Scrape:</strong> AI finds the festival website and extracts all artist names automatically</li>
+                    <li><strong>Scrape URL:</strong> Paste a specific festival page URL for more accurate results</li>
+                    <li>Works with any festival website - AI understands HTML structure</li>
+                    <li>Extracts 50-100+ artists in seconds</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Manual Entry Section -->
+        <div class="manual-entry-header">
+            <h3>✏️ Manual Entry</h3>
+            <p>Or enter festival details manually below</p>
+        </div>
+
+        <form method="post" action="{% if festival and festival.id %}/admin/festivals/{{ festival.id }}/update{% else %}/admin/festivals/new{% endif %}" class="admin-form">
+            <div class="form-group">
+                <label for="name">Festival Name *</label>
+                <input type="text" id="name" name="name" required 
+                       value="{{ form_data.name if form_data else (festival.name if festival else '') }}"
+                       placeholder="e.g., Coachella 2024">
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="location">Location *</label>
+                    <input type="text" id="location" name="location" required 
+                           value="{{ form_data.location if form_data else (festival.location if festival else '') }}"
+                           placeholder="e.g., Indio, California">
+                </div>
+
+                <div class="form-group">
+                    <label for="venue">Venue</label>
+                    <input type="text" id="venue" name="venue" 
+                           value="{{ form_data.venue if form_data else (festival.venue if festival else '') }}"
+                           placeholder="e.g., Empire Polo Club">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="dates">Dates *</label>
+                <input type="text" id="dates" name="dates" required 
+                       value="{{ form_data.dates if form_data else (festival.dates | join(', ') if festival else '') }}"
+                       placeholder="2024-04-12, 2024-04-13, 2024-04-14 (comma-separated)">
+                <small class="form-help">Enter dates in YYYY-MM-DD format, separated by commas</small>
+            </div>
+
+            <div class="form-group">
+                <label for="genres">Genres</label>
+                <input type="text" id="genres" name="genres" 
+                       value="{{ form_data.genres if form_data else (festival.genres | join(', ') if festival else '') }}"
+                       placeholder="Rock, Pop, Electronic, Hip-Hop (comma-separated)">
+                <small class="form-help">Enter genres separated by commas</small>
+            </div>
+
+            <div class="form-group">
+                <label for="artists">Artists</label>
+                <textarea id="artists" name="artists" rows="4" 
+                          placeholder="Artist Name 1, Artist Name 2, Artist Name 3 (comma-separated)">{{ form_data.artists if form_data else (festival.artists | map(attribute='name') | join(', ') if festival else '') }}</textarea>
+                <small class="form-help">Enter artist names separated by commas. Artists will be created if they don't exist.</small>
+            </div>
+
+            <div class="form-group">
+                <label for="ticket_url">Ticket URL</label>
+                <input type="url" id="ticket_url" name="ticket_url" 
+                       value="{{ form_data.ticket_url if form_data else (festival.ticket_url if festival else '') }}"
+                       placeholder="https://tickets.example.com">
+            </div>
+
+            <!-- Visual Branding Section -->
+            <div class="branding-section">
+                <h3>🎨 Visual Branding</h3>
+                <p>Customize the festival poster appearance with logos and colors</p>
+                
+                <div class="form-group">
+                    <label for="logo_url">Festival Logo URL</label>
+                    <input type="url" id="logo_url" name="logo_url" 
+                           value="{{ form_data.logo_url if form_data else (festival.logo_url if festival else '') }}"
+                           placeholder="https://example.com/logo.png">
+                    <small class="form-help">URL to the festival logo image</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="logo_upload">Or Upload Logo</label>
+                    <input type="file" id="logo_upload" name="logo_upload" accept="image/*">
+                    <small class="form-help">Upload a logo image (will be hosted and URL auto-filled)</small>
+                </div>
+
+                {% if festival and festival.logo_url %}
+                <div class="logo-preview">
+                    <label>Current Logo:</label>
+                    <img src="{{ festival.logo_url }}" alt="{{ festival.name }} logo" class="preview-logo">
+                </div>
+                {% endif %}
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="primary_color">Primary Color</label>
+                        <div class="color-input-group">
+                            <input type="color" id="primary_color_picker" 
+                                   value="{{ form_data.primary_color if form_data else (festival.primary_color if festival else '#667eea') }}"
+                                   class="color-picker">
+                            <input type="text" id="primary_color" name="primary_color" 
+                                   value="{{ form_data.primary_color if form_data else (festival.primary_color if festival else '#667eea') }}"
+                                   placeholder="#667eea" class="color-text" maxlength="7">
+                        </div>
+                        <small class="form-help">Main background color for poster</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="secondary_color">Secondary Color</label>
+                        <div class="color-input-group">
+                            <input type="color" id="secondary_color_picker" 
+                                   value="{{ form_data.secondary_color if form_data else (festival.secondary_color if festival else '#764ba2') }}"
+                                   class="color-picker">
+                            <input type="text" id="secondary_color" name="secondary_color" 
+                                   value="{{ form_data.secondary_color if form_data else (festival.secondary_color if festival else '#764ba2') }}"
+                                   placeholder="#764ba2" class="color-text" maxlength="7">
+                        </div>
+                        <small class="form-help">Gradient end color for poster</small>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="text_color">Text Color</label>
+                    <div class="color-input-group">
+                        <input type="color" id="text_color_picker" 
+                               value="{{ form_data.text_color if form_data else (festival.text_color if festival else '#ffffff') }}"
+                               class="color-picker">
+                        <input type="text" id="text_color" name="text_color" 
+                               value="{{ form_data.text_color if form_data else (festival.text_color if festival else '#ffffff') }}"
+                               placeholder="#ffffff" class="color-text" maxlength="7">
+                    </div>
+                    <small class="form-help">Color for all text on the poster (artist names, dates, etc.)</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="accent_colors">Accent Colors</label>
+                    <input type="text" id="accent_colors" name="accent_colors" 
+                           value="{{ form_data.accent_colors if form_data else (festival.accent_colors | join(', ') if festival and festival.accent_colors else '') }}"
+                           placeholder="#ffffff, #ffd700 (comma-separated hex colors)">
+                    <small class="form-help">Additional colors for highlights and borders (comma-separated)</small>
+                </div>
+
+                {% if festival and festival.id %}
+                <div class="branding-actions">
+                    <button type="button" id="refresh-branding-btn" class="btn btn-refresh">
+                        <span class="btn-text">🔄 Refresh Branding from Website</span>
+                        <span class="btn-loading" style="display: none;">⏳ Refreshing...</span>
+                    </button>
+                    <small class="form-help">Re-scrape visual branding from the festival website</small>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-success">{{ action }} Festival</button>
+                {% if festival and festival.id %}
+                <button type="button" id="preview-poster-btn" class="btn btn-preview">👁️ Preview Poster</button>
+                {% endif %}
+                <a href="/admin/festivals" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Poster Preview Modal -->
+<div id="poster-preview-modal" class="poster-modal" style="display: none;">
+    <div class="modal-overlay" id="modal-overlay"></div>
+    <div class="modal-container">
+        <div class="modal-header">
+            <h2>Poster Preview</h2>
+            <button type="button" id="close-modal-btn" class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <iframe id="poster-iframe" src="" frameborder="0"></iframe>
+        </div>
+    </div>
+</div>
+
+<style>
+.admin-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.enrichment-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 25px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.enrichment-section h3 {
+    margin: 0 0 10px 0;
+    font-size: 1.3em;
+}
+
+.enrichment-section p {
+    margin: 0 0 15px 0;
+    opacity: 0.9;
+}
+
+.enrichment-status {
+    padding: 12px;
+    border-radius: 5px;
+    margin: 15px 0;
+    font-weight: 500;
+}
+
+.enrichment-status.info {
+    background: rgba(59, 130, 246, 0.2);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.enrichment-status.success {
+    background: rgba(16, 185, 129, 0.2);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.enrichment-status.error {
+    background: rgba(239, 68, 68, 0.2);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.enrichment-form {
+    display: flex;
+    gap: 10px;
+    margin: 15px 0;
+    align-items: center;
+}
+
+.enrichment-inputs {
+    display: flex;
+    gap: 10px;
+    flex: 1;
+}
+
+.enrichment-input,
+.enrichment-input-small,
+.enrichment-input-full {
+    padding: 12px;
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 5px;
+    background: rgba(255,255,255,0.9);
+    font-size: 16px;
+}
+
+.enrichment-input {
+    flex: 2;
+}
+
+.enrichment-input-small {
+    flex: 1;
+}
+
+.enrichment-input-full {
+    flex: 1;
+}
+
+.btn-enrichment {
+    background: rgba(255,255,255,0.95);
+    color: #667eea;
+    padding: 12px 20px;
+    white-space: nowrap;
+    font-weight: 600;
+}
+
+.btn-enrichment:hover {
+    background: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.btn-enrichment:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.enrichment-divider {
+    text-align: center;
+    margin: 20px 0;
+    font-weight: 600;
+    opacity: 0.8;
+}
+
+.manual-entry-header {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.manual-entry-header h3 {
+    margin: 0 0 5px 0;
+    color: #374151;
+}
+
+.manual-entry-header p {
+    margin: 0;
+    color: #6b7280;
+}
+
+.quick-tips {
+    background: rgba(255,255,255,0.1);
+    padding: 15px;
+    border-radius: 5px;
+    margin-top: 15px;
+}
+
+.quick-tips strong {
+    display: block;
+    margin-bottom: 10px;
+}
+
+.quick-tips ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.quick-tips li {
+    margin-bottom: 8px;
+    line-height: 1.5;
+}
+
+.form-container {
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.admin-form {
+    max-width: 100%;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 5px;
+    font-size: 16px;
+    transition: border-color 0.3s;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.form-help {
+    display: block;
+    margin-top: 5px;
+    color: #6b7280;
+    font-size: 0.9em;
+}
+
+.form-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: bold;
+    cursor: pointer;
+    display: inline-block;
+    transition: background-color 0.3s;
+    font-size: 16px;
+}
+
+.btn-success {
+    background: #10b981;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #059669;
+}
+
+.btn-secondary {
+    background: #6b7280;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #4b5563;
+}
+
+.alert {
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+}
+
+.alert-error {
+    background: #fee2e2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+}
+
+.alert-suggestions a:hover {
+    color: #991b1b;
+}
+
+.branding-section {
+    background: #f0f9ff;
+    padding: 25px;
+    border-radius: 8px;
+    margin: 30px 0;
+    border: 2px solid #3b82f6;
+}
+
+.branding-section h3 {
+    margin: 0 0 10px 0;
+    color: #1e40af;
+    font-size: 1.3em;
+}
+
+.branding-section p {
+    margin: 0 0 20px 0;
+    color: #3b82f6;
+}
+
+.color-input-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.color-picker {
+    width: 60px;
+    height: 40px;
+    border: 1px solid #d1d5db;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.color-text {
+    flex: 1;
+    min-width: 120px;
+    padding: 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 5px;
+    font-family: monospace;
+    font-size: 14px;
+}
+
+.logo-preview {
+    margin: 15px 0;
+    padding: 15px;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 5px;
+}
+
+.logo-preview label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.preview-logo {
+    max-width: 200px;
+    max-height: 100px;
+    object-fit: contain;
+    border: 1px solid #e5e7eb;
+    border-radius: 4px;
+    padding: 5px;
+    background: white;
+}
+
+.branding-actions {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #bfdbfe;
+}
+
+.btn-refresh {
+    background: #3b82f6;
+    color: white;
+    padding: 12px 20px;
+    font-weight: 600;
+}
+
+.btn-refresh:hover {
+    background: #2563eb;
+}
+
+.btn-refresh:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-refresh:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-preview {
+    background: #8b5cf6;
+    color: white;
+    padding: 12px 20px;
+    font-weight: 600;
+}
+
+.btn-preview:hover {
+    background: #7c3aed;
+}
+
+.poster-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+}
+
+.modal-container {
+    position: relative;
+    background: white;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 1200px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+    padding: 20px;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h2 {
+    margin: 0;
+    color: #374151;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 32px;
+    cursor: pointer;
+    color: #6b7280;
+    padding: 0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.modal-close:hover {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.modal-body {
+    flex: 1;
+    overflow: hidden;
+    padding: 0;
+}
+
+#poster-iframe {
+    width: 100%;
+    height: 100%;
+    min-height: 600px;
+}
+
+@media (max-width: 768px) {
+    .admin-header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+    
+    .enrichment-form {
+        flex-direction: column;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .btn {
+        text-align: center;
+    }
+}
+</style>
+
+<script>
+// Auto-resize textarea
+document.addEventListener('DOMContentLoaded', function() {
+    const textarea = document.getElementById('artists');
+    if (textarea) {
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = this.scrollHeight + 'px';
+        });
+    }
+    
+    // Color picker synchronization
+    const primaryColorPicker = document.getElementById('primary_color_picker');
+    const primaryColor = document.getElementById('primary_color');
+    const secondaryColorPicker = document.getElementById('secondary_color_picker');
+    const secondaryColor = document.getElementById('secondary_color');
+    const textColorPicker = document.getElementById('text_color_picker');
+    const textColor = document.getElementById('text_color');
+    
+    if (primaryColorPicker && primaryColor) {
+        primaryColorPicker.addEventListener('input', function() {
+            primaryColor.value = this.value;
+        });
+        
+        primaryColor.addEventListener('input', function() {
+            if (/^#[0-9A-Fa-f]{6}$/.test(this.value)) {
+                primaryColorPicker.value = this.value;
+            }
+        });
+    }
+    
+    if (secondaryColorPicker && secondaryColor) {
+        secondaryColorPicker.addEventListener('input', function() {
+            secondaryColor.value = this.value;
+        });
+        
+        secondaryColor.addEventListener('input', function() {
+            if (/^#[0-9A-Fa-f]{6}$/.test(this.value)) {
+                secondaryColorPicker.value = this.value;
+            }
+        });
+    }
+    
+    if (textColorPicker && textColor) {
+        textColorPicker.addEventListener('input', function() {
+            textColor.value = this.value;
+        });
+        
+        textColor.addEventListener('input', function() {
+            if (/^#[0-9A-Fa-f]{6}$/.test(this.value)) {
+                textColorPicker.value = this.value;
+            }
+        });
+    }
+    
+    // Refresh branding button
+    const refreshBrandingBtn = document.getElementById('refresh-branding-btn');
+    if (refreshBrandingBtn) {
+        refreshBrandingBtn.addEventListener('click', async function() {
+            const festivalId = '{{ festival.id if festival else "" }}';
+            if (!festivalId) return;
+            
+            const btnText = refreshBrandingBtn.querySelector('.btn-text');
+            const btnLoading = refreshBrandingBtn.querySelector('.btn-loading');
+            btnText.style.display = 'none';
+            btnLoading.style.display = 'inline';
+            refreshBrandingBtn.disabled = true;
+            
+            try {
+                const response = await fetch(`/admin/api/festivals/${festivalId}/refresh-branding`, {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                
+                if (result.success && result.branding) {
+                    // Update form fields with new branding
+                    if (result.branding.logo_url) {
+                        document.getElementById('logo_url').value = result.branding.logo_url;
+                    }
+                    if (result.branding.primary_color) {
+                        primaryColorPicker.value = result.branding.primary_color;
+                        primaryColor.value = result.branding.primary_color;
+                    }
+                    if (result.branding.secondary_color) {
+                        secondaryColorPicker.value = result.branding.secondary_color;
+                        secondaryColor.value = result.branding.secondary_color;
+                    }
+                    if (result.branding.text_color) {
+                        textColorPicker.value = result.branding.text_color;
+                        textColor.value = result.branding.text_color;
+                    }
+                    if (result.branding.accent_colors && result.branding.accent_colors.length > 0) {
+                        document.getElementById('accent_colors').value = result.branding.accent_colors.join(', ');
+                    }
+                    
+                    alert('✓ Branding refreshed! The form has been updated with new values. Review them and click "Update Festival" to save your changes.');
+                } else {
+                    alert('✗ ' + (result.message || 'Failed to refresh branding'));
+                }
+            } catch (error) {
+                console.error('Error refreshing branding:', error);
+                alert('✗ Network error. Please try again.');
+            } finally {
+                btnText.style.display = 'inline';
+                btnLoading.style.display = 'none';
+                refreshBrandingBtn.disabled = false;
+            }
+        });
+    }
+    
+    // Poster preview functionality
+    const previewPosterBtn = document.getElementById('preview-poster-btn');
+    const posterModal = document.getElementById('poster-preview-modal');
+    const modalOverlay = document.getElementById('modal-overlay');
+    const closeModalBtn = document.getElementById('close-modal-btn');
+    const posterIframe = document.getElementById('poster-iframe');
+    
+    if (previewPosterBtn) {
+        previewPosterBtn.addEventListener('click', function() {
+            const festivalId = '{{ festival.id if festival else "" }}';
+            if (!festivalId) return;
+            
+            // Load the festival detail page in the iframe
+            posterIframe.src = `/festivals/${festivalId}`;
+            posterModal.style.display = 'flex';
+        });
+    }
+    
+    if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', function() {
+            posterModal.style.display = 'none';
+            posterIframe.src = '';
+        });
+    }
+    
+    if (modalOverlay) {
+        modalOverlay.addEventListener('click', function() {
+            posterModal.style.display = 'none';
+            posterIframe.src = '';
+        });
+    }
+    
+    // Close modal on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && posterModal && posterModal.style.display === 'flex') {
+            posterModal.style.display = 'none';
+            posterIframe.src = '';
+        }
+    });
+    
+    // Web scraping functionality
+    const scrapeWebBtn = document.getElementById('scrape-web-btn');
+    const festivalSearchName = document.getElementById('festival-search-name');
+    const festivalSearchYear = document.getElementById('festival-search-year');
+    const scrapeUrlBtn = document.getElementById('scrape-url-btn');
+    const festivalUrl = document.getElementById('festival-url');
+    const statusDiv = document.getElementById('enrichment-status');
+    
+    scrapeWebBtn.addEventListener('click', async function() {
+        const festivalName = festivalSearchName.value.trim();
+        const year = festivalSearchYear.value.trim();
+        
+        if (!festivalName) {
+            showStatus('Please enter a festival name', 'error');
+            return;
+        }
+        
+        const btnText = scrapeWebBtn.querySelector('.btn-text');
+        const btnLoading = scrapeWebBtn.querySelector('.btn-loading');
+        btnText.style.display = 'none';
+        btnLoading.style.display = 'inline';
+        scrapeWebBtn.disabled = true;
+        
+        showStatus(`Searching for "${festivalName}"... This may take a minute.`, 'info');
+        
+        try {
+            const url = `/api/v1/festivals/scrape?name=${encodeURIComponent(festivalName)}${year ? `&year=${encodeURIComponent(year)}` : ''}`;
+            const response = await fetch(url);
+            const result = await response.json();
+            
+            if (result.success && result.data) {
+                const festival = result.data;
+                populateForm(festival);
+                showStatus(`✓ Found "${festival.name}" with ${festival.artists ? festival.artists.length : 0} artists!`, 'success');
+            } else {
+                showStatus(`✗ ${result.error || result.message || 'Festival not found'}. Try pasting the festival website URL directly below.`, 'error');
+            }
+        } catch (error) {
+            console.error('Error scraping festival:', error);
+            showStatus('✗ Network error. Please try again or paste the festival URL directly.', 'error');
+        } finally {
+            btnText.style.display = 'inline';
+            btnLoading.style.display = 'none';
+            scrapeWebBtn.disabled = false;
+        }
+    });
+    
+    scrapeUrlBtn.addEventListener('click', async function() {
+        const url = festivalUrl.value.trim();
+        
+        if (!url) {
+            showStatus('Please enter a festival website URL', 'error');
+            return;
+        }
+        
+        if (!url.startsWith('http://') && !url.startsWith('https://')) {
+            showStatus('Please enter a valid URL starting with http:// or https://', 'error');
+            return;
+        }
+        
+        const btnText = scrapeUrlBtn.querySelector('.btn-text');
+        const btnLoading = scrapeUrlBtn.querySelector('.btn-loading');
+        btnText.style.display = 'none';
+        btnLoading.style.display = 'inline';
+        scrapeUrlBtn.disabled = true;
+        
+        showStatus(`Scraping ${url}... This may take a minute.`, 'info');
+        
+        try {
+            // Extract festival name from URL for the API call
+            const urlObj = new URL(url);
+            const hostname = urlObj.hostname.replace('www.', '');
+            const festivalName = hostname.split('.')[0];
+            
+            const apiUrl = `/api/v1/festivals/scrape?name=${encodeURIComponent(festivalName)}`;
+            const response = await fetch(apiUrl);
+            const result = await response.json();
+            
+            if (result.success && result.data) {
+                const festival = result.data;
+                // Override source URL with the one user provided
+                festival.source_url = url;
+                populateForm(festival);
+                showStatus(`✓ Scraped ${festival.artists ? festival.artists.length : 0} artists from the website!`, 'success');
+            } else {
+                showStatus(`✗ Could not scrape lineup from this URL. The website structure may not be supported.`, 'error');
+            }
+        } catch (error) {
+            console.error('Error scraping URL:', error);
+            showStatus('✗ Failed to scrape the URL. Please check the URL and try again.', 'error');
+        } finally {
+            btnText.style.display = 'inline';
+            btnLoading.style.display = 'none';
+            scrapeUrlBtn.disabled = false;
+        }
+    });
+    
+    // Allow Enter key to trigger search
+    festivalSearchName.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            scrapeWebBtn.click();
+        }
+    });
+    
+    festivalSearchYear.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            scrapeWebBtn.click();
+        }
+    });
+    
+    festivalUrl.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            scrapeUrlBtn.click();
+        }
+    });
+    
+    // Clashfinder enrichment functionality
+    const clashfinderInput = document.getElementById('clashfinder-id');
+    const fetchBtn = document.getElementById('fetch-clashfinder-btn');
+    const idSuggestions = document.querySelectorAll('.id-suggestion');
+    
+    // Handle ID suggestion clicks
+    idSuggestions.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = this.getAttribute('data-id');
+            clashfinderInput.value = id;
+            fetchBtn.click();
+        });
+    });
+    
+    // Handle fetch button click
+    fetchBtn.addEventListener('click', async function() {
+        const clashfinderId = clashfinderInput.value.trim();
+        
+        if (!clashfinderId) {
+            showStatus('Please enter a Clashfinder ID', 'error');
+            return;
+        }
+        
+        const btnText = fetchBtn.querySelector('.btn-text');
+        const btnLoading = fetchBtn.querySelector('.btn-loading');
+        btnText.style.display = 'none';
+        btnLoading.style.display = 'inline';
+        fetchBtn.disabled = true;
+        
+        showStatus('Fetching festival data from Clashfinder...', 'info');
+        
+        try {
+            const response = await fetch(`/api/v1/festivals/enrich/${encodeURIComponent(clashfinderId)}`);
+            const result = await response.json();
+            
+            if (result.success && result.data) {
+                populateForm(result.data);
+                showStatus(`✓ Successfully loaded data for "${result.data.name}" with ${result.data.artist_count} artists!`, 'success');
+            } else {
+                showStatus(`✗ ${result.error || 'Failed to fetch festival data'}`, 'error');
+            }
+        } catch (error) {
+            console.error('Error fetching Clashfinder data:', error);
+            showStatus('✗ Network error. Please try again.', 'error');
+        } finally {
+            btnText.style.display = 'inline';
+            btnLoading.style.display = 'none';
+            fetchBtn.disabled = false;
+        }
+    });
+    
+    // Allow Enter key to trigger fetch
+    clashfinderInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            fetchBtn.click();
+        }
+    });
+    
+    function populateForm(data) {
+        if (data.name) document.getElementById('name').value = data.name;
+        if (data.location) document.getElementById('location').value = data.location;
+        if (data.venue) document.getElementById('venue').value = data.venue;
+        if (data.dates && data.dates.length > 0) {
+            document.getElementById('dates').value = data.dates.join(', ');
+        }
+        if (data.genres && data.genres.length > 0) {
+            document.getElementById('genres').value = data.genres.join(', ');
+        }
+        if (data.artists && data.artists.length > 0) {
+            const artistsTextarea = document.getElementById('artists');
+            artistsTextarea.value = data.artists.join(', ');
+            artistsTextarea.style.height = 'auto';
+            artistsTextarea.style.height = artistsTextarea.scrollHeight + 'px';
+        }
+        if (data.ticket_url || data.source_url) {
+            document.getElementById('ticket_url').value = data.ticket_url || data.source_url;
+        }
+        
+        document.querySelector('.admin-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    
+    function showStatus(message, type) {
+        statusDiv.textContent = message;
+        statusDiv.className = `enrichment-status ${type}`;
+        statusDiv.style.display = 'block';
+        
+        if (type === 'success') {
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 5000);
+        }
+    }
+});
+</script>
+
+<style>
+.festival-selector-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-header {
+    padding: 20px;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #374151;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    color: #6b7280;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-close:hover {
+    color: #374151;
+}
+
+.modal-body {
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.modal-search {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 5px;
+    margin-bottom: 15px;
+    font-size: 16px;
+}
+
+.festival-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.festival-item {
+    padding: 15px;
+    border: 1px solid #e5e7eb;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.festival-item:hover {
+    background: #f9fafb;
+    border-color: #6366f1;
+}
+
+.festival-item-name {
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 5px;
+}
+
+.festival-item-details {
+    font-size: 0.9em;
+    color: #6b7280;
+}
+</style>
+{% endblock %}

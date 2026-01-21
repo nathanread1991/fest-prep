@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auth Debug</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .section {
+            background: #f5f5f5;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        pre {
+            background: white;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        button {
+            background: #6366f1;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #5856eb;
+        }
+    </style>
+</head>
+<body>
+    <h1>Authentication Debug Page</h1>
+    
+    <div class="section">
+        <h2>1. Cookie Check</h2>
+        <p id="cookie-status">Checking cookies...</p>
+        <pre id="cookie-data"></pre>
+    </div>
+    
+    <div class="section">
+        <h2>2. API Auth Check</h2>
+        <button onclick="checkAuth()">Test /api/auth/me</button>
+        <p id="api-status"></p>
+        <pre id="api-response"></pre>
+    </div>
+    
+    <div class="section">
+        <h2>3. Session Storage</h2>
+        <p id="session-status">Checking session storage...</p>
+        <pre id="session-data"></pre>
+    </div>
+    
+    <div class="section">
+        <h2>4. UI State</h2>
+        <p id="ui-status">Checking UI elements...</p>
+        <pre id="ui-data"></pre>
+    </div>
+    
+    <div class="section">
+        <h2>5. Manual Actions</h2>
+        <button onclick="window.location.href='/auth/login'">Go to Login Page</button>
+        <button onclick="clearAllData()">Clear All Data</button>
+        <button onclick="window.location.href='/'">Go to Home</button>
+    </div>
+
+    <script>
+        // Check cookies
+        function checkCookies() {
+            const cookies = document.cookie.split(';').map(c => c.trim());
+            const sessionCookie = cookies.find(c => c.startsWith('session_id='));
+            
+            const cookieStatus = document.getElementById('cookie-status');
+            const cookieData = document.getElementById('cookie-data');
+            
+            if (sessionCookie) {
+                cookieStatus.innerHTML = '<span class="success">✓ Session cookie found</span>';
+                cookieData.textContent = sessionCookie;
+            } else {
+                cookieStatus.innerHTML = '<span class="error">✗ No session cookie found</span>';
+                cookieData.textContent = 'All cookies:\n' + cookies.join('\n');
+            }
+        }
+        
+        // Check API
+        async function checkAuth() {
+            const apiStatus = document.getElementById('api-status');
+            const apiResponse = document.getElementById('api-response');
+            
+            apiStatus.innerHTML = '<span class="info">⏳ Checking...</span>';
+            
+            try {
+                const response = await fetch('/api/auth/me', {
+                    credentials: 'include'
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    apiStatus.innerHTML = '<span class="success">✓ Authenticated (Status: ' + response.status + ')</span>';
+                    apiResponse.textContent = JSON.stringify(data, null, 2);
+                } else {
+                    apiStatus.innerHTML = '<span class="error">✗ Not authenticated (Status: ' + response.status + ')</span>';
+                    apiResponse.textContent = JSON.stringify(data, null, 2);
+                }
+            } catch (error) {
+                apiStatus.innerHTML = '<span class="error">✗ Error: ' + error.message + '</span>';
+                apiResponse.textContent = error.stack;
+            }
+        }
+        
+        // Check session storage
+        function checkSessionStorage() {
+            const sessionStatus = document.getElementById('session-status');
+            const sessionData = document.getElementById('session-data');
+            
+            const authStatus = sessionStorage.getItem('auth_status');
+            const userData = sessionStorage.getItem('user_data');
+            
+            if (authStatus || userData) {
+                sessionStatus.innerHTML = '<span class="info">Session storage data found</span>';
+                sessionData.textContent = 'auth_status: ' + authStatus + '\n\nuser_data:\n' + (userData || 'null');
+            } else {
+                sessionStatus.innerHTML = '<span class="info">No session storage data</span>';
+                sessionData.textContent = 'Empty';
+            }
+        }
+        
+        // Check UI state
+        function checkUIState() {
+            const uiStatus = document.getElementById('ui-status');
+            const uiData = document.getElementById('ui-data');
+            
+            const signInLink = document.getElementById('sign-in-link');
+            const userMenu = document.getElementById('user-menu');
+            const playlistsLink = document.getElementById('my-playlists-link');
+            
+            let report = '';
+            report += 'Sign In Button: ' + (signInLink ? (signInLink.style.display === 'none' ? 'Hidden' : 'Visible') : 'Not found') + '\n';
+            report += 'User Menu: ' + (userMenu ? (userMenu.style.display === 'none' ? 'Hidden' : 'Visible') : 'Not found') + '\n';
+            report += 'My Playlists Link: ' + (playlistsLink ? (playlistsLink.style.display === 'none' ? 'Hidden' : 'Visible') : 'Not found') + '\n';
+            
+            uiData.textContent = report;
+        }
+        
+        // Clear all data
+        function clearAllData() {
+            sessionStorage.clear();
+            localStorage.clear();
+            document.cookie.split(";").forEach(function(c) { 
+                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+            });
+            alert('All data cleared. Refresh the page.');
+        }
+        
+        // Run checks on load
+        window.addEventListener('DOMContentLoaded', function() {
+            checkCookies();
+            checkSessionStorage();
+            checkUIState();
+            
+            // Auto-check API after 1 second
+            setTimeout(checkAuth, 1000);
+        });
+    </script>
+</body>
+</html>

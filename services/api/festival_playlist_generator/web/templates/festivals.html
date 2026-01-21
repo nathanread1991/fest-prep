@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+
+{% block title %}Festivals - Festival Playlist Generator{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<section class="page-header">
+    <h2 class="page-title">Festivals</h2>
+    <p class="page-subtitle">Discover upcoming festivals and create playlists for your favorites</p>
+</section>
+
+<!-- Search and Filters -->
+<section class="search-filters">
+    <form class="search-form" id="festival-filter-form">
+        <div class="filter-row">
+            <input 
+                type="text" 
+                id="festival-name-filter" 
+                class="filter-input" 
+                placeholder="Festival name..."
+            >
+            <input 
+                type="text" 
+                id="location-filter" 
+                class="filter-input" 
+                placeholder="Location..."
+            >
+            <select id="genre-filter" class="filter-select">
+                <option value="">All Genres</option>
+                <option value="Rock">Rock</option>
+                <option value="Electronic">Electronic</option>
+                <option value="Hip-Hop">Hip-Hop</option>
+                <option value="Indie">Indie</option>
+                <option value="Pop">Pop</option>
+                <option value="Folk">Folk</option>
+                <option value="Alternative">Alternative</option>
+                <option value="EDM">EDM</option>
+            </select>
+            <select id="per-page-select" class="filter-select">
+                <option value="12">12 per page</option>
+                <option value="24">24 per page</option>
+                <option value="48">48 per page</option>
+                <option value="100">100 per page</option>
+            </select>
+            <button type="submit" class="btn btn-primary">Filter</button>
+        </div>
+    </form>
+</section>
+
+<!-- Festivals List -->
+<section class="festivals-list">
+    <div class="festivals-container" id="festivals-container">
+        <!-- Festivals will be loaded here dynamically -->
+    </div>
+    
+    <!-- Load More Button -->
+    <div class="load-more-container">
+        <button id="load-more-btn" class="btn btn-secondary" style="display: none;">
+            Load More Festivals
+        </button>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let loadedCount = 0;
+let isLoading = false;
+let hasMore = true;
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadFestivals();
+    
+    // Set up form submission
+    document.getElementById('festival-filter-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        loadedCount = 0;
+        hasMore = true;
+        loadFestivals(true);
+    });
+    
+    // Set up per-page selector change
+    document.getElementById('per-page-select').addEventListener('change', function() {
+        loadedCount = 0;
+        hasMore = true;
+        loadFestivals(true);
+    });
+    
+    // Set up load more button
+    document.getElementById('load-more-btn').addEventListener('click', function() {
+        loadFestivals(false);
+    });
+});
+
+async function loadFestivals(clearResults = false) {
+    if (isLoading || (!clearResults && !hasMore)) return;
+    
+    isLoading = true;
+    const container = document.getElementById('festivals-container');
+    const loadMoreBtn = document.getElementById('load-more-btn');
+    
+    if (clearResults) {
+        container.innerHTML = '<div class="loading">Loading festivals...</div>';
+        loadMoreBtn.style.display = 'none';
+        loadedCount = 0;
+    }
+    
+    try {
+        // Get per-page value
+        const perPage = parseInt(document.getElementById('per-page-select').value);
+        
+        // Build query parameters using skip/limit
+        const params = new URLSearchParams({
+            skip: loadedCount,
+            limit: perPage
+        });
+        
+        const nameFilter = document.getElementById('festival-name-filter').value;
+        const locationFilter = document.getElementById('location-filter').value;
+        const genreFilter = document.getElementById('genre-filter').value;
+        
+        if (nameFilter) params.append('name', nameFilter);
+        if (locationFilter) params.append('location', locationFilter);
+        if (genreFilter) params.append('genre', genreFilter);
+        
+        const response = await fetch(`/api/v1/festivals?${params}`);
+        const data = await response.json();
+        
+        // Handle the API response structure
+        const festivals = data.success && data.data && data.data.festivals ? data.data.festivals : [];
+        
+        if (festivals && festivals.length > 0) {
+            const festivalsHtml = festivals.map(festival => `
+                <div class="festival-card-detailed" onclick="viewFestival('${festival.id}')">
+                    <div class="festival-header">
+                        <h3 class="festival-name">${festival.name}</h3>
+                        <span class="festival-genre">${festival.genres ? festival.genres[0] : 'Music'}</span>
+                    </div>
+                    <div class="festival-info">
+                        <p class="festival-location">📍 ${festival.location}</p>
+                        <p class="festival-dates">📅 ${formatDates(festival.dates)}</p>
+                        <p class="festival-artists-count">🎤 ${festival.artists.length} artists</p>
+                    </div>
+                    <div class="festival-artists-preview">
+                        ${festival.artists.slice(0, 4).map(artist => 
+                            `<span class="artist-tag">${artist}</span>`
+                        ).join('')}
+                        ${festival.artists.length > 4 ? `<span class="artist-tag more">+${festival.artists.length - 4} more</span>` : ''}
+                    </div>
+                    <div class="festival-actions">
+                        <button class="btn btn-primary btn-small" onclick="event.stopPropagation(); createPlaylist('${festival.id}')">
+                            Create Playlist
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            
+            if (clearResults) {
+                container.innerHTML = festivalsHtml;
+            } else {
+                container.innerHTML += festivalsHtml;
+            }
+            
+            // Update loaded count
+            loadedCount += festivals.length;
+            
+            // Determine if there are more results
+            hasMore = festivals.length === perPage;
+            loadMoreBtn.style.display = hasMore ? 'block' : 'none';
+            
+        } else if (clearResults) {
+            container.innerHTML = '<div class="no-results">No festivals found matching your criteria.</div>';
+            loadMoreBtn.style.display = 'none';
+            hasMore = false;
+        } else {
+            // No more results to load
+            hasMore = false;
+            loadMoreBtn.style.display = 'none';
+        }
+        
+    } catch (error) {
+        console.error('Error loading festivals:', error);
+        if (clearResults) {
+            container.innerHTML = '<div class="error">Unable to load festivals. Please try again later.</div>';
+        }
+        loadMoreBtn.style.display = 'none';
+    } finally {
+        isLoading = false;
+    }
+}
+
+function formatDates(dates) {
+    if (!dates || dates.length === 0) return 'Dates TBA';
+    
+    if (dates.length === 1) {
+        const date = new Date(dates[0]);
+        return date.toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric', 
+            year: 'numeric' 
+        });
+    } else {
+        const startDate = new Date(dates[0]);
+        const endDate = new Date(dates[dates.length - 1]);
+        return `${startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+    }
+}
+
+function viewFestival(festivalId) {
+    window.location.href = `/festivals/${festivalId}`;
+}
+
+async function createPlaylist(festivalId) {
+    try {
+        // Show loading state
+        const button = event.target;
+        const originalText = button.textContent;
+        button.textContent = 'Creating...';
+        button.disabled = true;
+        
+        const response = await fetch(`/api/v1/playlists/festival/${festivalId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            window.location.href = `/playlists/${data.playlist.id}`;
+        } else {
+            throw new Error('Failed to create playlist');
+        }
+        
+    } catch (error) {
+        console.error('Error creating playlist:', error);
+        alert('Unable to create playlist. Please try again.');
+        
+        // Reset button
+        button.textContent = originalText;
+        button.disabled = false;
+    }
+}
+</script>
+{% endblock %}

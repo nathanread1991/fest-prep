@@ -1,0 +1,246 @@
+<!-- Login Prompt Modal Component -->
+<div id="login-prompt-modal" class="login-prompt-modal" style="display: none;">
+    <div class="login-prompt-overlay" id="login-prompt-overlay"></div>
+    <div class="login-prompt-content">
+        <div class="login-prompt-header">
+            <h3>Sign In Required</h3>
+            <button class="login-prompt-close" id="login-prompt-close" aria-label="Close login prompt">×</button>
+        </div>
+        
+        <div class="login-prompt-body">
+            <div class="login-prompt-icon">🔒</div>
+            <p id="login-prompt-message">You need to sign in to access this feature.</p>
+            
+            <div class="login-prompt-actions">
+                <button class="btn btn-primary" onclick="openAuthModal(); closeLoginPrompt();">
+                    Sign In
+                </button>
+                <button class="btn btn-secondary" onclick="closeLoginPrompt()">
+                    Cancel
+                </button>
+            </div>
+            
+            <div class="login-prompt-benefits">
+                <h4>Why sign in?</h4>
+                <ul>
+                    <li>✅ Save your favorite festivals and artists</li>
+                    <li>✅ Create personalized playlists</li>
+                    <li>✅ Track songs you already know</li>
+                    <li>✅ Connect to streaming services</li>
+                    <li>✅ Get festival recommendations</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Login Prompt Modal Styles */
+.login-prompt-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.login-prompt-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+}
+
+.login-prompt-content {
+    position: relative;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    max-width: 400px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: loginPromptSlideIn 0.3s ease-out;
+}
+
+@keyframes loginPromptSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.login-prompt-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.5rem 1.5rem 0 1.5rem;
+    border-bottom: 1px solid #f1f5f9;
+    margin-bottom: 1.5rem;
+}
+
+.login-prompt-header h3 {
+    color: #1f2937;
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.login-prompt-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.login-prompt-close:hover {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.login-prompt-body {
+    padding: 0 1.5rem 1.5rem 1.5rem;
+    text-align: center;
+}
+
+.login-prompt-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.8;
+}
+
+.login-prompt-body p {
+    color: #6b7280;
+    margin-bottom: 1.5rem;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.login-prompt-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.login-prompt-benefits {
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: left;
+}
+
+.login-prompt-benefits h4 {
+    color: #1f2937;
+    font-size: 0.95rem;
+    margin: 0 0 0.75rem 0;
+    text-align: center;
+}
+
+.login-prompt-benefits ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.login-prompt-benefits li {
+    color: #374151;
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.login-prompt-benefits li:last-child {
+    margin-bottom: 0;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+    font-size: 0.9rem;
+}
+
+.btn-primary {
+    background: #6366f1;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #5856eb;
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: #f3f4f6;
+    color: #374151;
+    border: 1px solid #d1d5db;
+}
+
+.btn-secondary:hover {
+    background: #e5e7eb;
+    transform: translateY(-1px);
+}
+
+/* Mobile responsive */
+@media (max-width: 480px) {
+    .login-prompt-modal {
+        padding: 0.5rem;
+    }
+    
+    .login-prompt-content {
+        max-height: 95vh;
+    }
+    
+    .login-prompt-header {
+        padding: 1rem 1rem 0 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .login-prompt-header h3 {
+        font-size: 1.1rem;
+    }
+    
+    .login-prompt-body {
+        padding: 0 1rem 1rem 1rem;
+    }
+    
+    .login-prompt-actions {
+        flex-direction: column;
+    }
+    
+    .login-prompt-icon {
+        font-size: 2.5rem;
+    }
+}
+</style>

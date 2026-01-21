@@ -1,0 +1,1667 @@
+{% extends "base.html" %}
+
+{% block title %}{{ artist.name }} - Festival Playlist Generator{% endblock %}
+
+{% block content %}
+<div class="artist-detail-container">
+    <!-- Artist Header -->
+    <div class="artist-header">
+        <div class="artist-image-large">
+            {% if artist_spotify_image %}
+                <img src="{{ artist_spotify_image }}" alt="{{ artist.name }}" class="artist-photo-large">
+            {% else %}
+                <div class="artist-avatar-large">
+                    🎤
+                </div>
+            {% endif %}
+        </div>
+        <div class="artist-info-header">
+            <h1 class="artist-name">{{ artist.name }}</h1>
+            {% if artist.genres %}
+                <div class="artist-genres">
+                    {% for genre in artist.genres[:3] %}
+                        <span class="genre-tag">{{ genre }}</span>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            <div class="artist-stats">
+                <div class="stat-item">
+                    <span class="stat-number">{{ total_performances }}</span>
+                    <span class="stat-label">Recent Shows</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">{{ total_songs }}</span>
+                    <span class="stat-label">Unique Songs</span>
+                </div>
+                {% if artist.spotify_followers %}
+                    <div class="stat-item">
+                        <span class="stat-number">{{ "{:,}".format(artist.spotify_followers|int) }}</span>
+                        <span class="stat-label">Spotify Followers</span>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Festivals Section -->
+    {% if festivals %}
+        <div class="section festivals-section">
+            <h2 class="section-title">🎪 Performing At</h2>
+            <p class="section-subtitle">{{ artist.name }} is performing at {{ festivals|length }} festival{{ 's' if festivals|length != 1 else '' }}</p>
+            
+            <div class="festivals-grid">
+                {% for festival in festivals %}
+                    <a href="/festivals/{{ festival.id }}" class="festival-card-link">
+                        <div class="festival-card-compact">
+                            {% if festival.logo_url %}
+                                <div class="festival-logo-compact">
+                                    <img src="{{ festival.logo_url }}" alt="{{ festival.name }}">
+                                </div>
+                            {% endif %}
+                            <div class="festival-info-compact">
+                                <h3 class="festival-name-compact">{{ festival.name }}</h3>
+                                {% if festival.location %}
+                                    <div class="festival-location">📍 {{ festival.location }}</div>
+                                {% endif %}
+                                {% if festival.start_date %}
+                                    <div class="festival-date">📅 {{ festival.start_date.strftime('%B %d, %Y') }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="festival-arrow">→</div>
+                        </div>
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Top Songs Section -->
+    {% if top_songs %}
+        <div class="section">
+            <h2 class="section-title">🎵 Most Played Songs</h2>
+            <p class="section-subtitle">Songs ordered by frequency in recent setlists</p>
+            
+            <!-- Refined Word Cloud Display -->
+            <div class="song-cloud">
+                {% for song, count in top_songs %}
+                    {% set max_count = top_songs[0][1] %}
+                    {% set min_count = top_songs[-1][1] %}
+                    {% set font_scale = ((count - min_count) / (max_count - min_count) if max_count != min_count else 1) %}
+                    {% set font_size = 0.9 + (font_scale * 1.1) %}
+                    {% set opacity = 0.7 + (font_scale * 0.3) %}
+                    
+                    {% if font_scale >= 0.8 %}
+                        {% set color_class = "high-frequency" %}
+                    {% elif font_scale >= 0.6 %}
+                        {% set color_class = "medium-high-frequency" %}
+                    {% elif font_scale >= 0.4 %}
+                        {% set color_class = "medium-frequency" %}
+                    {% else %}
+                        {% set color_class = "low-frequency" %}
+                    {% endif %}
+                    
+                    <div class="song-cloud-item {{ color_class }}" 
+                         style="font-size: {{ font_size }}em; 
+                                opacity: {{ opacity }};
+                                animation-delay: {{ loop.index0 * 0.05 }}s;"
+                         data-count="{{ count }}"
+                         title="{{ song }} - Played {{ count }} time{{ 's' if count != 1 else '' }}">
+                        <span class="song-text">{{ song }}</span>
+                        <span class="play-count">{{ count }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Traditional List View (Toggle) -->
+            <div class="view-toggle">
+                <button id="cloud-view-btn" class="toggle-btn active">☁️ Cloud View</button>
+                <button id="list-view-btn" class="toggle-btn">📋 List View</button>
+                <button id="create-playlist-btn" class="toggle-btn create-playlist-btn">🎵 Create Playlist</button>
+            </div>
+            
+            <div class="top-songs-list" id="songs-list" style="display: none;">
+                {% for song, count in top_songs %}
+                    <div class="song-item-modern">
+                        <div class="song-rank-modern">
+                            <span class="rank-number">{{ loop.index }}</span>
+                            <div class="rank-indicator"></div>
+                        </div>
+                        <div class="song-info-modern">
+                            <div class="song-title-modern">{{ song }}</div>
+                            <div class="song-stats">
+                                <span class="play-count-badge">{{ count }} play{{ 's' if count != 1 else '' }}</span>
+                                <span class="frequency-percent">{{ ((count / top_songs[0][1]) * 100)|round(1) }}%</span>
+                            </div>
+                        </div>
+                        <div class="song-visualization">
+                            <div class="frequency-circle">
+                                <svg width="50" height="50" viewBox="0 0 50 50">
+                                    <circle cx="25" cy="25" r="20" fill="none" stroke="#e8eaed" stroke-width="3"/>
+                                    <circle cx="25" cy="25" r="20" fill="none" 
+                                            stroke="#1a73e8" 
+                                            stroke-width="3"
+                                            stroke-dasharray="{{ (count / top_songs[0][1] * 125.6)|round(1) }} 125.6"
+                                            stroke-dashoffset="0"
+                                            transform="rotate(-90 25 25)"
+                                            class="progress-circle"/>
+                                </svg>
+                                <span class="circle-count">{{ count }}</span>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% elif spotify_top_tracks %}
+        <div class="section">
+            <h2 class="section-title">🎵 Top Songs on Spotify</h2>
+            <div class="spotify-fallback-notice">
+                <div class="notice-icon">ℹ️</div>
+                <div class="notice-content">
+                    <strong>No setlist data found</strong>
+                    <p>Showing top 10 songs by listens on Spotify instead</p>
+                </div>
+            </div>
+            
+            <div class="top-songs-list">
+                {% for track in spotify_top_tracks %}
+                    <div class="song-item-modern spotify-track">
+                        <div class="song-rank-modern">
+                            <span class="rank-number">{{ loop.index }}</span>
+                            <div class="rank-indicator"></div>
+                        </div>
+                        {% if track.album_image %}
+                            <div class="track-album-art">
+                                <img src="{{ track.album_image }}" alt="{{ track.name }}">
+                            </div>
+                        {% endif %}
+                        <div class="song-info-modern">
+                            <div class="song-title-modern">{{ track.name }}</div>
+                            <div class="song-stats">
+                                {% if track.album_name %}
+                                    <span class="album-badge">{{ track.album_name }}</span>
+                                {% endif %}
+                                {% if track.popularity %}
+                                    <span class="popularity-badge">{{ track.popularity }}% popularity</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% if track.preview_url %}
+                            <div class="track-preview">
+                                <button class="preview-btn" onclick="playPreview('{{ track.preview_url }}', this)">
+                                    <span class="play-icon">▶️</span>
+                                    <span class="pause-icon" style="display: none;">⏸️</span>
+                                </button>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+            
+            <div class="view-toggle">
+                <button id="create-playlist-btn" class="toggle-btn create-playlist-btn">🎵 Create Playlist</button>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Recent Setlists Section (hidden when using Spotify fallback) -->
+    {% if not spotify_top_tracks %}
+        <div class="section">
+            <h2 class="section-title">🎪 Recent Performances</h2>
+            <p class="section-subtitle">Last {{ recent_setlists|length }} shows with full setlists</p>
+            
+            {% if recent_setlists %}
+                <div class="setlists-container">
+                    {% for setlist in recent_setlists %}
+                        <div class="setlist-card">
+                            <div class="setlist-header">
+                                <div class="setlist-venue">
+                                    <h3>{{ setlist.venue }}</h3>
+                                    <div class="setlist-date">{{ setlist.date.strftime('%B %d, %Y') }}</div>
+                                </div>
+                                <div class="setlist-meta">
+                                    {% if setlist.tour_name %}
+                                        <span class="tour-badge">{{ setlist.tour_name }}</span>
+                                    {% endif %}
+                                    {% if setlist.festival_name %}
+                                        <span class="festival-badge">{{ setlist.festival_name }}</span>
+                                    {% endif %}
+                                    <span class="song-count-badge">{{ setlist.songs|length }} songs</span>
+                                </div>
+                            </div>
+                            
+                            {% if setlist.songs %}
+                                <div class="setlist-songs">
+                                    <div class="songs-grid">
+                                        {% for song in setlist.songs %}
+                                            <div class="song-pill">
+                                                <span class="song-number">{{ loop.index }}</span>
+                                                <span class="song-name">{{ song }}</span>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="no-setlists">
+                    <div class="no-setlists-icon">🎵</div>
+                    <h3>No Recent Setlists</h3>
+                    <p>No recent performance data available for {{ artist.name }}.</p>
+                    <button onclick="fetchSetlists('{{ artist.id }}')" class="btn btn-primary">
+                        Fetch from Setlist.fm
+                    </button>
+                </div>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+
+<!-- Create Playlist Modal -->
+<div id="playlist-modal" class="playlist-modal" style="display: none;">
+    <div class="playlist-modal-content">
+        <div class="playlist-modal-header">
+            <h2>🎵 Create Playlist for {{ artist.name }}</h2>
+            <button class="modal-close" onclick="closePlaylistModal()">&times;</button>
+        </div>
+        
+        <div class="playlist-modal-body">
+            <p class="modal-description">Select the songs you want to include in your playlist. All songs are selected by default.</p>
+            
+            <div class="song-selection-controls">
+                <button onclick="selectAllSongs()" class="control-btn">✓ Select All</button>
+                <button onclick="deselectAllSongs()" class="control-btn">✗ Deselect All</button>
+                <span class="selected-count">
+                    <span id="selected-count">{{ (top_songs|length if top_songs else (spotify_top_tracks|length if spotify_top_tracks else 0)) }}</span> / {{ (top_songs|length if top_songs else (spotify_top_tracks|length if spotify_top_tracks else 0)) }} songs selected
+                </span>
+            </div>
+            
+            <div class="song-selection-list">
+                {% if top_songs %}
+                    {% for song, count in top_songs %}
+                        <label class="song-checkbox-item">
+                            <input type="checkbox" 
+                                   class="song-checkbox" 
+                                   value="{{ song }}" 
+                                   data-artist="{{ artist.name }}"
+                                   checked>
+                            <span class="checkbox-custom"></span>
+                            <span class="song-checkbox-info">
+                                <span class="song-checkbox-title">{{ song }}</span>
+                                <span class="song-checkbox-meta">Played {{ count }} time{{ 's' if count != 1 else '' }}</span>
+                            </span>
+                        </label>
+                    {% endfor %}
+                {% elif spotify_top_tracks %}
+                    {% for track in spotify_top_tracks %}
+                        <label class="song-checkbox-item">
+                            <input type="checkbox" 
+                                   class="song-checkbox" 
+                                   value="{{ track.name }}" 
+                                   data-artist="{{ artist.name }}"
+                                   checked>
+                            <span class="checkbox-custom"></span>
+                            <span class="song-checkbox-info">
+                                <span class="song-checkbox-title">{{ track.name }}</span>
+                                <span class="song-checkbox-meta">{{ track.album_name if track.album_name else 'Spotify Top Track' }}</span>
+                            </span>
+                        </label>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="playlist-modal-footer">
+            <button onclick="closePlaylistModal()" class="btn btn-secondary">Cancel</button>
+            <button onclick="createPlaylist()" class="btn btn-primary" id="create-playlist-submit">
+                Create on Spotify
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+// Playlist Modal Functions
+function openPlaylistModal() {
+    const modal = document.getElementById('playlist-modal');
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+function closePlaylistModal() {
+    const modal = document.getElementById('playlist-modal');
+    modal.style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+function selectAllSongs() {
+    const checkboxes = document.querySelectorAll('.song-checkbox');
+    checkboxes.forEach(cb => cb.checked = true);
+    updateSelectedCount();
+}
+
+function deselectAllSongs() {
+    const checkboxes = document.querySelectorAll('.song-checkbox');
+    checkboxes.forEach(cb => cb.checked = false);
+    updateSelectedCount();
+}
+
+function updateSelectedCount() {
+    const checkboxes = document.querySelectorAll('.song-checkbox');
+    const checked = Array.from(checkboxes).filter(cb => cb.checked).length;
+    document.getElementById('selected-count').textContent = checked;
+}
+
+async function createPlaylist() {
+    const checkboxes = document.querySelectorAll('.song-checkbox:checked');
+    const songs = Array.from(checkboxes).map(cb => ({
+        title: cb.value,
+        artist: cb.dataset.artist
+    }));
+    
+    if (songs.length === 0) {
+        alert('Please select at least one song to create a playlist.');
+        return;
+    }
+    
+    const button = document.getElementById('create-playlist-submit');
+    const originalText = button.textContent;
+    button.textContent = 'Creating...';
+    button.disabled = true;
+    
+    try {
+        const response = await fetch('/api/v1/playlists/create', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                artist_name: '{{ artist.name }}',
+                songs: songs,
+                platform: 'spotify'
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            alert(`✓ Playlist created successfully! ${data.tracks_added} of ${songs.length} songs added.`);
+            closePlaylistModal();
+            
+            // Optionally redirect to the playlist
+            if (data.playlist_url) {
+                const openPlaylist = confirm('Would you like to open the playlist on Spotify?');
+                if (openPlaylist) {
+                    window.open(data.playlist_url, '_blank');
+                }
+            }
+        } else {
+            if (response.status === 401) {
+                alert('You need to sign in with Spotify to create playlists. Please sign in and try again.');
+                // Optionally trigger auth modal
+                window.location.href = '/auth/login?provider=spotify';
+            } else {
+                alert(`Error: ${data.message || 'Failed to create playlist'}`);
+            }
+        }
+    } catch (error) {
+        console.error('Error creating playlist:', error);
+        alert('Error creating playlist. Please try again later.');
+    } finally {
+        button.textContent = originalText;
+        button.disabled = false;
+    }
+}
+
+async function fetchSetlists(artistId) {
+    const button = event.target;
+    const originalText = button.textContent;
+    button.textContent = 'Fetching...';
+    button.disabled = true;
+    
+    try {
+        const response = await fetch(`/api/v1/setlists/refresh/${artistId}`, {
+            method: 'POST'
+        });
+        
+        if (response.ok) {
+            // Reload the page to show new setlists
+            window.location.reload();
+        } else {
+            const data = await response.json();
+            alert(`Error: ${data.message || 'Failed to fetch setlists'}`);
+        }
+    } catch (error) {
+        console.error('Error fetching setlists:', error);
+        alert('Error fetching setlists. Please try again later.');
+    } finally {
+        button.textContent = originalText;
+        button.disabled = false;
+    }
+}
+
+// Audio preview functionality
+let currentAudio = null;
+let currentButton = null;
+
+function playPreview(previewUrl, button) {
+    // If clicking the same button, toggle play/pause
+    if (currentAudio && currentButton === button) {
+        if (currentAudio.paused) {
+            currentAudio.play();
+            button.querySelector('.play-icon').style.display = 'none';
+            button.querySelector('.pause-icon').style.display = 'inline';
+        } else {
+            currentAudio.pause();
+            button.querySelector('.play-icon').style.display = 'inline';
+            button.querySelector('.pause-icon').style.display = 'none';
+        }
+        return;
+    }
+    
+    // Stop current audio if playing
+    if (currentAudio) {
+        currentAudio.pause();
+        currentAudio.currentTime = 0;
+        if (currentButton) {
+            currentButton.querySelector('.play-icon').style.display = 'inline';
+            currentButton.querySelector('.pause-icon').style.display = 'none';
+        }
+    }
+    
+    // Create and play new audio
+    currentAudio = new Audio(previewUrl);
+    currentButton = button;
+    
+    currentAudio.play();
+    button.querySelector('.play-icon').style.display = 'none';
+    button.querySelector('.pause-icon').style.display = 'inline';
+    
+    // Reset button when audio ends
+    currentAudio.addEventListener('ended', function() {
+        button.querySelector('.play-icon').style.display = 'inline';
+        button.querySelector('.pause-icon').style.display = 'none';
+        currentAudio = null;
+        currentButton = null;
+    });
+}
+
+// View toggle functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const cloudViewBtn = document.getElementById('cloud-view-btn');
+    const listViewBtn = document.getElementById('list-view-btn');
+    const createPlaylistBtn = document.getElementById('create-playlist-btn');
+    const songCloud = document.querySelector('.song-cloud');
+    const songsList = document.getElementById('songs-list');
+    
+    if (cloudViewBtn && listViewBtn && songCloud && songsList) {
+        cloudViewBtn.addEventListener('click', function() {
+            songCloud.style.display = 'flex';
+            songsList.style.display = 'none';
+            cloudViewBtn.classList.add('active');
+            listViewBtn.classList.remove('active');
+        });
+        
+        listViewBtn.addEventListener('click', function() {
+            songCloud.style.display = 'none';
+            songsList.style.display = 'block';
+            listViewBtn.classList.add('active');
+            cloudViewBtn.classList.remove('active');
+        });
+    }
+    
+    // Create Playlist button
+    if (createPlaylistBtn) {
+        createPlaylistBtn.addEventListener('click', openPlaylistModal);
+    }
+    
+    // Song checkbox change listener
+    const checkboxes = document.querySelectorAll('.song-checkbox');
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', updateSelectedCount);
+    });
+    
+    // Add subtle hover effects to song cloud items
+    const cloudItems = document.querySelectorAll('.song-cloud-item');
+    cloudItems.forEach(item => {
+        item.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px)';
+        });
+        
+        item.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+});
+</script>
+
+<style>
+.artist-detail-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.artist-header {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    margin-bottom: 40px;
+    padding: 30px;
+    background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+}
+
+.artist-image-large {
+    flex-shrink: 0;
+}
+
+.artist-photo-large {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid white;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.artist-avatar-large {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 4em;
+    color: white;
+    border: 4px solid white;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.artist-info-header {
+    flex: 1;
+}
+
+.artist-name {
+    font-size: 3em;
+    margin: 0 0 15px 0;
+    color: #1f2937;
+    font-weight: 700;
+}
+
+.artist-genres {
+    margin-bottom: 20px;
+}
+
+.genre-tag {
+    display: inline-block;
+    background: #6366f1;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.9em;
+    margin: 0 8px 8px 0;
+    font-weight: 500;
+}
+
+.artist-stats {
+    display: flex;
+    gap: 30px;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-number {
+    display: block;
+    font-size: 2em;
+    font-weight: 700;
+    color: #6366f1;
+    line-height: 1;
+}
+
+.stat-label {
+    display: block;
+    font-size: 0.9em;
+    color: #6b7280;
+    margin-top: 5px;
+}
+
+.section {
+    margin-bottom: 50px;
+}
+
+.section-title {
+    font-size: 2em;
+    margin-bottom: 8px;
+    color: #1f2937;
+    font-weight: 600;
+}
+
+.section-subtitle {
+    color: #6b7280;
+    margin-bottom: 25px;
+    font-size: 1.1em;
+}
+
+.top-songs-grid {
+    display: grid;
+    gap: 12px;
+}
+
+/* Refined Song Cloud Styles */
+.song-cloud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-start;
+    align-items: flex-start;
+    padding: 25px;
+    background: #fafbfc;
+    border-radius: 12px;
+    border: 1px solid #e8eaed;
+    min-height: 200px;
+    position: relative;
+    line-height: 1.4;
+}
+
+.song-cloud-item {
+    position: relative;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 4px 10px;
+    border-radius: 16px;
+    background: #ffffff;
+    border: 1px solid #e8eaed;
+    font-weight: 500;
+    color: #3c4043;
+    animation: fadeInUp 0.4s ease-out forwards;
+    opacity: 0;
+    transform: translateY(10px);
+    margin: 2px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.song-cloud-item.high-frequency {
+    color: #1a73e8;
+    border-color: #d2e3fc;
+    background: #f8fbff;
+}
+
+.song-cloud-item.medium-high-frequency {
+    color: #137333;
+    border-color: #ceead6;
+    background: #f6fdf7;
+}
+
+.song-cloud-item.medium-frequency {
+    color: #b06000;
+    border-color: #fce8b2;
+    background: #fffbf2;
+}
+
+.song-cloud-item.low-frequency {
+    color: #c5221f;
+    border-color: #fce8e6;
+    background: #fef7f0;
+}
+
+@keyframes fadeInUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.song-cloud-item:hover {
+    background: #f1f3f4;
+    border-color: #dadce0;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.song-text {
+    font-size: inherit;
+    line-height: 1.2;
+}
+
+.play-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #f1f3f4;
+    color: #5f6368;
+    padding: 1px 6px;
+    border-radius: 8px;
+    font-size: 0.75em;
+    font-weight: 600;
+    min-width: 18px;
+    height: 18px;
+}
+
+/* View Toggle */
+.view-toggle {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin: 20px 0 15px 0;
+}
+
+.toggle-btn {
+    padding: 8px 16px;
+    border: 1px solid #dadce0;
+    background: #ffffff;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 500;
+    color: #5f6368;
+    font-size: 0.9em;
+}
+
+.toggle-btn:hover {
+    border-color: #1a73e8;
+    color: #1a73e8;
+    background: #f8fbff;
+}
+
+.toggle-btn.active {
+    background: #1a73e8;
+    border-color: #1a73e8;
+    color: white;
+    box-shadow: 0 1px 3px rgba(26, 115, 232, 0.3);
+}
+
+.create-playlist-btn {
+    background: linear-gradient(135deg, #1db954, #1ed760);
+    border-color: #1db954;
+    color: white;
+    font-weight: 600;
+}
+
+.create-playlist-btn:hover {
+    background: linear-gradient(135deg, #1aa34a, #1db954);
+    border-color: #1aa34a;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(29, 185, 84, 0.3);
+}
+
+/* Playlist Modal Styles */
+.playlist-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    backdrop-filter: blur(4px);
+}
+
+.playlist-modal-content {
+    background: white;
+    border-radius: 20px;
+    max-width: 600px;
+    width: 100%;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.playlist-modal-header {
+    padding: 25px 30px;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.playlist-modal-header h2 {
+    margin: 0;
+    font-size: 1.5em;
+    color: #1f2937;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 2em;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s;
+}
+
+.modal-close:hover {
+    background: #f3f4f6;
+    color: #1f2937;
+}
+
+.playlist-modal-body {
+    padding: 25px 30px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.modal-description {
+    color: #6b7280;
+    margin-bottom: 20px;
+    font-size: 0.95em;
+}
+
+.song-selection-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.control-btn {
+    padding: 6px 12px;
+    border: 1px solid #d1d5db;
+    background: white;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.85em;
+    font-weight: 500;
+    color: #374151;
+    transition: all 0.2s;
+}
+
+.control-btn:hover {
+    background: #f9fafb;
+    border-color: #9ca3af;
+}
+
+.selected-count {
+    margin-left: auto;
+    font-weight: 600;
+    color: #1a73e8;
+    font-size: 0.9em;
+}
+
+.song-selection-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.song-checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+}
+
+.song-checkbox-item:hover {
+    background: #f9fafb;
+    border-color: #e5e7eb;
+}
+
+.song-checkbox {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: #1db954;
+}
+
+.song-checkbox-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.song-checkbox-title {
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 0.95em;
+}
+
+.song-checkbox-meta {
+    font-size: 0.8em;
+    color: #6b7280;
+}
+
+.playlist-modal-footer {
+    padding: 20px 30px;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.btn-secondary {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.btn-secondary:hover {
+    background: #e5e7eb;
+}
+
+/* Modern List View */
+.top-songs-list {
+    display: grid;
+    gap: 15px;
+}
+
+.song-item-modern {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 20px;
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.song-item-modern::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: #1a73e8;
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.song-item-modern:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.song-item-modern:hover::before {
+    transform: scaleX(1);
+}
+
+.song-rank-modern {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    min-width: 60px;
+}
+
+.rank-number {
+    font-size: 1.5em;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.rank-indicator {
+    width: 30px;
+    height: 4px;
+    border-radius: 2px;
+    background: #1a73e8;
+    transition: all 0.3s ease;
+}
+
+.song-info-modern {
+    flex: 1;
+}
+
+.song-title-modern {
+    font-size: 1.2em;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 8px;
+}
+
+.song-stats {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.play-count-badge {
+    background: #1a73e8;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.85em;
+    font-weight: 500;
+}
+
+.frequency-percent {
+    background: #f1f3f4;
+    color: #5f6368;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 0.8em;
+    font-weight: 500;
+}
+
+.song-visualization {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.frequency-circle {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.progress-circle {
+    transition: stroke-dasharray 1s ease-in-out;
+}
+
+.circle-count {
+    position: absolute;
+    font-size: 0.9em;
+    font-weight: 700;
+    color: #374151;
+}
+
+/* Legacy styles for backward compatibility */
+.song-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px 20px;
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.song-item:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.song-rank {
+    font-size: 1.2em;
+    font-weight: 700;
+    color: #6366f1;
+    min-width: 30px;
+    text-align: center;
+}
+
+.song-info {
+    flex: 1;
+}
+
+.song-title {
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 4px;
+}
+
+.song-count {
+    font-size: 0.9em;
+    color: #6b7280;
+}
+
+.song-frequency {
+    width: 100px;
+}
+
+.frequency-bar {
+    height: 6px;
+    background: #e5e7eb;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.frequency-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #6366f1, #8b5cf6);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.setlists-container {
+    display: grid;
+    gap: 25px;
+}
+
+.setlist-card {
+    background: white;
+    border-radius: 16px;
+    border: 1px solid #e5e7eb;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.setlist-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.setlist-header {
+    padding: 25px;
+    background: #f8fafc;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.setlist-venue h3 {
+    margin: 0 0 8px 0;
+    color: #1f2937;
+    font-size: 1.3em;
+}
+
+.setlist-date {
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.setlist-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-end;
+}
+
+.tour-badge, .festival-badge, .song-count-badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    font-weight: 500;
+}
+
+.tour-badge {
+    background: #ddd6fe;
+    color: #6d28d9;
+}
+
+.festival-badge {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.song-count-badge {
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
+.setlist-songs {
+    padding: 25px;
+}
+
+.songs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 10px;
+}
+
+.song-pill {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: #f1f5f9;
+    border-radius: 20px;
+    font-size: 0.9em;
+}
+
+.song-number {
+    background: #6366f1;
+    color: white;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8em;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.song-name {
+    color: #374151;
+    font-weight: 500;
+}
+
+.no-setlists {
+    text-align: center;
+    padding: 60px 20px;
+    background: #f9fafb;
+    border-radius: 16px;
+    border: 2px dashed #d1d5db;
+}
+
+.no-setlists-icon {
+    font-size: 4em;
+    margin-bottom: 20px;
+}
+
+.no-setlists h3 {
+    color: #374151;
+    margin-bottom: 10px;
+}
+
+.no-setlists p {
+    color: #6b7280;
+    margin-bottom: 25px;
+}
+
+/* Spotify Fallback Styles */
+.spotify-fallback-notice {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 20px;
+    background: linear-gradient(135deg, #1db954 0%, #1ed760 100%);
+    color: white;
+    border-radius: 12px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 12px rgba(29, 185, 84, 0.2);
+}
+
+.notice-icon {
+    font-size: 2em;
+    flex-shrink: 0;
+}
+
+.notice-content {
+    flex: 1;
+}
+
+.notice-content strong {
+    display: block;
+    font-size: 1.1em;
+    margin-bottom: 4px;
+}
+
+.notice-content p {
+    margin: 0;
+    opacity: 0.9;
+    font-size: 0.95em;
+}
+
+.spotify-track {
+    background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
+    border-color: #d1fae5;
+}
+
+.track-album-art {
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    overflow: hidden;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.track-album-art img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.album-badge {
+    background: #f0fdf4;
+    color: #166534;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 0.8em;
+    font-weight: 500;
+}
+
+.popularity-badge {
+    background: #1db954;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 0.8em;
+    font-weight: 500;
+}
+
+.track-preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.preview-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: #1db954;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    font-size: 1.2em;
+}
+
+.preview-btn:hover {
+    background: #1ed760;
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(29, 185, 84, 0.3);
+}
+
+.preview-btn:active {
+    transform: scale(0.95);
+}
+
+.btn {
+    display: inline-block;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    font-size: 1em;
+}
+
+.btn-primary {
+    background: #6366f1;
+    color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: #5856eb;
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+    .artist-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 20px;
+    }
+    
+    .artist-name {
+        font-size: 2.2em;
+    }
+    
+    .artist-stats {
+        justify-content: center;
+        gap: 20px;
+    }
+    
+    .setlist-header {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .setlist-meta {
+        align-items: flex-start;
+    }
+    
+    .songs-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    /* Mobile optimizations for song cloud */
+    .song-cloud {
+        padding: 15px;
+        min-height: 150px;
+        gap: 6px;
+    }
+    
+    .song-cloud-item {
+        font-size: 0.85em !important;
+        padding: 3px 8px;
+        margin: 1px;
+    }
+    
+    .play-count {
+        font-size: 0.7em;
+        padding: 1px 4px;
+        min-width: 16px;
+        height: 16px;
+    }
+    
+    .song-item-modern {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+    
+    .song-rank-modern {
+        flex-direction: row;
+        min-width: auto;
+    }
+    
+    .song-stats {
+        justify-content: center;
+    }
+    
+    .view-toggle {
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .toggle-btn {
+        width: 100%;
+        max-width: 300px;
+    }
+    
+    /* Mobile modal styles */
+    .playlist-modal {
+        padding: 10px;
+    }
+    
+    .playlist-modal-content {
+        max-height: 95vh;
+        border-radius: 16px;
+    }
+    
+    .playlist-modal-header {
+        padding: 20px;
+    }
+    
+    .playlist-modal-header h2 {
+        font-size: 1.2em;
+    }
+    
+    .playlist-modal-body {
+        padding: 20px;
+    }
+    
+    .song-selection-controls {
+        flex-wrap: wrap;
+    }
+    
+    .control-btn {
+        flex: 1;
+        min-width: 100px;
+    }
+    
+    .selected-count {
+        width: 100%;
+        text-align: center;
+        margin-left: 0;
+        margin-top: 8px;
+    }
+    
+    .playlist-modal-footer {
+        padding: 15px 20px;
+        flex-direction: column-reverse;
+    }
+    
+    .playlist-modal-footer .btn {
+        width: 100%;
+    }
+}
+
+/* Festivals Section Styles */
+.festivals-section {
+    margin-bottom: 40px;
+}
+
+.festivals-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 15px;
+}
+
+.festival-card-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+.festival-card-compact {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 20px;
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.festival-card-compact::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #6366f1, #8b5cf6);
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.festival-card-compact:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    border-color: #6366f1;
+}
+
+.festival-card-compact:hover::before {
+    transform: scaleX(1);
+}
+
+.festival-logo-compact {
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.festival-logo-compact img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.festival-info-compact {
+    flex: 1;
+    min-width: 0;
+}
+
+.festival-name-compact {
+    font-size: 1.1em;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0 0 8px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.festival-location {
+    font-size: 0.9em;
+    color: #6b7280;
+    margin-bottom: 4px;
+}
+
+.festival-date {
+    font-size: 0.9em;
+    color: #6366f1;
+    font-weight: 500;
+}
+
+.festival-arrow {
+    font-size: 1.5em;
+    color: #6366f1;
+    flex-shrink: 0;
+    transition: transform 0.3s ease;
+}
+
+.festival-card-compact:hover .festival-arrow {
+    transform: translateX(5px);
+}
+
+@media (max-width: 768px) {
+    .festivals-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .festival-card-compact {
+        padding: 15px;
+    }
+    
+    .festival-logo-compact {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .festival-name-compact {
+        font-size: 1em;
+    }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,452 @@
+{% extends "base.html" %}
+
+{% block title %}Privacy Consent - Festival Playlist Generator{% endblock %}
+
+{% block head %}
+<style>
+.consent-container {
+    max-width: 600px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.consent-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.consent-header h2 {
+    color: #1f2937;
+    margin-bottom: 0.5rem;
+    font-size: 1.5rem;
+}
+
+.consent-header p {
+    color: #6b7280;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.welcome-message {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 2rem;
+}
+
+.welcome-message h3 {
+    color: #166534;
+    margin: 0 0 0.5rem 0;
+    font-size: 1.1rem;
+}
+
+.welcome-message p {
+    color: #166534;
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.privacy-section {
+    margin-bottom: 2rem;
+}
+
+.privacy-section h3 {
+    color: #1f2937;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.privacy-section-icon {
+    width: 20px;
+    height: 20px;
+    color: #6366f1;
+}
+
+.privacy-explanation {
+    background: #f8fafc;
+    border-left: 4px solid #6366f1;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    border-radius: 0 6px 6px 0;
+}
+
+.privacy-explanation p {
+    margin: 0 0 0.5rem 0;
+    color: #374151;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.privacy-explanation p:last-child {
+    margin-bottom: 0;
+}
+
+.privacy-explanation strong {
+    color: #1f2937;
+}
+
+.consent-options {
+    margin-bottom: 2rem;
+}
+
+.consent-option {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    transition: all 0.2s ease;
+}
+
+.consent-option:hover {
+    border-color: #6366f1;
+    background: #f0f4ff;
+}
+
+.consent-option.selected {
+    border-color: #6366f1;
+    background: #f0f4ff;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.consent-option-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.consent-checkbox {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #d1d5db;
+    border-radius: 4px;
+    background: white;
+    cursor: pointer;
+    position: relative;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.consent-checkbox.checked {
+    background: #6366f1;
+    border-color: #6366f1;
+}
+
+.consent-checkbox.checked::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.consent-option-title {
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0;
+    cursor: pointer;
+}
+
+.consent-option-description {
+    color: #6b7280;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    margin: 0;
+}
+
+.required-notice {
+    background: #fef3c7;
+    border: 1px solid #f59e0b;
+    border-radius: 6px;
+    padding: 0.75rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.85rem;
+    color: #92400e;
+}
+
+.required-notice strong {
+    color: #78350f;
+}
+
+.policy-links {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.policy-link {
+    color: #6366f1;
+    text-decoration: none;
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.policy-link:hover {
+    background: #f0f4ff;
+    border-color: #6366f1;
+    text-decoration: none;
+}
+
+.consent-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+    font-size: 0.9rem;
+}
+
+.btn-primary {
+    background: #6366f1;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #5856eb;
+    transform: translateY(-1px);
+}
+
+.btn-primary:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-secondary {
+    background: #f3f4f6;
+    color: #374151;
+    border: 1px solid #d1d5db;
+}
+
+.btn-secondary:hover {
+    background: #e5e7eb;
+    transform: translateY(-1px);
+}
+
+.privacy-commitment {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.privacy-commitment h4 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.1rem;
+}
+
+.privacy-commitment p {
+    margin: 0;
+    font-size: 0.9rem;
+    opacity: 0.9;
+    line-height: 1.4;
+}
+
+@media (max-width: 480px) {
+    .consent-container {
+        margin: 1rem;
+        padding: 1.5rem;
+    }
+    
+    .consent-header h2 {
+        font-size: 1.3rem;
+    }
+    
+    .consent-actions {
+        flex-direction: column;
+    }
+    
+    .policy-links {
+        flex-direction: column;
+        align-items: center;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="consent-container">
+    <div class="consent-header">
+        <h2>Welcome to Festival Playlists!</h2>
+        <p>Before we get started, let's set up your privacy preferences. We believe in transparency and giving you control over your data.</p>
+    </div>
+    
+    <div class="welcome-message">
+        <h3>🎉 You're almost ready to discover amazing festival music!</h3>
+        <p>We just need to understand how you'd like us to handle your data and communications. This will only take a moment.</p>
+    </div>
+    
+    <div class="privacy-commitment">
+        <h4>🔒 Our Privacy Commitment</h4>
+        <p>We respect your privacy and will never sell your personal information. You have full control over your data and can change these preferences anytime.</p>
+    </div>
+    
+    <form id="consent-form" method="post" action="/auth/privacy-consent">
+        <input type="hidden" name="user_id" value="{{ user_id }}">
+        <input type="hidden" name="session_token" value="{{ session_token }}">
+        
+        <div class="privacy-section">
+            <h3>
+                <svg class="privacy-section-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                </svg>
+                Communication Preferences
+            </h3>
+            
+            <div class="privacy-explanation">
+                <p><strong>Essential Communications:</strong> We'll always send you important account updates, security notifications, and service announcements. These cannot be disabled as they're necessary for the service.</p>
+                <p><strong>Marketing Communications:</strong> Optional promotional emails about new features, festival announcements, and special offers. You can opt out anytime.</p>
+            </div>
+            
+            <div class="consent-options">
+                <div class="consent-option" data-option="marketing">
+                    <div class="consent-option-header">
+                        <div class="consent-checkbox" id="marketing-checkbox"></div>
+                        <div>
+                            <h4 class="consent-option-title">Marketing Communications</h4>
+                            <p class="consent-option-description">
+                                Receive emails about new festivals, features, and special offers. 
+                                <strong>Default: Opt-out</strong> (respecting your privacy)
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <input type="hidden" name="marketing_opt_in" id="marketing-input" value="false">
+            </div>
+        </div>
+        
+        <div class="privacy-section">
+            <h3>
+                <svg class="privacy-section-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 00-2-2z"></path>
+                </svg>
+                Usage Analytics
+            </h3>
+            
+            <div class="privacy-explanation">
+                <p><strong>Anonymous Usage Data:</strong> Help us improve the service by sharing anonymous usage statistics. This includes which features are used most, performance metrics, and error reports.</p>
+                <p><strong>No Personal Data:</strong> We never include personal information, email addresses, or playlist contents in analytics data.</p>
+            </div>
+            
+            <div class="consent-options">
+                <div class="consent-option selected" data-option="analytics">
+                    <div class="consent-option-header">
+                        <div class="consent-checkbox checked" id="analytics-checkbox"></div>
+                        <div>
+                            <h4 class="consent-option-title">Usage Analytics</h4>
+                            <p class="consent-option-description">
+                                Share anonymous usage data to help improve the service. 
+                                <strong>Default: Enabled</strong> (helps us make the app better)
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <input type="hidden" name="analytics_opt_in" id="analytics-input" value="true">
+            </div>
+        </div>
+        
+        <div class="required-notice">
+            <strong>Required:</strong> By continuing, you agree to our Terms of Service and Privacy Policy. 
+            You must be at least 13 years old to use this service.
+        </div>
+        
+        <div class="policy-links">
+            <a href="/privacy" target="_blank" class="policy-link">📋 Privacy Policy</a>
+            <a href="/terms" target="_blank" class="policy-link">📜 Terms of Service</a>
+        </div>
+        
+        <div class="consent-actions">
+            <button type="submit" class="btn btn-primary" id="continue-btn">
+                Continue to Festival Playlists
+            </button>
+            <a href="/auth/logout" class="btn btn-secondary">
+                Cancel & Sign Out
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const consentOptions = document.querySelectorAll('.consent-option');
+    
+    consentOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            const optionType = this.getAttribute('data-option');
+            const checkbox = this.querySelector('.consent-checkbox');
+            const input = document.getElementById(optionType + '-input');
+            
+            // Toggle checkbox state
+            if (checkbox.classList.contains('checked')) {
+                checkbox.classList.remove('checked');
+                this.classList.remove('selected');
+                input.value = 'false';
+            } else {
+                checkbox.classList.add('checked');
+                this.classList.add('selected');
+                input.value = 'true';
+            }
+        });
+    });
+    
+    // Form submission
+    const consentForm = document.getElementById('consent-form');
+    const continueBtn = document.getElementById('continue-btn');
+    
+    consentForm.addEventListener('submit', function(e) {
+        // Show loading state
+        continueBtn.disabled = true;
+        continueBtn.textContent = 'Setting up your account...';
+        
+        // Track consent completion
+        if (typeof gtag !== 'undefined') {
+            gtag('event', 'privacy_consent_completed', {
+                'marketing_opt_in': document.getElementById('marketing-input').value === 'true',
+                'analytics_opt_in': document.getElementById('analytics-input').value === 'true'
+            });
+        }
+    });
+    
+    // Track page view
+    if (typeof gtag !== 'undefined') {
+        gtag('event', 'privacy_consent_viewed');
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,112 @@
+{
+  "name": "Festival Playlist Generator",
+  "short_name": "FestivalPlaylists",
+  "description": "Create playlists for festivals and concerts based on artist setlists",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#6366f1",
+  "theme_color": "#6366f1",
+  "orientation": "portrait-primary",
+  "categories": ["music", "entertainment"],
+  "lang": "en",
+  "dir": "ltr",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/static/images/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/images/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Browse Festivals",
+      "short_name": "Festivals",
+      "description": "Browse upcoming festivals and events",
+      "url": "/festivals",
+      "icons": [
+        {
+          "src": "/static/images/shortcut-festivals.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "My Playlists",
+      "short_name": "Playlists",
+      "description": "View and manage your playlists",
+      "url": "/playlists",
+      "icons": [
+        {
+          "src": "/static/images/shortcut-playlists.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Search",
+      "short_name": "Search",
+      "description": "Search for festivals and artists",
+      "url": "/search",
+      "icons": [
+        {
+          "src": "/static/images/shortcut-search.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Streaming Services",
+      "short_name": "Streaming",
+      "description": "Connect your streaming accounts",
+      "url": "/streaming",
+      "icons": [
+        {
+          "src": "/static/images/shortcut-streaming.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/static/images/screenshot-mobile.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Festival search on mobile"
+    },
+    {
+      "src": "/static/images/screenshot-desktop.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Festival playlist generator on desktop"
+    }
+  ],
+  "prefer_related_applications": false,
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
+  "handle_links": "preferred",
+  "protocol_handlers": [
+    {
+      "protocol": "web+festivalplaylist",
+      "url": "/festival/%s"
+    }
+  ]
+}

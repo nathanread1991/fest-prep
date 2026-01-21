@@ -1,0 +1,1224 @@
+{% extends "base.html" %}
+
+{% block title %}{{ action }} Artist - Admin - Festival Playlist Generator{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="admin-header">
+        <h1>{{ action }} Artist</h1>
+        <a href="/admin/artists" class="btn btn-secondary">← Back to Artists</a>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-error">
+        <strong>Error:</strong> {{ error }}
+    </div>
+    {% endif %}
+
+    {% if artist %}
+    <div class="artist-info-card">
+        <h3>Current Artist Information</h3>
+        <div class="info-grid">
+            <div class="info-item">
+                <span class="label">Festivals:</span>
+                <span class="value">{{ artist.festivals|length }}</span>
+            </div>
+            <div class="info-item">
+                <span class="label">Setlists:</span>
+                <span class="value">{{ artist.setlists|length }}</span>
+            </div>
+            <div class="info-item">
+                <span class="label">Spotify Linked:</span>
+                <span class="value">{% if artist.spotify_id %}✓ Yes{% else %}✗ No{% endif %}</span>
+            </div>
+        </div>
+        
+        <!-- Manual Merge Section -->
+        <div class="manual-merge-section">
+            <h4>🔀 Merge This Artist</h4>
+            <p>If this is a duplicate of another artist, you can merge them here</p>
+            <div class="merge-input-group">
+                <input 
+                    type="text" 
+                    id="merge-search" 
+                    class="search-input"
+                    placeholder="Search for artist to merge with..."
+                >
+                <button class="btn btn-warning" onclick="searchArtistsToMerge()">
+                    🔍 Find Artist
+                </button>
+            </div>
+            <div id="merge-results" class="merge-results" style="display: none;"></div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Search & Link Section -->
+    <div class="search-link-section">
+        <h3>🔍 Search & Link Artist Data</h3>
+        <p>Search Spotify and Setlist.fm to find and link the correct artist profile</p>
+        
+        <div class="search-input-group">
+            <label for="search-name">Search Name:</label>
+            <input 
+                type="text" 
+                id="search-name" 
+                class="search-input"
+                value="{{ artist.name if artist else '' }}"
+                placeholder="Enter artist name to search..."
+            >
+            <button class="btn btn-primary" onclick="searchBoth()">
+                🔍 Search Both Services
+            </button>
+            <button class="btn btn-secondary" onclick="suggestSearchNames()" title="Find similar artist names in database">
+                💡 Suggest Names
+            </button>
+        </div>
+
+        <div id="suggestions-section" class="suggestions-section" style="display: none;">
+            <h4>💡 Suggested Search Names</h4>
+            <p style="font-size: 0.9em; color: #666; margin-bottom: 10px;">
+                Based on similar artists in your database, try searching for:
+            </p>
+            <div id="suggestions-list" class="suggestions-list"></div>
+        </div>
+
+        <div id="search-status" class="search-status" style="display: none;"></div>
+
+        <!-- Spotify Results -->
+        <div id="spotify-results-section" class="results-section" style="display: none;">
+            <h4>🎵 Spotify Results</h4>
+            <div id="spotify-results" class="results-grid"></div>
+        </div>
+
+        <!-- Setlist.fm Results -->
+        <div id="setlistfm-results-section" class="results-section" style="display: none;">
+            <h4>🎸 Setlist.fm Results</h4>
+            <div id="setlistfm-results" class="results-grid"></div>
+        </div>
+    </div>
+
+    <!-- Manual Edit Form -->
+    <form method="POST" action="/admin/artists/{{ artist.id if artist else 'new' }}/update" class="admin-form">
+        <div class="form-section">
+            <h3>Artist Details</h3>
+            
+            <div class="form-group">
+                <label for="name">Artist Name *</label>
+                <input 
+                    type="text" 
+                    id="name" 
+                    name="name" 
+                    value="{{ form_data.name if form_data else (artist.name if artist else '') }}" 
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="genres">Genres (comma-separated)</label>
+                <input 
+                    type="text" 
+                    id="genres" 
+                    name="genres" 
+                    value="{{ form_data.genres if form_data else '' }}"
+                    placeholder="e.g., Rock, Metal, Alternative"
+                    readonly
+                >
+                <small>Auto-populated from Spotify</small>
+            </div>
+
+            <div class="form-group">
+                <label for="musicbrainz_id">MusicBrainz ID</label>
+                <input 
+                    type="text" 
+                    id="musicbrainz_id" 
+                    name="musicbrainz_id" 
+                    value="{{ form_data.musicbrainz_id if form_data else '' }}"
+                    readonly
+                >
+                <small>Auto-populated from Setlist.fm</small>
+            </div>
+
+            <div class="form-group">
+                <label for="popularity_score">Popularity Score</label>
+                <input 
+                    type="number" 
+                    id="popularity_score" 
+                    name="popularity_score" 
+                    step="0.01"
+                    value="{{ form_data.popularity_score if form_data else '' }}"
+                >
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3>Spotify Information</h3>
+            
+            <div class="form-group">
+                <label for="spotify_id">Spotify ID</label>
+                <input 
+                    type="text" 
+                    id="spotify_id" 
+                    name="spotify_id" 
+                    value="{{ form_data.spotify_id if form_data else '' }}"
+                    readonly
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="spotify_image_url">Spotify Image URL</label>
+                <input 
+                    type="url" 
+                    id="spotify_image_url" 
+                    name="spotify_image_url" 
+                    value="{{ form_data.spotify_image_url if form_data else '' }}"
+                    readonly
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="spotify_popularity">Spotify Popularity</label>
+                <input 
+                    type="number" 
+                    id="spotify_popularity" 
+                    name="spotify_popularity" 
+                    step="0.01"
+                    value="{{ form_data.spotify_popularity if form_data else '' }}"
+                    readonly
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="spotify_followers">Spotify Followers</label>
+                <input 
+                    type="number" 
+                    id="spotify_followers" 
+                    name="spotify_followers" 
+                    step="0.01"
+                    value="{{ form_data.spotify_followers if form_data else '' }}"
+                    readonly
+                >
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3>Logo</h3>
+            
+            <div class="form-group">
+                <label for="logo_url">Logo URL</label>
+                <input 
+                    type="url" 
+                    id="logo_url" 
+                    name="logo_url" 
+                    value="{{ form_data.logo_url if form_data else '' }}"
+                    readonly
+                >
+                <small>Auto-populated from Spotify</small>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">{{ action }} Artist</button>
+            <a href="/admin/artists" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<style>
+.admin-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.admin-header {
+    margin-bottom: 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.admin-header h1 {
+    margin: 0;
+    color: #333;
+}
+
+.alert {
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.alert-error {
+    background: #fee;
+    border: 1px solid #fcc;
+    color: #c00;
+}
+
+.artist-info-card {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 30px;
+}
+
+.artist-info-card h3 {
+    margin: 0 0 15px 0;
+    color: #333;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    background: #f9f9f9;
+    border-radius: 4px;
+}
+
+.info-item .label {
+    color: #666;
+    font-weight: 500;
+}
+
+.info-item .value {
+    color: #333;
+    font-weight: 600;
+}
+
+.search-link-section {
+    background: white;
+    border: 2px solid #1DB954;
+    border-radius: 8px;
+    padding: 25px;
+    margin-bottom: 30px;
+}
+
+.manual-merge-section {
+    margin-top: 25px;
+    padding-top: 25px;
+    border-top: 2px solid #eee;
+}
+
+.manual-merge-section h4 {
+    margin: 0 0 10px 0;
+    color: #333;
+}
+
+.manual-merge-section p {
+    margin: 0 0 15px 0;
+    color: #666;
+    font-size: 0.9em;
+}
+
+.merge-input-group {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.merge-results {
+    margin-top: 15px;
+}
+
+.merge-result-card {
+    background: #fff3cd;
+    border: 2px solid #ffc107;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 10px;
+}
+
+.merge-result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.merge-result-name {
+    font-weight: 700;
+    font-size: 1.1em;
+    color: #333;
+}
+
+.merge-result-details {
+    font-size: 0.85em;
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.merge-result-details div {
+    margin: 3px 0;
+}
+
+.btn-warning {
+    background: #ffc107;
+    color: #000;
+}
+
+.btn-warning:hover {
+    background: #ffca2c;
+}
+
+.btn-danger {
+    background: #dc3545;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #bb2d3b;
+}
+
+.search-link-section h3 {
+    margin: 0 0 10px 0;
+    color: #333;
+}
+
+.search-link-section > p {
+    margin: 0 0 20px 0;
+    color: #666;
+}
+
+.suggestions-section {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f0f9ff;
+    border: 2px solid #3b82f6;
+    border-radius: 8px;
+}
+
+.suggestions-section h4 {
+    margin: 0 0 10px 0;
+    color: #1e40af;
+}
+
+.suggestions-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.suggestion-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: white;
+    border: 2px solid #3b82f6;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.suggestion-chip:hover {
+    background: #3b82f6;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+}
+
+.suggestion-chip .match-score {
+    font-size: 0.75em;
+    padding: 2px 6px;
+    background: #dbeafe;
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+.suggestion-chip:hover .match-score {
+    background: rgba(255, 255, 255, 0.3);
+    color: white;
+}
+
+.search-input-group {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    margin-bottom: 20px;
+}
+
+.search-input-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #333;
+}
+
+.search-input {
+    flex: 1;
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    font-size: 1em;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #1DB954;
+}
+
+.search-status {
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    font-weight: 500;
+}
+
+.search-status.loading {
+    background: #e3f2fd;
+    border: 1px solid #90caf9;
+    color: #1976d2;
+}
+
+.search-status.success {
+    background: #efe;
+    border: 1px solid #cfc;
+    color: #060;
+}
+
+.search-status.error {
+    background: #fee;
+    border: 1px solid #fcc;
+    color: #c00;
+}
+
+.results-section {
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 2px solid #eee;
+}
+
+.results-section h4 {
+    margin: 0 0 15px 0;
+    color: #333;
+}
+
+.results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 15px;
+}
+
+.result-card {
+    background: #f9f9f9;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.result-card:hover {
+    border-color: #1DB954;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+.result-card.selected {
+    border-color: #1DB954;
+    background: #f0fdf4;
+}
+
+.result-header {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 12px;
+}
+
+.result-image {
+    width: 80px;
+    height: 80px;
+    border-radius: 8px;
+    object-fit: cover;
+    background: #ddd;
+}
+
+.result-image.placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2em;
+    color: #999;
+}
+
+.result-info {
+    flex: 1;
+}
+
+.result-name {
+    font-weight: 700;
+    font-size: 1.1em;
+    color: #333;
+    margin: 0 0 5px 0;
+}
+
+.result-detail {
+    font-size: 0.85em;
+    color: #666;
+    margin: 3px 0;
+}
+
+.result-genres {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 10px;
+}
+
+.genre-tag {
+    background: #fef3c7;
+    color: #92400e;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 0.75em;
+    font-weight: 600;
+}
+
+.result-actions {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #ddd;
+}
+
+.btn-select {
+    width: 100%;
+    padding: 8px;
+    background: #1DB954;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-select:hover {
+    background: #1ed760;
+}
+
+.btn-select:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.admin-form {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 30px;
+}
+
+.form-section {
+    margin-bottom: 30px;
+}
+
+.form-section h3 {
+    margin: 0 0 20px 0;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #eee;
+    color: #333;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #333;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1em;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #1DB954;
+}
+
+.form-group input[readonly] {
+    background: #f5f5f5;
+    color: #666;
+}
+
+.form-group small {
+    display: block;
+    margin-top: 5px;
+    color: #666;
+    font-size: 0.85em;
+}
+
+.form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 30px;
+}
+
+.btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 6px;
+    font-size: 1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-primary {
+    background: #1DB954;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #1ed760;
+}
+
+.btn-secondary {
+    background: #666;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #555;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+</style>
+
+<script>
+const artistId = '{{ artist.id if artist else "" }}';
+let selectedSpotify = null;
+let selectedSetlistfm = null;
+
+async function searchBoth() {
+    const searchName = document.getElementById('search-name').value.trim();
+    
+    if (!searchName) {
+        showStatus('Please enter an artist name to search', 'error');
+        return;
+    }
+    
+    showStatus('Searching Spotify and Setlist.fm...', 'loading');
+    
+    // Search both services in parallel
+    await Promise.all([
+        searchSpotify(searchName),
+        searchSetlistfm(searchName)
+    ]);
+    
+    showStatus('Search complete! Select the correct matches below.', 'success');
+}
+
+async function suggestSearchNames() {
+    const currentName = document.getElementById('search-name').value.trim();
+    
+    if (!currentName) {
+        alert('Please enter an artist name first');
+        return;
+    }
+    
+    showStatus('Finding similar artists...', 'loading');
+    
+    try {
+        // Use smart search to find similar artists
+        const response = await fetch(`/admin/api/artists/search?q=${encodeURIComponent(currentName)}`, {
+            credentials: 'include'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success && data.artists && data.artists.length > 0) {
+            displaySuggestions(data.artists);
+            showStatus(`Found ${data.artists.length} similar artist(s) in database`, 'success');
+        } else {
+            document.getElementById('suggestions-section').style.display = 'none';
+            showStatus('No similar artists found in database', 'error');
+        }
+    } catch (error) {
+        console.error('Error getting suggestions:', error);
+        showStatus('Error finding suggestions', 'error');
+    }
+}
+
+function displaySuggestions(artists) {
+    const section = document.getElementById('suggestions-section');
+    const list = document.getElementById('suggestions-list');
+    
+    section.style.display = 'block';
+    list.innerHTML = '';
+    
+    // Filter out current artist and show top 5
+    const suggestions = artists
+        .filter(a => a.id !== artistId)
+        .slice(0, 5);
+    
+    if (suggestions.length === 0) {
+        list.innerHTML = '<p style="color: #666;">No other similar artists found</p>';
+        return;
+    }
+    
+    suggestions.forEach(artist => {
+        const chip = document.createElement('div');
+        chip.className = 'suggestion-chip';
+        chip.onclick = () => useSearchName(artist.name);
+        
+        const matchBadge = artist.match_score >= 90 ? '🎯' :
+                          artist.match_score >= 70 ? '✅' :
+                          artist.match_score >= 50 ? '⚠️' : '❓';
+        
+        chip.innerHTML = `
+            <span>${matchBadge} ${artist.name}</span>
+            <span class="match-score">${artist.match_score}%</span>
+        `;
+        
+        list.appendChild(chip);
+    });
+}
+
+function useSearchName(name) {
+    document.getElementById('search-name').value = name;
+    showStatus(`Search name updated to: "${name}"`, 'success');
+    // Auto-search after a brief delay
+    setTimeout(() => searchBoth(), 500);
+}
+
+async function searchSpotify(artistName) {
+    try {
+        const response = await fetch('/admin/api/spotify/search', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ artist_name: artistName })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success && data.results) {
+            displaySpotifyResults(data.results);
+        } else {
+            document.getElementById('spotify-results-section').style.display = 'block';
+            document.getElementById('spotify-results').innerHTML = 
+                `<p style="color: #666;">No Spotify results found for "${artistName}"</p>`;
+        }
+    } catch (error) {
+        console.error('Spotify search error:', error);
+    }
+}
+
+async function searchSetlistfm(artistName) {
+    try {
+        const response = await fetch('/admin/api/setlistfm/search', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ artist_name: artistName })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success && data.results) {
+            displaySetlistfmResults(data.results);
+        } else {
+            document.getElementById('setlistfm-results-section').style.display = 'block';
+            document.getElementById('setlistfm-results').innerHTML = 
+                `<p style="color: #666;">No Setlist.fm results found for "${artistName}"</p>`;
+        }
+    } catch (error) {
+        console.error('Setlist.fm search error:', error);
+    }
+}
+
+function displaySpotifyResults(results) {
+    const container = document.getElementById('spotify-results');
+    const section = document.getElementById('spotify-results-section');
+    
+    section.style.display = 'block';
+    container.innerHTML = '';
+    
+    results.forEach((artist, index) => {
+        const card = document.createElement('div');
+        card.className = 'result-card';
+        card.dataset.spotifyId = artist.id;
+        
+        const imageHtml = artist.image_url 
+            ? `<img src="${artist.image_url}" alt="${artist.name}" class="result-image">`
+            : `<div class="result-image placeholder">🎵</div>`;
+        
+        const genresHtml = artist.genres && artist.genres.length > 0
+            ? `<div class="result-genres">${artist.genres.slice(0, 3).map(g => `<span class="genre-tag">${g}</span>`).join('')}</div>`
+            : '';
+        
+        card.innerHTML = `
+            <div class="result-header">
+                ${imageHtml}
+                <div class="result-info">
+                    <h5 class="result-name">${artist.name}</h5>
+                    <div class="result-detail">👥 ${artist.followers.toLocaleString()} followers</div>
+                    <div class="result-detail">⭐ Popularity: ${artist.popularity}/100</div>
+                </div>
+            </div>
+            ${genresHtml}
+            <div class="result-actions">
+                <button class="btn-select" onclick="selectSpotify('${artist.id}', this)">
+                    Select This Artist
+                </button>
+            </div>
+        `;
+        
+        container.appendChild(card);
+    });
+}
+
+function displaySetlistfmResults(results) {
+    const container = document.getElementById('setlistfm-results');
+    const section = document.getElementById('setlistfm-results-section');
+    
+    section.style.display = 'block';
+    container.innerHTML = '';
+    
+    results.forEach((artist, index) => {
+        const card = document.createElement('div');
+        card.className = 'result-card';
+        card.dataset.mbid = artist.mbid;
+        
+        card.innerHTML = `
+            <div class="result-header">
+                <div class="result-image placeholder">🎸</div>
+                <div class="result-info">
+                    <h5 class="result-name">${artist.name}</h5>
+                    ${artist.disambiguation ? `<div class="result-detail">📝 ${artist.disambiguation}</div>` : ''}
+                    <div class="result-detail">🎵 ${artist.setlist_count} setlists</div>
+                </div>
+            </div>
+            <div class="result-actions">
+                <button class="btn-select" onclick="selectSetlistfm('${artist.mbid}', this)">
+                    Select This Artist
+                </button>
+            </div>
+        `;
+        
+        container.appendChild(card);
+    });
+}
+
+async function selectSpotify(spotifyId, button) {
+    if (!artistId) {
+        alert('Error: No artist ID found');
+        return;
+    }
+    
+    button.disabled = true;
+    button.textContent = 'Applying...';
+    
+    try {
+        const response = await fetch(`/admin/api/artists/${artistId}/apply-spotify`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ spotify_id: spotifyId })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Update form fields
+            if (data.artist) {
+                document.getElementById('spotify_id').value = data.artist.spotify_id || '';
+                document.getElementById('spotify_image_url').value = data.artist.spotify_image_url || '';
+                document.getElementById('spotify_popularity').value = data.artist.spotify_popularity || '';
+                document.getElementById('spotify_followers').value = data.artist.spotify_followers || '';
+                document.getElementById('logo_url').value = data.artist.logo_url || '';
+                if (data.artist.genres && data.artist.genres.length > 0) {
+                    document.getElementById('genres').value = data.artist.genres.join(', ');
+                }
+            }
+            
+            // Mark as selected
+            document.querySelectorAll('#spotify-results .result-card').forEach(c => c.classList.remove('selected'));
+            button.closest('.result-card').classList.add('selected');
+            button.textContent = '✓ Selected';
+            
+            showStatus('✓ Spotify data applied successfully!', 'success');
+        } else {
+            button.disabled = false;
+            button.textContent = 'Select This Artist';
+            
+            // Check if this is a conflict that can be overridden
+            if (response.status === 409 && data.conflict && data.options && data.options.can_override) {
+                const message = `${data.message}\n\n${data.options.override_message}`;
+                if (confirm(message)) {
+                    // Retry with force_override flag
+                    await selectSpotifyWithOverride(spotifyId, button);
+                } else {
+                    showStatus(`⚠️ ${data.message}`, 'error');
+                }
+            } else {
+                showStatus(`✗ Error: ${data.message}`, 'error');
+            }
+        }
+    } catch (error) {
+        button.disabled = false;
+        button.textContent = 'Select This Artist';
+        showStatus(`✗ Error: ${error.message}`, 'error');
+    }
+}
+
+async function selectSpotifyWithOverride(spotifyId, button) {
+    button.disabled = true;
+    button.textContent = 'Overriding...';
+    
+    try {
+        const response = await fetch(`/admin/api/artists/${artistId}/apply-spotify`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ 
+                spotify_id: spotifyId,
+                force_override: true 
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Update form fields
+            if (data.artist) {
+                document.getElementById('spotify_id').value = data.artist.spotify_id || '';
+                document.getElementById('spotify_image_url').value = data.artist.spotify_image_url || '';
+                document.getElementById('spotify_popularity').value = data.artist.spotify_popularity || '';
+                document.getElementById('spotify_followers').value = data.artist.spotify_followers || '';
+                document.getElementById('logo_url').value = data.artist.logo_url || '';
+                if (data.artist.genres && data.artist.genres.length > 0) {
+                    document.getElementById('genres').value = data.artist.genres.join(', ');
+                }
+            }
+            
+            // Mark as selected
+            document.querySelectorAll('#spotify-results .result-card').forEach(c => c.classList.remove('selected'));
+            button.closest('.result-card').classList.add('selected');
+            button.textContent = '✓ Selected';
+            
+            showStatus('✓ Spotify data applied successfully (unlinked from other artist)!', 'success');
+        } else {
+            button.disabled = false;
+            button.textContent = 'Select This Artist';
+            showStatus(`✗ Error: ${data.message}`, 'error');
+        }
+    } catch (error) {
+        button.disabled = false;
+        button.textContent = 'Select This Artist';
+        showStatus(`✗ Error: ${error.message}`, 'error');
+    }
+}
+
+async function selectSetlistfm(mbid, button) {
+    if (!artistId) {
+        alert('Error: No artist ID found');
+        return;
+    }
+    
+    button.disabled = true;
+    button.textContent = 'Applying...';
+    
+    try {
+        const response = await fetch(`/admin/api/artists/${artistId}/apply-setlistfm`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ mbid: mbid })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Update form field
+            if (data.artist) {
+                document.getElementById('musicbrainz_id').value = data.artist.musicbrainz_id || '';
+            }
+            
+            // Mark as selected
+            document.querySelectorAll('#setlistfm-results .result-card').forEach(c => c.classList.remove('selected'));
+            button.closest('.result-card').classList.add('selected');
+            button.textContent = '✓ Selected';
+            
+            showStatus(`✓ Setlist.fm data applied! ${data.setlists_added} setlists added.`, 'success');
+        } else {
+            button.disabled = false;
+            button.textContent = 'Select This Artist';
+            showStatus(`✗ Error: ${data.message}`, 'error');
+        }
+    } catch (error) {
+        button.disabled = false;
+        button.textContent = 'Select This Artist';
+        showStatus(`✗ Error: ${error.message}`, 'error');
+    }
+}
+
+function showStatus(message, type) {
+    const statusDiv = document.getElementById('search-status');
+    statusDiv.textContent = message;
+    statusDiv.className = `search-status ${type}`;
+    statusDiv.style.display = 'block';
+    
+    if (type === 'success') {
+        setTimeout(() => {
+            statusDiv.style.display = 'none';
+        }, 5000);
+    }
+}
+
+// Allow Enter key to trigger search
+document.getElementById('search-name').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        searchBoth();
+    }
+});
+
+// Manual merge functionality
+async function searchArtistsToMerge() {
+    const searchTerm = document.getElementById('merge-search').value.trim();
+    
+    if (!searchTerm) {
+        alert('Please enter an artist name to search');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/admin/api/artists/search?q=${encodeURIComponent(searchTerm)}`, {
+            credentials: 'include'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success && data.artists && data.artists.length > 0) {
+            displayMergeResults(data.artists);
+        } else {
+            document.getElementById('merge-results').innerHTML = '<p style="color: #666;">No artists found matching that search</p>';
+            document.getElementById('merge-results').style.display = 'block';
+        }
+    } catch (error) {
+        alert(`Error searching artists: ${error.message}`);
+    }
+}
+
+function displayMergeResults(artists) {
+    const container = document.getElementById('merge-results');
+    container.innerHTML = '';
+    container.style.display = 'block';
+    
+    // Filter out the current artist
+    const filteredArtists = artists.filter(a => a.id !== artistId);
+    
+    if (filteredArtists.length === 0) {
+        container.innerHTML = '<p style="color: #666;">No other artists found</p>';
+        return;
+    }
+    
+    filteredArtists.forEach(artist => {
+        const card = document.createElement('div');
+        card.className = 'merge-result-card';
+        
+        // Add match quality indicator
+        const matchBadge = artist.match_score >= 90 ? '🎯 Excellent Match' :
+                          artist.match_score >= 70 ? '✅ Good Match' :
+                          artist.match_score >= 50 ? '⚠️ Possible Match' :
+                          '❓ Weak Match';
+        
+        const matchType = artist.match_type === 'exact' ? 'Exact' :
+                         artist.match_type === 'normalized_exact' ? 'Normalized' :
+                         artist.match_type === 'contains' ? 'Contains' :
+                         artist.match_type === 'levenshtein' ? 'Typo Match' :
+                         artist.match_type === 'jaro_winkler' ? 'Fuzzy' :
+                         artist.match_type === 'phonetic_primary' ? 'Phonetic' :
+                         artist.match_type === 'phonetic_secondary' ? 'Phonetic' :
+                         artist.match_type === 'phonetic_cross' ? 'Phonetic' :
+                         artist.match_type === 'token_set' ? 'Token Match' :
+                         artist.match_type === 'token_sort' ? 'Token Match' :
+                         artist.match_type === 'semantic' ? 'AI Semantic' :
+                         artist.match_type === 'token' ? 'Fuzzy' : 'Unknown';
+        
+        card.innerHTML = `
+            <div class="merge-result-header">
+                <span class="merge-result-name">${artist.name}</span>
+                <span class="match-badge" style="font-size: 0.85em; color: #666;">
+                    ${matchBadge} (${artist.match_score}% - ${matchType})
+                </span>
+            </div>
+            <div class="merge-result-details">
+                <div>🎪 Festivals: ${artist.festival_count || 0}</div>
+                <div>🎵 Setlists: ${artist.setlist_count || 0}</div>
+                <div>🎤 Spotify: ${artist.has_spotify ? '✓ Yes' : '✗ No'}</div>
+                ${artist.genres && artist.genres.length > 0 ? `<div>🎸 Genres: ${artist.genres.join(', ')}</div>` : ''}
+            </div>
+            <button class="btn btn-danger" onclick="confirmMergeInto('${artist.id}', '${artist.name.replace(/'/g, "\\'")}')">
+                Merge Current Artist Into This One
+            </button>
+        `;
+        
+        container.appendChild(card);
+    });
+}
+
+async function confirmMergeInto(targetId, targetName) {
+    const currentName = document.getElementById('name').value;
+    
+    const message = `Are you sure you want to merge "${currentName}" into "${targetName}"?\n\n` +
+                    `This will:\n` +
+                    `• Transfer all festivals and setlists to "${targetName}"\n` +
+                    `• Delete "${currentName}"\n` +
+                    `• This action cannot be undone!\n\n` +
+                    `Continue?`;
+    
+    if (!confirm(message)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/admin/api/duplicates/merge', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+                primary_id: targetId,
+                secondary_ids: [artistId]
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            alert(`✓ Success! Merged "${currentName}" into "${targetName}"\n\n` +
+                  `Festivals transferred: ${data.result.festivals_transferred}\n` +
+                  `Setlists transferred: ${data.result.setlists_transferred}`);
+            
+            // Redirect to artists list
+            window.location.href = '/admin/artists';
+        } else {
+            alert(`✗ Error: ${data.message}`);
+        }
+    } catch (error) {
+        alert(`✗ Error: ${error.message}`);
+    }
+}
+</script>
+{% endblock %}

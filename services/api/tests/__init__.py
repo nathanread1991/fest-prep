@@ -1,0 +1,1 @@
+"""Test package for festival playlist generator."""

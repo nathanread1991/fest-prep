@@ -1,0 +1,992 @@
+{% extends "base.html" %}
+
+{% block title %}{{ action }} Artist - Admin{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="admin-header">
+        <h1>{{ action }} Artist</h1>
+        <div class="header-actions">
+            <a href="/admin/artists" class="btn btn-secondary">← Back to Artists</a>
+        </div>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-error">
+        <div class="alert-icon">⚠️</div>
+        <div class="alert-content">
+            <strong>Unable to create artist:</strong>
+            <p>{{ error }}</p>
+            {% if "already exists" in error %}
+            <div class="alert-suggestions">
+                <strong>Suggestions:</strong>
+                <ul>
+                    <li>Check the <a href="/admin/artists" target="_blank">existing artists list</a> to see if this artist is already there</li>
+                    <li>Try using a slightly different name if this is a different artist</li>
+                    <li>If this is the same artist, consider updating the existing entry instead</li>
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="form-container">
+        <form method="post" class="admin-form">
+            <div class="form-group">
+                <label for="name">Artist Name *</label>
+                <div class="input-with-button">
+                    <input type="text" id="name" name="name" required 
+                           value="{{ form_data.name if form_data else (artist.name if artist else '') }}"
+                           placeholder="e.g., Taylor Swift">
+                    <button type="button" id="suggest-names" class="btn btn-suggest">
+                        💡 Suggest Names
+                    </button>
+                    <button type="button" id="fetch-spotify" class="btn btn-spotify">
+                        🎵 Fetch from Spotify
+                    </button>
+                </div>
+                <small class="form-help">Enter artist name and click "Suggest Names" to find similar existing artists, or "Fetch from Spotify" to auto-populate fields</small>
+                
+                <!-- Suggestions list -->
+                <div id="suggestions-container" style="display: none; margin-top: 10px;">
+                    <div class="suggestions-header">
+                        <strong>💡 Similar Artists Found:</strong>
+                        <small style="color: #6b7280; margin-left: 8px;">Click to use name</small>
+                    </div>
+                    <div id="suggestions-list" class="suggestions-list"></div>
+                </div>
+            </div>
+
+            <!-- Spotify results will be dynamically inserted here -->
+            <div id="spotify-info" class="spotify-info" style="display: none;"></div>
+
+            <div class="form-group">
+                <label for="genres">Genres</label>
+                <input type="text" id="genres" name="genres" 
+                       value="{{ form_data.genres if form_data else (artist.genres | join(', ') if artist else '') }}"
+                       placeholder="Pop, Country, Rock (comma-separated)">
+                <small class="form-help">Enter genres separated by commas</small>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="musicbrainz_id">MusicBrainz ID</label>
+                    <input type="text" id="musicbrainz_id" name="musicbrainz_id" 
+                           value="{{ form_data.musicbrainz_id if form_data else (artist.musicbrainz_id if artist else '') }}"
+                           placeholder="e.g., 20244d07-534f-4eff-b4d4-930878889970">
+                    <small class="form-help">Optional: MusicBrainz identifier for this artist</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="popularity_score">Popularity Score</label>
+                    <input type="number" id="popularity_score" name="popularity_score" 
+                           min="0" max="1" step="0.01"
+                           value="{{ form_data.popularity_score if form_data else (artist.popularity_score if artist else '') }}"
+                           placeholder="0.75">
+                    <small class="form-help">Optional: Popularity score between 0 and 1</small>
+                </div>
+            </div>
+
+            <!-- Artist Logo Section -->
+            <div class="logo-section">
+                <h3>🎨 Artist Logo/Image</h3>
+                <p>Add a custom logo or image for this artist (separate from Spotify image)</p>
+                
+                <div class="form-group">
+                    <label for="logo_url">Artist Logo URL</label>
+                    <input type="url" id="logo_url" name="logo_url" 
+                           value="{{ form_data.logo_url if form_data else (artist.logo_url if artist else '') }}"
+                           placeholder="https://example.com/artist-logo.png">
+                    <small class="form-help">URL to the artist's logo or promotional image</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="logo_upload">Or Upload Logo</label>
+                    <input type="file" id="logo_upload" name="logo_upload" accept="image/*">
+                    <small class="form-help">Upload a logo image (will be hosted and URL auto-filled)</small>
+                </div>
+
+                {% if artist and artist.logo_url %}
+                <div class="logo-preview">
+                    <label>Current Logo:</label>
+                    <img src="{{ artist.logo_url }}" alt="{{ artist.name }} logo" class="preview-logo">
+                    <small class="logo-source">Source: {{ artist.logo_source or 'manual' }}</small>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Hidden Spotify fields -->
+            <input type="hidden" id="spotify_id" name="spotify_id" value="{{ form_data.spotify_id if form_data else (artist.spotify_id if artist else '') }}">
+            <input type="hidden" id="spotify_image_url" name="spotify_image_url" value="{{ form_data.spotify_image_url if form_data else (artist.spotify_image_url if artist else '') }}">
+            <input type="hidden" id="spotify_popularity" name="spotify_popularity" value="{{ form_data.spotify_popularity if form_data else (artist.spotify_popularity if artist else '') }}">
+            <input type="hidden" id="spotify_followers" name="spotify_followers" value="{{ form_data.spotify_followers if form_data else (artist.spotify_followers if artist else '') }}">
+
+            <div class="form-group">
+                <label>Preview</label>
+                <div class="artist-preview">
+                    <div class="preview-name">
+                        <strong id="preview-name">Artist Name</strong>
+                    </div>
+                    <div class="preview-genres" id="preview-genres">
+                        <em>No genres specified</em>
+                    </div>
+                    <div class="preview-popularity" id="preview-popularity" style="display: none;">
+                        <div class="popularity-score">
+                            <div class="score-bar">
+                                <div class="score-fill" id="preview-score-fill" style="width: 0%"></div>
+                            </div>
+                            <span class="score-text" id="preview-score-text">0%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-success">{{ action }} Artist</button>
+                <a href="/admin/artists" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.admin-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.form-container {
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.admin-form {
+    max-width: 100%;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 5px;
+    font-size: 16px;
+    transition: border-color 0.3s;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.input-with-button {
+    display: flex;
+    gap: 10px;
+    align-items: stretch;
+}
+
+.input-with-button input {
+    flex: 1;
+}
+
+.btn-spotify {
+    background: #1db954;
+    color: white;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 5px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    white-space: nowrap;
+}
+
+.btn-spotify:hover {
+    background: #1ed760;
+}
+
+.btn-spotify:disabled {
+    background: #6b7280;
+    cursor: not-allowed;
+}
+
+.btn-suggest {
+    background: #8b5cf6;
+    color: white;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 5px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    white-space: nowrap;
+}
+
+.btn-suggest:hover {
+    background: #7c3aed;
+}
+
+.btn-suggest:disabled {
+    background: #6b7280;
+    cursor: not-allowed;
+}
+
+.suggestions-container {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 10px;
+}
+
+.suggestions-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.suggestions-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.suggestion-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: white;
+    border: 2px solid #8b5cf6;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.9em;
+}
+
+.suggestion-chip:hover {
+    background: #8b5cf6;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(139, 92, 246, 0.3);
+}
+
+.suggestion-chip .match-score {
+    font-size: 0.85em;
+    opacity: 0.8;
+    font-weight: 600;
+}
+
+.spotify-info {
+    margin: 20px 0;
+    padding: 20px;
+    background: #f0fdf4;
+    border: 2px solid #10b981;
+    border-radius: 8px;
+}
+
+.spotify-preview {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.spotify-image {
+    flex-shrink: 0;
+}
+
+.spotify-image img {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #10b981;
+}
+
+.image-placeholder {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2em;
+    color: white;
+}
+
+.spotify-details h4 {
+    margin: 0 0 10px 0;
+    color: #1f2937;
+}
+
+.spotify-genres {
+    margin-bottom: 10px;
+}
+
+.spotify-genre-tag {
+    display: inline-block;
+    background: #10b981;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    margin: 2px;
+}
+
+.spotify-stats {
+    color: #6b7280;
+    font-size: 0.9em;
+}
+
+.spotify-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.form-help {
+    display: block;
+    margin-top: 5px;
+    color: #6b7280;
+    font-size: 0.9em;
+}
+
+.artist-preview {
+    padding: 20px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    margin-top: 5px;
+}
+
+.preview-name {
+    margin-bottom: 10px;
+}
+
+.preview-genres {
+    margin-bottom: 15px;
+}
+
+.genre-tag {
+    display: inline-block;
+    background: #fef3c7;
+    color: #92400e;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    margin: 2px;
+}
+
+.popularity-score {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 200px;
+}
+
+.score-bar {
+    flex: 1;
+    height: 8px;
+    background: #e5e7eb;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.score-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ef4444 0%, #f59e0b 50%, #10b981 100%);
+    transition: width 0.3s ease;
+}
+
+.score-text {
+    font-size: 0.8em;
+    color: #6b7280;
+    min-width: 35px;
+}
+
+.form-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: bold;
+    cursor: pointer;
+    display: inline-block;
+    transition: background-color 0.3s;
+    font-size: 16px;
+}
+
+.btn-success {
+    background: #10b981;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #059669;
+}
+
+.btn-secondary {
+    background: #6b7280;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #4b5563;
+}
+
+.alert {
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.alert-error {
+    background: #fee2e2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+}
+
+.alert-icon {
+    font-size: 1.2em;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.alert-content {
+    flex: 1;
+}
+
+.alert-content strong {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 1.1em;
+}
+
+.alert-content p {
+    margin: 0 0 12px 0;
+    line-height: 1.4;
+}
+
+.alert-suggestions {
+    background: rgba(220, 38, 38, 0.05);
+    padding: 12px;
+    border-radius: 4px;
+    border-left: 3px solid #dc2626;
+    margin-top: 8px;
+}
+
+.alert-suggestions strong {
+    font-size: 0.95em;
+    margin-bottom: 6px;
+}
+
+.alert-suggestions ul {
+    margin: 6px 0 0 0;
+    padding-left: 18px;
+}
+
+.alert-suggestions li {
+    margin-bottom: 4px;
+    font-size: 0.9em;
+    line-height: 1.3;
+}
+
+.alert-suggestions a {
+    color: #dc2626;
+    text-decoration: underline;
+    font-weight: 500;
+}
+
+.alert-suggestions a:hover {
+    color: #991b1b;
+}
+
+.alert-suggestions a:hover {
+    color: #991b1b;
+}
+
+.logo-section {
+    background: #f0f9ff;
+    padding: 25px;
+    border-radius: 8px;
+    margin: 30px 0;
+    border: 2px solid #3b82f6;
+}
+
+.logo-section h3 {
+    margin: 0 0 10px 0;
+    color: #1e40af;
+    font-size: 1.3em;
+}
+
+.logo-section p {
+    margin: 0 0 20px 0;
+    color: #3b82f6;
+}
+
+.logo-preview {
+    margin: 15px 0;
+    padding: 15px;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 5px;
+}
+
+.logo-preview label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.preview-logo {
+    max-width: 200px;
+    max-height: 100px;
+    object-fit: contain;
+    border: 1px solid #e5e7eb;
+    border-radius: 4px;
+    padding: 5px;
+    background: white;
+    display: block;
+    margin-bottom: 10px;
+}
+
+.logo-source {
+    display: block;
+    color: #6b7280;
+    font-size: 0.85em;
+    font-style: italic;
+}
+
+@media (max-width: 768px) {
+    .admin-header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .btn {
+        text-align: center;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const nameInput = document.getElementById('name');
+    const genresInput = document.getElementById('genres');
+    const popularityInput = document.getElementById('popularity_score');
+    
+    const previewName = document.getElementById('preview-name');
+    const previewGenres = document.getElementById('preview-genres');
+    const previewPopularity = document.getElementById('preview-popularity');
+    const previewScoreFill = document.getElementById('preview-score-fill');
+    const previewScoreText = document.getElementById('preview-score-text');
+
+    // Spotify elements
+    const fetchSpotifyBtn = document.getElementById('fetch-spotify');
+    const spotifyInfo = document.getElementById('spotify-info');
+
+    // Suggestions elements
+    const suggestNamesBtn = document.getElementById('suggest-names');
+    const suggestionsContainer = document.getElementById('suggestions-container');
+    const suggestionsList = document.getElementById('suggestions-list');
+
+    // Hidden Spotify fields
+    const spotifyIdField = document.getElementById('spotify_id');
+    const spotifyImageField = document.getElementById('spotify_image_url');
+    const spotifyPopularityField = document.getElementById('spotify_popularity');
+    const spotifyFollowersField = document.getElementById('spotify_followers');
+
+    let currentSpotifyData = null;
+
+    function updatePreview() {
+        // Update name
+        const name = nameInput.value.trim();
+        previewName.textContent = name || 'Artist Name';
+        
+        // Update genres
+        const genres = genresInput.value.trim();
+        if (genres) {
+            const genreList = genres.split(',').map(g => g.trim()).filter(g => g);
+            if (genreList.length > 0) {
+                previewGenres.innerHTML = genreList.map(genre => 
+                    `<span class="genre-tag">${genre}</span>`
+                ).join('');
+            } else {
+                previewGenres.innerHTML = '<em>No genres specified</em>';
+            }
+        } else {
+            previewGenres.innerHTML = '<em>No genres specified</em>';
+        }
+        
+        // Update popularity
+        const popularity = parseFloat(popularityInput.value);
+        if (!isNaN(popularity) && popularity >= 0 && popularity <= 1) {
+            previewPopularity.style.display = 'block';
+            const percentage = Math.round(popularity * 100);
+            previewScoreFill.style.width = percentage + '%';
+            previewScoreText.textContent = percentage + '%';
+        } else {
+            previewPopularity.style.display = 'none';
+        }
+    }
+
+    async function suggestNames() {
+        const artistName = nameInput.value.trim();
+        if (!artistName) {
+            alert('Please enter an artist name first');
+            return;
+        }
+
+        suggestNamesBtn.disabled = true;
+        suggestNamesBtn.textContent = '🔄 Searching Spotify...';
+
+        try {
+            // Search Spotify for artist suggestions
+            const response = await fetch(`/admin/api/artists/search?q=${encodeURIComponent(artistName)}&source=spotify`, {
+                credentials: 'include'
+            });
+
+            const data = await response.json();
+
+            if (data.success && data.artists && data.artists.length > 0) {
+                displaySuggestions(data.artists);
+            } else {
+                suggestionsList.innerHTML = '<p style="color: #666; margin: 0;">No artists found on Spotify</p>';
+                suggestionsContainer.style.display = 'block';
+            }
+        } catch (error) {
+            console.error('Error fetching suggestions:', error);
+            alert('Error fetching suggestions from Spotify. Please try again.');
+        } finally {
+            suggestNamesBtn.disabled = false;
+            suggestNamesBtn.textContent = '💡 Suggest Names';
+        }
+    }
+
+    function displaySuggestions(artists) {
+        suggestionsList.innerHTML = '';
+        
+        const suggestions = artists.slice(0, 5);
+        
+        if (suggestions.length === 0) {
+            suggestionsList.innerHTML = '<p style="color: #666; margin: 0;">No artists found</p>';
+            suggestionsContainer.style.display = 'block';
+            return;
+        }
+        
+        suggestions.forEach(artist => {
+            const chip = document.createElement('div');
+            chip.className = 'suggestion-chip';
+            chip.onclick = () => useSuggestedArtist(artist);
+            
+            // For Spotify results, show popularity as badge
+            const badge = artist.source === 'spotify' ? '🎵' : 
+                         artist.match_score >= 90 ? '🎯' :
+                         artist.match_score >= 70 ? '✅' :
+                         artist.match_score >= 50 ? '⚠️' : '❓';
+            
+            const scoreText = artist.source === 'spotify' ? 
+                             `${artist.popularity}% popular` : 
+                             `${artist.match_score}%`;
+            
+            chip.innerHTML = `
+                <span>${badge} ${artist.name}</span>
+                <span class="match-score">${scoreText}</span>
+            `;
+            
+            suggestionsList.appendChild(chip);
+        });
+        
+        suggestionsContainer.style.display = 'block';
+    }
+
+    function useSuggestedArtist(artist) {
+        // Update name field
+        nameInput.value = artist.name;
+        
+        // If it's a Spotify result, auto-populate all Spotify data
+        if (artist.source === 'spotify') {
+            if (artist.genres && artist.genres.length > 0) {
+                genresInput.value = artist.genres.join(', ');
+            }
+            
+            if (artist.popularity !== undefined) {
+                popularityInput.value = (artist.popularity / 100).toFixed(2);
+            }
+            
+            // Update hidden Spotify fields
+            spotifyIdField.value = artist.spotify_id || '';
+            spotifyImageField.value = artist.image_url || '';
+            spotifyPopularityField.value = artist.popularity || '';
+            spotifyFollowersField.value = artist.followers || '';
+        }
+        
+        updatePreview();
+        suggestionsContainer.style.display = 'none';
+        
+        // Show success message
+        const originalText = suggestNamesBtn.textContent;
+        suggestNamesBtn.textContent = '✓ Artist Data Loaded';
+        suggestNamesBtn.style.background = '#10b981';
+        
+        setTimeout(() => {
+            suggestNamesBtn.textContent = originalText;
+            suggestNamesBtn.style.background = '';
+        }, 2000);
+    }
+
+    async function fetchSpotifyData() {
+        const artistName = nameInput.value.trim();
+        if (!artistName) {
+            alert('Please enter an artist name first');
+            return;
+        }
+
+        fetchSpotifyBtn.disabled = true;
+        fetchSpotifyBtn.textContent = '🔄 Fetching...';
+
+        try {
+            const response = await fetch('/admin/api/spotify/search', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ artist_name: artistName })
+            });
+
+            const data = await response.json();
+
+            // Show all results for user to choose from
+            if (data.success && data.results && data.results.length > 0) {
+                displaySpotifyResults(data.results);
+            } else {
+                alert(data.message || 'Artist not found on Spotify');
+            }
+        } catch (error) {
+            console.error('Error fetching Spotify data:', error);
+            alert('Error fetching data from Spotify. Please try again.');
+        } finally {
+            fetchSpotifyBtn.disabled = false;
+            fetchSpotifyBtn.textContent = '🎵 Fetch from Spotify';
+        }
+    }
+
+    function displaySpotifyResults(results) {
+        // Clear any existing Spotify info
+        spotifyInfo.innerHTML = '';
+        
+        // Create header
+        const header = document.createElement('div');
+        header.style.marginBottom = '15px';
+        header.innerHTML = '<h4 style="margin: 0 0 10px 0;">Select the correct artist:</h4>';
+        spotifyInfo.appendChild(header);
+        
+        // Create results container
+        const resultsContainer = document.createElement('div');
+        resultsContainer.style.display = 'flex';
+        resultsContainer.style.flexDirection = 'column';
+        resultsContainer.style.gap = '10px';
+        resultsContainer.style.maxHeight = '400px';
+        resultsContainer.style.overflowY = 'auto';
+        
+        results.forEach((artist, index) => {
+            const card = document.createElement('div');
+            card.style.cssText = `
+                display: flex;
+                gap: 15px;
+                padding: 12px;
+                background: white;
+                border: 2px solid #e5e7eb;
+                border-radius: 8px;
+                cursor: pointer;
+                transition: all 0.2s;
+            `;
+            
+            card.onmouseover = () => {
+                card.style.borderColor = '#10b981';
+                card.style.boxShadow = '0 2px 8px rgba(16, 185, 129, 0.2)';
+            };
+            
+            card.onmouseout = () => {
+                card.style.borderColor = '#e5e7eb';
+                card.style.boxShadow = 'none';
+            };
+            
+            card.onclick = () => selectSpotifyArtist(artist);
+            
+            // Image
+            const imgContainer = document.createElement('div');
+            imgContainer.style.flexShrink = '0';
+            if (artist.image_url) {
+                imgContainer.innerHTML = `<img src="${artist.image_url}" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;">`;
+            } else {
+                imgContainer.innerHTML = '<div style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #8b5cf6); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5em;">🎤</div>';
+            }
+            
+            // Details
+            const details = document.createElement('div');
+            details.style.flex = '1';
+            details.style.minWidth = '0';
+            
+            const name = document.createElement('div');
+            name.style.fontWeight = 'bold';
+            name.style.marginBottom = '4px';
+            name.textContent = artist.name;
+            
+            const genres = document.createElement('div');
+            genres.style.fontSize = '0.85em';
+            genres.style.color = '#6b7280';
+            genres.style.marginBottom = '4px';
+            if (artist.genres && artist.genres.length > 0) {
+                genres.textContent = artist.genres.slice(0, 3).join(', ');
+            } else {
+                genres.textContent = 'No genres listed';
+            }
+            
+            const stats = document.createElement('div');
+            stats.style.fontSize = '0.8em';
+            stats.style.color = '#9ca3af';
+            const statsText = [];
+            if (artist.popularity !== undefined) {
+                statsText.push(`Popularity: ${artist.popularity}%`);
+            }
+            if (artist.followers !== undefined) {
+                statsText.push(`Followers: ${artist.followers.toLocaleString()}`);
+            }
+            stats.textContent = statsText.join(' • ');
+            
+            details.appendChild(name);
+            details.appendChild(genres);
+            details.appendChild(stats);
+            
+            card.appendChild(imgContainer);
+            card.appendChild(details);
+            
+            resultsContainer.appendChild(card);
+        });
+        
+        spotifyInfo.appendChild(resultsContainer);
+        
+        // Add cancel button
+        const cancelBtn = document.createElement('button');
+        cancelBtn.type = 'button';
+        cancelBtn.className = 'btn btn-secondary';
+        cancelBtn.textContent = 'Cancel';
+        cancelBtn.style.marginTop = '15px';
+        cancelBtn.onclick = () => {
+            spotifyInfo.style.display = 'none';
+            spotifyInfo.innerHTML = '';
+        };
+        spotifyInfo.appendChild(cancelBtn);
+        
+        spotifyInfo.style.display = 'block';
+    }
+
+    function selectSpotifyArtist(artist) {
+        currentSpotifyData = artist;
+        
+        // Update form fields
+        nameInput.value = artist.name;
+        
+        if (artist.genres && artist.genres.length > 0) {
+            genresInput.value = artist.genres.join(', ');
+        }
+
+        if (artist.popularity !== undefined) {
+            popularityInput.value = (artist.popularity / 100).toFixed(2);
+        }
+
+        // Update hidden Spotify fields
+        spotifyIdField.value = artist.id || '';
+        spotifyImageField.value = artist.image_url || '';
+        spotifyPopularityField.value = artist.popularity || '';
+        spotifyFollowersField.value = artist.followers || '';
+
+        // Hide Spotify results
+        spotifyInfo.style.display = 'none';
+        spotifyInfo.innerHTML = '';
+
+        // Update preview
+        updatePreview();
+        
+        // Show success message
+        fetchSpotifyBtn.textContent = '✓ Artist Data Loaded';
+        fetchSpotifyBtn.style.background = '#10b981';
+        
+        setTimeout(() => {
+            fetchSpotifyBtn.textContent = '🎵 Fetch from Spotify';
+            fetchSpotifyBtn.style.background = '';
+        }, 2000);
+    }
+
+    // Add event listeners
+    nameInput.addEventListener('input', updatePreview);
+    genresInput.addEventListener('input', updatePreview);
+    popularityInput.addEventListener('input', updatePreview);
+    
+    suggestNamesBtn.addEventListener('click', suggestNames);
+    fetchSpotifyBtn.addEventListener('click', fetchSpotifyData);
+    
+    // Initial update
+    updatePreview();
+});
+</script>
+{% endblock %}

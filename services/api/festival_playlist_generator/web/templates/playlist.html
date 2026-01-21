@@ -1,0 +1,366 @@
+{% extends "base.html" %}
+
+{% block title %}{{ playlist.name }} - Festival Playlist Generator{% endblock %}
+
+{% block content %}
+<!-- Playlist Header -->
+<section class="playlist-header">
+    <div class="playlist-info">
+        <h2 class="playlist-title">{{ playlist.name }}</h2>
+        <p class="playlist-description">{{ playlist.description }}</p>
+        <div class="playlist-meta">
+            <span class="playlist-count">{{ playlist.songs|length }} songs</span>
+            {% if playlist.festival_id %}
+            <span class="playlist-type">Festival Playlist</span>
+            {% else %}
+            <span class="playlist-type">Artist Playlist</span>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Playlist Actions -->
+    <div class="playlist-actions">
+        <button class="btn btn-primary" id="export-playlist-btn">
+            🎵 Export to Streaming
+        </button>
+        <button class="btn btn-secondary" id="toggle-known-btn">
+            👁️ Hide Known Songs
+        </button>
+        <button class="btn btn-secondary" id="share-playlist-btn">
+            📤 Share
+        </button>
+        <a href="/streaming" class="btn btn-secondary">
+            🔗 Manage Connections
+        </a>
+    </div>
+</section>
+
+<!-- Song Filters -->
+<section class="song-filters">
+    <div class="filter-tabs">
+        <button class="filter-tab active" data-filter="all">All Songs</button>
+        <button class="filter-tab" data-filter="unknown">Unknown Only</button>
+        <button class="filter-tab" data-filter="known">Known Only</button>
+    </div>
+    
+    <div class="filter-controls">
+        <input 
+            type="text" 
+            id="song-search" 
+            class="filter-input" 
+            placeholder="Search songs or artists..."
+        >
+        <select id="artist-filter" class="filter-select">
+            <option value="">All Artists</option>
+            <!-- Artists will be populated dynamically -->
+        </select>
+    </div>
+</section>
+
+<!-- Songs List -->
+<section class="songs-list">
+    <div class="songs-container" id="songs-container">
+        {% for song in playlist.songs %}
+        <div class="song-item" data-song-id="{{ song.id }}" data-known="false">
+            <div class="song-checkbox">
+                <input 
+                    type="checkbox" 
+                    id="song-{{ song.id }}" 
+                    class="song-known-checkbox"
+                    onchange="toggleSongKnown('{{ song.id }}', this.checked)"
+                >
+                <label for="song-{{ song.id }}" class="checkbox-label"></label>
+            </div>
+            
+            <div class="song-info">
+                <h4 class="song-title">{{ song.title }}</h4>
+                <p class="song-artist">{{ song.artist }}</p>
+                {% if song.is_cover %}
+                <p class="song-cover-info">Cover of {{ song.original_artist }}</p>
+                {% endif %}
+            </div>
+            
+            <div class="song-meta">
+                <span class="song-frequency">{{ song.performance_count }} plays</span>
+                <button class="song-action-btn" onclick="previewSong('{{ song.id }}')">
+                    ▶️
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Empty State -->
+    <div id="empty-state" class="empty-state" style="display: none;">
+        <p>No songs match your current filters.</p>
+    </div>
+</section>
+
+<!-- Export Modal -->
+<div id="export-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Export to Streaming Service</h3>
+            <button class="modal-close" onclick="closeExportModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p>Choose your preferred streaming service:</p>
+            <div class="streaming-options">
+                <button class="streaming-btn" data-streaming-platform="spotify">
+                    <img src="/static/images/spotify-icon.png" alt="Spotify" class="streaming-icon">
+                    <div>
+                        <div>Spotify</div>
+                        <small>World's largest music platform</small>
+                    </div>
+                </button>
+                <button class="streaming-btn" data-streaming-platform="youtube_music">
+                    <img src="/static/images/youtube-music-icon.png" alt="YouTube Music" class="streaming-icon">
+                    <div>
+                        <div>YouTube Music</div>
+                        <small>Music streaming by Google</small>
+                    </div>
+                </button>
+                <button class="streaming-btn" data-streaming-platform="apple_music">
+                    <img src="/static/images/apple-music-icon.png" alt="Apple Music" class="streaming-icon">
+                    <div>
+                        <div>Apple Music</div>
+                        <small>Apple's music service</small>
+                    </div>
+                </button>
+                <button class="streaming-btn" data-streaming-platform="youtube">
+                    <img src="/static/images/youtube-icon.png" alt="YouTube" class="streaming-icon">
+                    <div>
+                        <div>YouTube</div>
+                        <small>Music videos & performances</small>
+                    </div>
+                </button>
+            </div>
+            <div style="margin-top: 1rem; text-align: center;">
+                <a href="/streaming" class="btn btn-secondary btn-small">
+                    Manage Streaming Connections
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentFilter = 'all';
+let knownSongs = new Set();
+let hideKnownSongs = false;
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadUserPreferences();
+    setupEventListeners();
+    populateArtistFilter();
+});
+
+function setupEventListeners() {
+    // Filter tabs
+    document.querySelectorAll('.filter-tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+            document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+            currentFilter = this.dataset.filter;
+            filterSongs();
+        });
+    });
+    
+    // Search input
+    document.getElementById('song-search').addEventListener('input', filterSongs);
+    
+    // Artist filter
+    document.getElementById('artist-filter').addEventListener('change', filterSongs);
+    
+    // Toggle known songs button
+    document.getElementById('toggle-known-btn').addEventListener('click', function() {
+        hideKnownSongs = !hideKnownSongs;
+        this.textContent = hideKnownSongs ? '👁️ Show Known Songs' : '👁️ Hide Known Songs';
+        filterSongs();
+    });
+    
+    // Export button
+    document.getElementById('export-playlist-btn').addEventListener('click', function() {
+        document.getElementById('export-modal').style.display = 'flex';
+    });
+    
+    // Share button
+    document.getElementById('share-playlist-btn').addEventListener('click', sharePlaylist);
+}
+
+async function loadUserPreferences() {
+    try {
+        const response = await fetch('/api/v1/user/preferences');
+        if (response.ok) {
+            const data = await response.json();
+            knownSongs = new Set(data.known_songs || []);
+            
+            // Update checkboxes
+            knownSongs.forEach(songId => {
+                const checkbox = document.getElementById(`song-${songId}`);
+                if (checkbox) {
+                    checkbox.checked = true;
+                    checkbox.closest('.song-item').dataset.known = 'true';
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Error loading user preferences:', error);
+    }
+}
+
+async function toggleSongKnown(songId, isKnown) {
+    try {
+        const response = await fetch('/api/v1/user/preferences/song', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                song_id: songId,
+                is_known: isKnown
+            })
+        });
+        
+        if (response.ok) {
+            const songItem = document.querySelector(`[data-song-id="${songId}"]`);
+            songItem.dataset.known = isKnown.toString();
+            
+            if (isKnown) {
+                knownSongs.add(songId);
+            } else {
+                knownSongs.delete(songId);
+            }
+            
+            filterSongs();
+        }
+    } catch (error) {
+        console.error('Error updating song preference:', error);
+    }
+}
+
+function populateArtistFilter() {
+    const artists = new Set();
+    document.querySelectorAll('.song-artist').forEach(element => {
+        artists.add(element.textContent);
+    });
+    
+    const artistFilter = document.getElementById('artist-filter');
+    Array.from(artists).sort().forEach(artist => {
+        const option = document.createElement('option');
+        option.value = artist;
+        option.textContent = artist;
+        artistFilter.appendChild(option);
+    });
+}
+
+function filterSongs() {
+    const searchTerm = document.getElementById('song-search').value.toLowerCase();
+    const artistFilter = document.getElementById('artist-filter').value;
+    const songItems = document.querySelectorAll('.song-item');
+    let visibleCount = 0;
+    
+    songItems.forEach(item => {
+        const songTitle = item.querySelector('.song-title').textContent.toLowerCase();
+        const songArtist = item.querySelector('.song-artist').textContent;
+        const isKnown = item.dataset.known === 'true';
+        
+        let shouldShow = true;
+        
+        // Apply search filter
+        if (searchTerm && !songTitle.includes(searchTerm) && !songArtist.toLowerCase().includes(searchTerm)) {
+            shouldShow = false;
+        }
+        
+        // Apply artist filter
+        if (artistFilter && songArtist !== artistFilter) {
+            shouldShow = false;
+        }
+        
+        // Apply known/unknown filter
+        if (currentFilter === 'known' && !isKnown) {
+            shouldShow = false;
+        } else if (currentFilter === 'unknown' && isKnown) {
+            shouldShow = false;
+        }
+        
+        // Apply hide known songs toggle
+        if (hideKnownSongs && isKnown) {
+            shouldShow = false;
+        }
+        
+        item.style.display = shouldShow ? 'flex' : 'none';
+        if (shouldShow) visibleCount++;
+    });
+    
+    // Show/hide empty state
+    document.getElementById('empty-state').style.display = visibleCount === 0 ? 'block' : 'none';
+}
+
+function previewSong(songId) {
+    // This would integrate with a music preview service
+    console.log('Preview song:', songId);
+    // For now, just show an alert
+    alert('Song preview feature coming soon!');
+}
+
+function closeExportModal() {
+    document.getElementById('export-modal').style.display = 'none';
+}
+
+async function exportToStreaming(platform) {
+    try {
+        closeExportModal();
+        
+        // Show loading state
+        const exportBtn = document.getElementById('export-playlist-btn');
+        const originalText = exportBtn.textContent;
+        exportBtn.textContent = '🔄 Exporting...';
+        exportBtn.disabled = true;
+        
+        const response = await fetch(`/api/v1/streaming/${platform}/create-playlist`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                playlist_id: '{{ playlist.id }}'
+            })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            alert(`Playlist exported successfully to ${platform}!`);
+        } else {
+            throw new Error('Export failed');
+        }
+        
+    } catch (error) {
+        console.error('Error exporting playlist:', error);
+        alert('Unable to export playlist. Please try again.');
+    } finally {
+        // Reset button
+        exportBtn.textContent = originalText;
+        exportBtn.disabled = false;
+    }
+}
+
+function sharePlaylist() {
+    const url = window.location.href;
+    if (navigator.share) {
+        navigator.share({
+            title: '{{ playlist.name }}',
+            text: '{{ playlist.description }}',
+            url: url
+        });
+    } else {
+        // Fallback: copy to clipboard
+        navigator.clipboard.writeText(url).then(() => {
+            alert('Playlist link copied to clipboard!');
+        });
+    }
+}
+</script>
+{% endblock %}

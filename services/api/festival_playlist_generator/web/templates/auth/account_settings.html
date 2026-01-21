@@ -1,0 +1,786 @@
+{% extends "base.html" %}
+
+{% block title %}Account Settings - Festival Playlist Generator{% endblock %}
+
+{% block head %}
+<style>
+.settings-container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 0;
+}
+
+.settings-header {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.settings-header h1 {
+    margin: 0 0 0.5rem 0;
+    color: #1f2937;
+    font-size: 1.5rem;
+}
+
+.settings-header p {
+    margin: 0;
+    color: #6b7280;
+}
+
+.settings-nav {
+    background: white;
+    border-bottom: 1px solid #e5e7eb;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.settings-nav-list {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+.settings-nav-item {
+    flex-shrink: 0;
+}
+
+.settings-nav-link {
+    display: block;
+    padding: 1rem 1.5rem;
+    color: #6b7280;
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.settings-nav-link:hover {
+    color: #374151;
+    background: #f8fafc;
+}
+
+.settings-nav-link.active {
+    color: #6366f1;
+    border-bottom-color: #6366f1;
+    background: #f8fafc;
+}
+
+.settings-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 0 0 12px 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.settings-section {
+    display: none;
+}
+
+.settings-section.active {
+    display: block;
+}
+
+.section-header {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.section-header h2 {
+    margin: 0 0 0.5rem 0;
+    color: #1f2937;
+    font-size: 1.25rem;
+}
+
+.section-header p {
+    margin: 0;
+    color: #6b7280;
+    font-size: 0.9rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #374151;
+}
+
+.form-input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    transition: border-color 0.2s ease;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.form-input:disabled {
+    background: #f9fafb;
+    color: #6b7280;
+}
+
+.form-help {
+    margin-top: 0.25rem;
+    font-size: 0.8rem;
+    color: #6b7280;
+}
+
+.toggle-group {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 1rem;
+    background: #f8fafc;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.toggle-info {
+    flex: 1;
+    margin-right: 1rem;
+}
+
+.toggle-title {
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.25rem;
+}
+
+.toggle-description {
+    font-size: 0.85rem;
+    color: #6b7280;
+    line-height: 1.4;
+}
+
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 48px;
+    height: 28px;
+    flex-shrink: 0;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #d1d5db;
+    transition: .3s;
+    border-radius: 28px;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .3s;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+input:checked + .toggle-slider {
+    background-color: #6366f1;
+}
+
+input:checked + .toggle-slider:before {
+    transform: translateX(20px);
+}
+
+.connected-accounts {
+    display: grid;
+    gap: 1rem;
+}
+
+.connected-account {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: #f8fafc;
+}
+
+.account-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.account-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+}
+
+.account-details h4 {
+    margin: 0 0 0.25rem 0;
+    color: #1f2937;
+    font-size: 0.9rem;
+}
+
+.account-details p {
+    margin: 0;
+    color: #6b7280;
+    font-size: 0.8rem;
+}
+
+.account-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+}
+
+.status-connected {
+    color: #059669;
+}
+
+.status-disconnected {
+    color: #dc2626;
+}
+
+.btn {
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+}
+
+.btn-primary {
+    background: #6366f1;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #5856eb;
+}
+
+.btn-secondary {
+    background: #f3f4f6;
+    color: #374151;
+    border: 1px solid #d1d5db;
+}
+
+.btn-secondary:hover {
+    background: #e5e7eb;
+}
+
+.btn-danger {
+    background: #ef4444;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #dc2626;
+}
+
+.btn-sm {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.8rem;
+}
+
+.danger-zone {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    background: #fef2f2;
+}
+
+.danger-zone h3 {
+    color: #dc2626;
+    margin: 0 0 0.5rem 0;
+    font-size: 1.1rem;
+}
+
+.danger-zone p {
+    color: #7f1d1d;
+    margin: 0 0 1rem 0;
+    font-size: 0.9rem;
+}
+
+.success-message {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #166534;
+    padding: 0.75rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+
+.error-message {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #dc2626;
+    padding: 0.75rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+    .settings-container {
+        margin: 1rem;
+    }
+    
+    .settings-header,
+    .settings-content {
+        padding: 1.5rem;
+    }
+    
+    .settings-nav-link {
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+    }
+    
+    .toggle-group {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .toggle-info {
+        margin-right: 0;
+    }
+    
+    .connected-account {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="settings-container">
+    <div class="settings-header">
+        <h1>Account Settings</h1>
+        <p>Manage your account preferences, privacy settings, and connected services</p>
+    </div>
+    
+    <nav class="settings-nav">
+        <ul class="settings-nav-list">
+            <li class="settings-nav-item">
+                <a href="#profile" class="settings-nav-link active" data-section="profile">Profile</a>
+            </li>
+            <li class="settings-nav-item">
+                <a href="#privacy" class="settings-nav-link" data-section="privacy">Privacy</a>
+            </li>
+            <li class="settings-nav-item">
+                <a href="#connected" class="settings-nav-link" data-section="connected">Connected Accounts</a>
+            </li>
+            <li class="settings-nav-item">
+                <a href="#data" class="settings-nav-link" data-section="data">Data & Export</a>
+            </li>
+            <li class="settings-nav-item">
+                <a href="#danger" class="settings-nav-link" data-section="danger">Account</a>
+            </li>
+        </ul>
+    </nav>
+    
+    <div class="settings-content">
+        <!-- Profile Section -->
+        <div id="profile-section" class="settings-section active">
+            <div class="section-header">
+                <h2>Profile Information</h2>
+                <p>Update your personal information and profile settings</p>
+            </div>
+            
+            <form id="profile-form">
+                <div class="form-group">
+                    <label class="form-label" for="display-name">Display Name</label>
+                    <input type="text" id="display-name" class="form-input" value="{{ user.display_name or '' }}" placeholder="Enter your display name">
+                    <div class="form-help">This is how your name will appear to other users</div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="email">Email Address</label>
+                    <input type="email" id="email" class="form-input" value="{{ user.email }}" disabled>
+                    <div class="form-help">Email cannot be changed as it's linked to your OAuth provider</div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">OAuth Provider</label>
+                    <div class="connected-account">
+                        <div class="account-info">
+                            <div class="account-icon">
+                                {% if user.oauth_provider == 'google' %}
+                                    🔍
+                                {% elif user.oauth_provider == 'spotify' %}
+                                    🎵
+                                {% elif user.oauth_provider == 'apple' %}
+                                    🍎
+                                {% elif user.oauth_provider == 'youtube' %}
+                                    📺
+                                {% elif user.oauth_provider == 'x' %}
+                                    🐦
+                                {% endif %}
+                            </div>
+                            <div class="account-details">
+                                <h4>
+                                    {% if user.oauth_provider == 'google' %}
+                                        Google
+                                    {% elif user.oauth_provider == 'spotify' %}
+                                        Spotify
+                                    {% elif user.oauth_provider == 'apple' %}
+                                        Apple
+                                    {% elif user.oauth_provider == 'youtube' %}
+                                        YouTube
+                                    {% elif user.oauth_provider == 'x' %}
+                                        X (Twitter)
+                                    {% endif %}
+                                </h4>
+                                <p>Connected on {{ user.created_at.strftime('%B %d, %Y') }}</p>
+                            </div>
+                        </div>
+                        <div class="account-status status-connected">
+                            ✓ Connected
+                        </div>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </form>
+        </div>
+        
+        <!-- Privacy Section -->
+        <div id="privacy-section" class="settings-section">
+            <div class="section-header">
+                <h2>Privacy & Communications</h2>
+                <p>Control how we use your data and communicate with you</p>
+            </div>
+            
+            <form id="privacy-form">
+                <div class="toggle-group">
+                    <div class="toggle-info">
+                        <div class="toggle-title">Marketing Communications</div>
+                        <div class="toggle-description">
+                            Receive promotional emails about new features, festivals, and special offers. 
+                            You can unsubscribe at any time.
+                        </div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="marketing-toggle" {{ 'checked' if user.marketing_opt_in else '' }}>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                
+                <div class="toggle-group">
+                    <div class="toggle-info">
+                        <div class="toggle-title">Usage Analytics</div>
+                        <div class="toggle-description">
+                            Help us improve the service by sharing anonymous usage data. 
+                            This helps us understand how features are used and identify areas for improvement.
+                        </div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="analytics-toggle" {{ 'checked' if user.preferences.get('analytics_opt_in', True) else '' }}>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                
+                <div class="toggle-group">
+                    <div class="toggle-info">
+                        <div class="toggle-title">Festival Notifications</div>
+                        <div class="toggle-description">
+                            Get notified when new festivals are added or when artists you follow are announced for festivals.
+                        </div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="festival-notifications-toggle" {{ 'checked' if user.preferences.get('festival_notifications', True) else '' }}>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Save Privacy Settings</button>
+            </form>
+        </div>
+        
+        <!-- Connected Accounts Section -->
+        <div id="connected-section" class="settings-section">
+            <div class="section-header">
+                <h2>Connected Streaming Services</h2>
+                <p>Manage your connected streaming platforms for playlist creation</p>
+            </div>
+            
+            <div class="connected-accounts">
+                <div class="connected-account">
+                    <div class="account-info">
+                        <div class="account-icon" style="background: #1DB954; color: white;">🎵</div>
+                        <div class="account-details">
+                            <h4>Spotify</h4>
+                            <p>Create playlists on Spotify</p>
+                        </div>
+                    </div>
+                    <div class="account-status">
+                        {% if 'spotify' in user.connected_platforms %}
+                            <span class="status-connected">✓ Connected</span>
+                            <button class="btn btn-secondary btn-sm" onclick="disconnectService('spotify')">Disconnect</button>
+                        {% else %}
+                            <span class="status-disconnected">Not connected</span>
+                            <button class="btn btn-primary btn-sm" onclick="connectService('spotify')">Connect</button>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="connected-account">
+                    <div class="account-info">
+                        <div class="account-icon" style="background: #FF0000; color: white;">📺</div>
+                        <div class="account-details">
+                            <h4>YouTube Music</h4>
+                            <p>Create playlists on YouTube Music</p>
+                        </div>
+                    </div>
+                    <div class="account-status">
+                        {% if 'youtube_music' in user.connected_platforms %}
+                            <span class="status-connected">✓ Connected</span>
+                            <button class="btn btn-secondary btn-sm" onclick="disconnectService('youtube_music')">Disconnect</button>
+                        {% else %}
+                            <span class="status-disconnected">Not connected</span>
+                            <button class="btn btn-primary btn-sm" onclick="connectService('youtube_music')">Connect</button>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="connected-account">
+                    <div class="account-info">
+                        <div class="account-icon" style="background: #000000; color: white;">🍎</div>
+                        <div class="account-details">
+                            <h4>Apple Music</h4>
+                            <p>Create playlists on Apple Music</p>
+                        </div>
+                    </div>
+                    <div class="account-status">
+                        {% if 'apple_music' in user.connected_platforms %}
+                            <span class="status-connected">✓ Connected</span>
+                            <button class="btn btn-secondary btn-sm" onclick="disconnectService('apple_music')">Disconnect</button>
+                        {% else %}
+                            <span class="status-disconnected">Not connected</span>
+                            <button class="btn btn-primary btn-sm" onclick="connectService('apple_music')">Connect</button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Data & Export Section -->
+        <div id="data-section" class="settings-section">
+            <div class="section-header">
+                <h2>Data Management</h2>
+                <p>Export your data or manage your account information</p>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Export Your Data</label>
+                <p class="form-help">Download a copy of all your data including playlists, preferences, and account information.</p>
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <a href="/auth/export-data?format=json" class="btn btn-secondary">Export as JSON</a>
+                    <a href="/auth/export-data?format=csv" class="btn btn-secondary">Export as CSV</a>
+                    <a href="/auth/export-data?format=xml" class="btn btn-secondary">Export as XML</a>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Account Statistics</label>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-top: 0.5rem;">
+                    <div style="padding: 1rem; background: #f8fafc; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: bold; color: #6366f1;">{{ user.festival_history|length }}</div>
+                        <div style="font-size: 0.8rem; color: #6b7280;">Festivals</div>
+                    </div>
+                    <div style="padding: 1rem; background: #f8fafc; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: bold; color: #6366f1;">{{ user.known_songs|length }}</div>
+                        <div style="font-size: 0.8rem; color: #6b7280;">Songs Marked</div>
+                    </div>
+                    <div style="padding: 1rem; background: #f8fafc; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: bold; color: #6366f1;">{{ user.connected_platforms|length }}</div>
+                        <div style="font-size: 0.8rem; color: #6b7280;">Connected Services</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Danger Zone Section -->
+        <div id="danger-section" class="settings-section">
+            <div class="section-header">
+                <h2>Account Management</h2>
+                <p>Manage your account and data</p>
+            </div>
+            
+            <div class="danger-zone">
+                <h3>Delete Account</h3>
+                <p>
+                    Permanently delete your account and all associated data. This action cannot be undone.
+                    All your playlists, preferences, and account information will be permanently removed.
+                </p>
+                <a href="/auth/delete-account" class="btn btn-danger">Delete My Account</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Tab navigation
+    const navLinks = document.querySelectorAll('.settings-nav-link');
+    const sections = document.querySelectorAll('.settings-section');
+    
+    navLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Remove active class from all links and sections
+            navLinks.forEach(l => l.classList.remove('active'));
+            sections.forEach(s => s.classList.remove('active'));
+            
+            // Add active class to clicked link
+            this.classList.add('active');
+            
+            // Show corresponding section
+            const sectionId = this.getAttribute('data-section') + '-section';
+            const section = document.getElementById(sectionId);
+            if (section) {
+                section.classList.add('active');
+            }
+            
+            // Update URL hash
+            window.history.replaceState(null, null, this.getAttribute('href'));
+        });
+    });
+    
+    // Handle initial hash
+    const hash = window.location.hash.substring(1);
+    if (hash) {
+        const link = document.querySelector(`[data-section="${hash}"]`);
+        if (link) {
+            link.click();
+        }
+    }
+    
+    // Profile form submission
+    const profileForm = document.getElementById('profile-form');
+    if (profileForm) {
+        profileForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData();
+            formData.append('display_name', document.getElementById('display-name').value);
+            
+            try {
+                const response = await fetch('/auth/profile', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    showMessage('Profile updated successfully!', 'success');
+                } else {
+                    showMessage('Failed to update profile. Please try again.', 'error');
+                }
+            } catch (error) {
+                showMessage('An error occurred. Please try again.', 'error');
+            }
+        });
+    }
+    
+    // Privacy form submission
+    const privacyForm = document.getElementById('privacy-form');
+    if (privacyForm) {
+        privacyForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData();
+            formData.append('marketing_opt_in', document.getElementById('marketing-toggle').checked);
+            formData.append('analytics_opt_in', document.getElementById('analytics-toggle').checked);
+            formData.append('festival_notifications', document.getElementById('festival-notifications-toggle').checked);
+            
+            try {
+                const response = await fetch('/auth/privacy-preferences', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    showMessage('Privacy settings updated successfully!', 'success');
+                } else {
+                    showMessage('Failed to update privacy settings. Please try again.', 'error');
+                }
+            } catch (error) {
+                showMessage('An error occurred. Please try again.', 'error');
+            }
+        });
+    }
+});
+
+function showMessage(message, type) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = type === 'success' ? 'success-message' : 'error-message';
+    messageDiv.textContent = message;
+    
+    const content = document.querySelector('.settings-content');
+    content.insertBefore(messageDiv, content.firstChild);
+    
+    setTimeout(() => messageDiv.remove(), 5000);
+}
+
+function connectService(service) {
+    // Redirect to streaming service connection
+    window.location.href = `/streaming/connect/${service}`;
+}
+
+function disconnectService(service) {
+    if (confirm(`Are you sure you want to disconnect ${service}?`)) {
+        fetch(`/streaming/disconnect/${service}`, {
+            method: 'POST'
+        }).then(response => {
+            if (response.ok) {
+                location.reload();
+            } else {
+                showMessage('Failed to disconnect service. Please try again.', 'error');
+            }
+        }).catch(error => {
+            showMessage('An error occurred. Please try again.', 'error');
+        });
+    }
+}
+</script>
+{% endblock %}

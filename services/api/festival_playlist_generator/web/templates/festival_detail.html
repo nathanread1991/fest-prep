@@ -1,0 +1,552 @@
+{% extends "base.html" %}
+
+{% block title %}{{ festival.name }} - Festival Lineup{% endblock %}
+
+{% block content %}
+<style>
+:root {
+    /* Dynamic festival colors with fallbacks */
+    --festival-primary: {{ festival.primary_color or '#667eea' }};
+    --festival-secondary: {{ festival.secondary_color or '#764ba2' }};
+    --festival-text: {{ festival.text_color or '#ffffff' }};
+    --festival-accent: {{ festival.accent_colors[0] if festival.accent_colors else '#ffffff' }};
+}
+
+.festival-poster {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 3rem 2rem;
+    background: linear-gradient(135deg, var(--festival-primary) 0%, var(--festival-secondary) 100%);
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    color: var(--festival-text);
+    text-align: center;
+}
+
+.poster-header {
+    margin-bottom: 3rem;
+    border-bottom: 3px solid var(--festival-accent);
+    padding-bottom: 2rem;
+}
+
+.poster-title {
+    font-size: 3.5rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    margin: 0 0 1rem 0;
+    text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
+}
+
+.festival-logo {
+    max-width: 500px;
+    max-height: 200px;
+    width: auto;
+    height: auto;
+    margin: 0 auto 1rem;
+    display: block;
+    filter: drop-shadow(3px 3px 6px rgba(0,0,0,0.3));
+}
+
+.poster-meta {
+    font-size: 1.3rem;
+    opacity: 0.95;
+    font-weight: 500;
+}
+
+.poster-meta span {
+    margin: 0 1rem;
+}
+
+.lineup-section {
+    margin: 2rem 0;
+}
+
+.tier-separator {
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--festival-accent), transparent);
+    margin: 2rem 0;
+    opacity: 0.5;
+}
+
+.headliners-section {
+    margin: 2rem 0;
+}
+
+.sub-headliners-section {
+    margin: 2rem 0;
+}
+
+.mid-tier-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin: 2rem 0;
+}
+
+.lower-tier-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.8rem;
+    margin: 2rem 0;
+}
+
+.small-tier-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+    margin: 2rem 0;
+}
+
+.headliner {
+    font-size: 4rem;
+    font-weight: 900;
+    margin: 2rem 0;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-shadow: 4px 4px 8px rgba(0,0,0,0.4);
+    line-height: 1.2;
+    animation: pulse 2s ease-in-out infinite;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.headliner .artist-image {
+    max-width: 300px;
+    max-height: 300px;
+    width: auto;
+    height: auto;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    object-fit: cover;
+}
+
+.sub-headliners {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin: 1.5rem 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.sub-headliners .artist-image {
+    max-width: 200px;
+    max-height: 200px;
+    width: auto;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+    object-fit: cover;
+}
+
+.mid-tier {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin: 1rem 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.mid-tier .artist-image {
+    max-width: 120px;
+    max-height: 120px;
+    width: auto;
+    height: auto;
+    border-radius: 6px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    object-fit: cover;
+}
+
+.lower-tier {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin: 0.8rem 0;
+    text-transform: uppercase;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.lower-tier .artist-image {
+    max-width: 80px;
+    max-height: 80px;
+    width: auto;
+    height: auto;
+    border-radius: 4px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+    object-fit: cover;
+}
+
+.small-tier {
+    font-size: 1rem;
+    font-weight: 500;
+    margin: 0.5rem 0;
+    opacity: 0.9;
+}
+
+.artist-name {
+    display: inline-block;
+    padding: 0.3rem 0;
+    transition: transform 0.2s;
+    cursor: pointer;
+}
+
+.artist-name:hover {
+    transform: scale(1.05);
+    text-shadow: 0 0 20px rgba(255,255,255,0.8);
+}
+
+.artist-stats {
+    font-size: 0.7em;
+    opacity: 0.7;
+    font-weight: normal;
+    margin-left: 0.5rem;
+}
+
+.poster-actions {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 2px solid var(--festival-accent);
+}
+
+.btn-poster {
+    background: var(--festival-text);
+    color: var(--festival-primary);
+    border: none;
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    border-radius: 50px;
+    cursor: pointer;
+    margin: 0.5rem;
+    transition: all 0.3s;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.btn-poster:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+}
+
+.btn-poster.secondary {
+    background: transparent;
+    color: var(--festival-text);
+    border: 2px solid var(--festival-text);
+}
+
+.artist-image {
+    transition: opacity 0.3s ease-in-out;
+}
+
+.artist-image.loading {
+    opacity: 0.3;
+    background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.8; }
+}
+
+@media (max-width: 768px) {
+    .poster-title { font-size: 2rem; }
+    .festival-logo { max-width: 300px; max-height: 120px; }
+    .headliner { font-size: 2.5rem; }
+    .sub-headliners { font-size: 1.8rem; }
+    .mid-tier { font-size: 1.3rem; }
+    .lower-tier { font-size: 1rem; }
+    .small-tier { font-size: 0.9rem; }
+}
+</style>
+
+<div class="festival-poster">
+    <div class="poster-header">
+        {% if festival_logo %}
+            <img data-src="{{ festival_logo }}" 
+                 class="festival-logo loading" 
+                 alt="{{ festival.name }} logo" 
+                 onerror="this.style.display='none'; var titleEl = document.getElementById('festival-title-{{ festival.id }}'); if(titleEl) titleEl.style.display='block';">
+            <h1 id="festival-title-{{ festival.id }}" class="poster-title" style="display: none;">{{ festival.name }}</h1>
+        {% else %}
+            <h1 class="poster-title">{{ festival.name }}</h1>
+        {% endif %}
+        <div class="poster-meta">
+            {% if festival.dates %}
+                <span>📅 {{ festival.dates[0].strftime('%B %d') }}{% if festival.dates|length > 1 %} - {{ festival.dates[-1].strftime('%d, %Y') }}{% else %}, {{ festival.dates[0].strftime('%Y') }}{% endif %}</span>
+            {% endif %}
+            {% if festival.location %}
+                <span>📍 {{ festival.location }}</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="lineup-section">
+        {% if sorted_artists %}
+            {# Group artists by tier #}
+            {% set headliners = [] %}
+            {% set sub_headliners = [] %}
+            {% set mid_tier = [] %}
+            {% set lower_tier = [] %}
+            {% set small_tier = [] %}
+            
+            {% for artist in sorted_artists %}
+                {% set followers = artist.spotify_followers or 0 %}
+                {% if followers >= 5000000 %}
+                    {% set _ = headliners.append(artist) %}
+                {% elif followers >= 1000000 %}
+                    {% set _ = sub_headliners.append(artist) %}
+                {% elif followers >= 250000 %}
+                    {% set _ = mid_tier.append(artist) %}
+                {% elif followers >= 50000 %}
+                    {% set _ = lower_tier.append(artist) %}
+                {% else %}
+                    {% set _ = small_tier.append(artist) %}
+                {% endif %}
+            {% endfor %}
+            
+            {# Headliners Section #}
+            {% if headliners %}
+                <div class="headliners-section">
+                    {% for artist in headliners %}
+                        {% set followers = artist.spotify_followers or 0 %}
+                        {% set followers_millions = (followers / 1000000) | round(1) %}
+                        {% set image_url = artist.logo_url or artist.spotify_image_url %}
+                        <div class="headliner">
+                            {% if image_url %}
+                                <img data-src="{{ image_url }}" 
+                                     class="artist-image loading" 
+                                     alt="{{ artist.name }}"
+                                     onerror="this.style.display='none';">
+                            {% endif %}
+                            <span class="artist-name" onclick="window.location.href='/artists/{{ artist.id }}'">
+                                {{ artist.name }}
+                            </span>
+                            {% if followers > 0 %}
+                                <span class="artist-stats">{{ followers_millions }}M listeners</span>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+                {% if sub_headliners or mid_tier or lower_tier or small_tier %}
+                    <div class="tier-separator"></div>
+                {% endif %}
+            {% endif %}
+            
+            {# Sub-headliners Section #}
+            {% if sub_headliners %}
+                <div class="sub-headliners-section">
+                    {% for artist in sub_headliners %}
+                        {% set followers = artist.spotify_followers or 0 %}
+                        {% set followers_millions = (followers / 1000000) | round(1) %}
+                        {% set image_url = artist.logo_url or artist.spotify_image_url %}
+                        <div class="sub-headliners">
+                            {% if image_url %}
+                                <img data-src="{{ image_url }}" 
+                                     class="artist-image loading" 
+                                     alt="{{ artist.name }}"
+                                     onerror="this.style.display='none';">
+                            {% endif %}
+                            <span class="artist-name" onclick="window.location.href='/artists/{{ artist.id }}'">
+                                {{ artist.name }}
+                            </span>
+                            {% if followers > 0 %}
+                                <span class="artist-stats">{{ followers_millions }}M listeners</span>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+                {% if mid_tier or lower_tier or small_tier %}
+                    <div class="tier-separator"></div>
+                {% endif %}
+            {% endif %}
+            
+            {# Mid-tier Grid #}
+            {% if mid_tier %}
+                <div class="mid-tier-grid">
+                    {% for artist in mid_tier %}
+                        {% set followers = artist.spotify_followers or 0 %}
+                        {% set image_url = artist.logo_url or artist.spotify_image_url %}
+                        <div class="mid-tier">
+                            {% if image_url %}
+                                <img data-src="{{ image_url }}" 
+                                     class="artist-image loading" 
+                                     alt="{{ artist.name }}"
+                                     onerror="this.style.display='none';">
+                            {% endif %}
+                            <span class="artist-name" onclick="window.location.href='/artists/{{ artist.id }}'">
+                                {{ artist.name }}
+                            </span>
+                            {% if followers > 0 %}
+                                <span class="artist-stats">{{ (followers / 1000) | round(0) | int }}K listeners</span>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+                {% if lower_tier or small_tier %}
+                    <div class="tier-separator"></div>
+                {% endif %}
+            {% endif %}
+            
+            {# Lower-tier Grid #}
+            {% if lower_tier %}
+                <div class="lower-tier-grid">
+                    {% for artist in lower_tier %}
+                        {% set followers = artist.spotify_followers or 0 %}
+                        {% set image_url = artist.logo_url or artist.spotify_image_url %}
+                        <div class="lower-tier">
+                            {% if image_url %}
+                                <img data-src="{{ image_url }}" 
+                                     class="artist-image loading" 
+                                     alt="{{ artist.name }}"
+                                     onerror="this.style.display='none';">
+                            {% endif %}
+                            <span class="artist-name" onclick="window.location.href='/artists/{{ artist.id }}'">
+                                {{ artist.name }}
+                            </span>
+                            {% if followers > 0 %}
+                                <span class="artist-stats">{{ (followers / 1000) | round(0) | int }}K listeners</span>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+                {% if small_tier %}
+                    <div class="tier-separator"></div>
+                {% endif %}
+            {% endif %}
+            
+            {# Small-tier List #}
+            {% if small_tier %}
+                <div class="small-tier-list">
+                    {% for artist in small_tier %}
+                        {% set followers = artist.spotify_followers or 0 %}
+                        <div class="small-tier">
+                            <span class="artist-name" onclick="window.location.href='/artists/{{ artist.id }}'">
+                                {{ artist.name }}
+                            </span>
+                            {% if followers > 0 %}
+                                <span class="artist-stats">{{ (followers / 1000) | round(0) | int }}K listeners</span>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% else %}
+            <p style="font-size: 1.5rem; opacity: 0.8;">Lineup coming soon...</p>
+        {% endif %}
+    </div>
+
+    <div class="poster-actions">
+        <button class="btn-poster" onclick="generatePlaylist('{{ festival.id }}')">
+            🎵 Generate Playlist
+        </button>
+        <button class="btn-poster secondary" onclick="window.location.href='/festivals'">
+            ← Back to Festivals
+        </button>
+    </div>
+</div>
+
+<script>
+function generatePlaylist(festivalId) {
+    // Redirect to playlist generation
+    window.location.href = `/api/v1/festivals/${festivalId}/playlist`;
+}
+
+// Lazy loading implementation using Intersection Observer
+document.addEventListener('DOMContentLoaded', function() {
+    const imageObserver = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const img = entry.target;
+                const src = img.getAttribute('data-src');
+                
+                if (src) {
+                    // Add loading class
+                    img.classList.add('loading');
+                    
+                    // Load the image
+                    img.src = src;
+                    img.removeAttribute('data-src');
+                    
+                    // Remove loading class when image loads
+                    img.onload = function() {
+                        img.classList.remove('loading');
+                    };
+                    
+                    // Handle error - hide image and show text fallback
+                    img.onerror = function() {
+                        img.classList.remove('loading');
+                        img.style.display = 'none';
+                        
+                        // Log error for debugging
+                        console.error('Failed to load image:', src);
+                        
+                        // If this is a festival logo, show the title fallback
+                        if (img.classList.contains('festival-logo')) {
+                            const festivalId = '{{ festival.id }}';
+                            const titleElement = document.getElementById('festival-title-' + festivalId);
+                            if (titleElement) {
+                                titleElement.style.display = 'block';
+                            }
+                        }
+                        
+                        // For artist images, the text is already visible, just hide the broken image
+                        // This ensures no broken image icons are shown
+                    };
+                }
+                
+                // Stop observing this image
+                observer.unobserve(img);
+            }
+        });
+    }, {
+        rootMargin: '50px', // Start loading 50px before image enters viewport
+        threshold: 0.01
+    });
+    
+    // Observe all lazy-load images
+    const lazyImages = document.querySelectorAll('img[data-src]');
+    lazyImages.forEach(img => {
+        imageObserver.observe(img);
+    });
+    
+    // For browsers that don't support Intersection Observer, load all images immediately
+    if (!('IntersectionObserver' in window)) {
+        console.warn('IntersectionObserver not supported, loading all images immediately');
+        lazyImages.forEach(img => {
+            const src = img.getAttribute('data-src');
+            if (src) {
+                img.src = src;
+                img.removeAttribute('data-src');
+                
+                // Add error handler for fallback browsers too
+                img.onerror = function() {
+                    img.style.display = 'none';
+                    console.error('Failed to load image:', src);
+                };
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

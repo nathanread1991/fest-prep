@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In - Festival Playlist Generator{% endblock %}
+
+{% block head %}
+<style>
+.auth-container {
+    max-width: 400px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.auth-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.auth-header h2 {
+    color: #1f2937;
+    margin-bottom: 0.5rem;
+}
+
+.auth-header p {
+    color: #6b7280;
+    font-size: 0.9rem;
+}
+
+.oauth-providers {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.oauth-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    background: white;
+    color: #374151;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.oauth-button:hover {
+    border-color: #6366f1;
+    background: #f8fafc;
+    transform: translateY(-1px);
+}
+
+.oauth-button.google {
+    border-color: #db4437;
+}
+
+.oauth-button.google:hover {
+    border-color: #db4437;
+    background: #fef2f2;
+}
+
+.oauth-button.spotify {
+    border-color: #1db954;
+}
+
+.oauth-button.spotify:hover {
+    border-color: #1db954;
+    background: #f0fdf4;
+}
+
+.oauth-button.apple {
+    border-color: #000000;
+}
+
+.oauth-button.apple:hover {
+    border-color: #000000;
+    background: #f9fafb;
+}
+
+.oauth-button.youtube {
+    border-color: #ff0000;
+}
+
+.oauth-button.youtube:hover {
+    border-color: #ff0000;
+    background: #fef2f2;
+}
+
+.oauth-button.x {
+    border-color: #1da1f2;
+}
+
+.oauth-button.x:hover {
+    border-color: #1da1f2;
+    background: #eff6ff;
+}
+
+.oauth-button.coming-soon {
+    opacity: 0.6;
+    cursor: not-allowed;
+    position: relative;
+}
+
+.oauth-button.coming-soon:hover {
+    transform: none;
+}
+
+.coming-soon-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #f59e0b;
+    color: white;
+    font-size: 0.65rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.provider-icon {
+    width: 20px;
+    height: 20px;
+    font-size: 1.2rem;
+}
+
+.error-message {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #dc2626;
+    padding: 0.75rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+
+.privacy-notice {
+    margin-top: 2rem;
+    padding: 1rem;
+    background: #f8fafc;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    color: #6b7280;
+    text-align: center;
+}
+
+.privacy-notice a {
+    color: #6366f1;
+    text-decoration: none;
+}
+
+.privacy-notice a:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 480px) {
+    .auth-container {
+        margin: 1rem;
+        padding: 1.5rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-header">
+        <h2>Sign In to Festival Playlists</h2>
+        <p>Choose your preferred sign-in method</p>
+    </div>
+
+    {% if request.query_params.get('error') %}
+    <div class="error-message">
+        {% if request.query_params.get('error') == 'oauth_denied' %}
+            Authentication was cancelled. Please try again.
+        {% elif request.query_params.get('error') == 'invalid_callback' %}
+            Invalid authentication response. Please try again.
+        {% elif request.query_params.get('error') == 'auth_failed' %}
+            Authentication failed. Please check your credentials and try again.
+        {% else %}
+            An error occurred during sign-in. Please try again.
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="oauth-providers">
+        {% for provider in providers %}
+        <form method="post" action="/auth/login/{{ provider }}" {% if provider != 'google' %}onsubmit="return false;"{% endif %}>
+            <button type="submit" class="oauth-button {{ provider }} {% if provider != 'google' %}coming-soon{% endif %}" {% if provider != 'google' %}disabled{% endif %}>
+                {% if provider != 'google' %}
+                <span class="coming-soon-badge">Coming Soon</span>
+                {% endif %}
+                <span class="provider-icon">
+                    {% if provider == 'google' %}
+                        🔍
+                    {% elif provider == 'spotify' %}
+                        🎵
+                    {% elif provider == 'apple' %}
+                        🍎
+                    {% elif provider == 'youtube' %}
+                        📺
+                    {% elif provider == 'x' %}
+                        🐦
+                    {% endif %}
+                </span>
+                <span>
+                    Continue with 
+                    {% if provider == 'google' %}
+                        Google
+                    {% elif provider == 'spotify' %}
+                        Spotify
+                    {% elif provider == 'apple' %}
+                        Apple
+                    {% elif provider == 'youtube' %}
+                        YouTube
+                    {% elif provider == 'x' %}
+                        X (Twitter)
+                    {% endif %}
+                </span>
+            </button>
+        </form>
+        {% endfor %}
+    </div>
+
+    <div class="privacy-notice">
+        <p>
+            By signing in, you agree to our <a href="/terms">Terms of Service</a> 
+            and <a href="/privacy">Privacy Policy</a>. 
+        </p>
+        <p>
+            <strong>Privacy First:</strong> Marketing communications are opt-out by default. 
+            We'll only contact you about product updates and essential notifications.
+        </p>
+    </div>
+</div>
+
+{% if not providers %}
+<div class="auth-container">
+    <div class="error-message">
+        No OAuth providers are currently configured. Please contact the administrator.
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Add loading state to OAuth buttons
+document.addEventListener('DOMContentLoaded', function() {
+    const oauthForms = document.querySelectorAll('.oauth-providers form');
+    
+    oauthForms.forEach(form => {
+        form.addEventListener('submit', function() {
+            const button = this.querySelector('.oauth-button');
+            const originalText = button.innerHTML;
+            
+            button.innerHTML = `
+                <span class="provider-icon">⏳</span>
+                <span>Connecting...</span>
+            `;
+            button.disabled = true;
+            
+            // Re-enable after 10 seconds in case of issues
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }, 10000);
+        });
+    });
+});
+</script>
+{% endblock %}

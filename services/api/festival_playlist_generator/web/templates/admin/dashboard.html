@@ -1,0 +1,491 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Festival Playlist Generator{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="admin-header">
+        <h1>Admin Dashboard</h1>
+        <p>Welcome, {{ admin_user }}!</p>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-error">
+        <strong>Error:</strong> {{ error }}
+    </div>
+    {% endif %}
+
+    <div class="admin-stats">
+        <div class="stat-card">
+            <h3 id="festivals-count">{{ festivals_count }}</h3>
+            <p>Festivals</p>
+            <a href="/admin/festivals" class="btn btn-primary">Manage Festivals</a>
+        </div>
+        
+        <div class="stat-card">
+            <h3 id="artists-count">{{ artists_count }}</h3>
+            <p>Artists</p>
+            <a href="/admin/artists" class="btn btn-primary">Manage Artists</a>
+        </div>
+        
+        <div class="stat-card">
+            <h3 id="users-count">{{ users_count }}</h3>
+            <p>Users</p>
+            <a href="/admin/users" class="btn btn-primary">Manage Users</a>
+        </div>
+        
+        <div class="stat-card">
+            <h3 id="setlists-count">-</h3>
+            <p>Recent Setlists</p>
+            <button onclick="refreshRecentSetlists()" class="btn btn-primary">Refresh Data</button>
+        </div>
+    </div>
+
+    <div class="admin-actions">
+        <h2>Quick Actions</h2>
+        <div class="action-buttons">
+            <a href="/admin/festivals/new" class="btn btn-success">Add New Festival</a>
+            <a href="/admin/artists/new" class="btn btn-success">Add New Artist</a>
+            <a href="/admin/duplicates" class="btn btn-info">🔍 Find Duplicate Artists</a>
+            <button onclick="warmImageCache()" class="btn btn-warning" id="warm-cache-btn">
+                🔥 Warm Image Cache
+            </button>
+        </div>
+    </div>
+    
+    <div class="recent-setlists">
+        <h2>Recent Setlists</h2>
+        <div id="setlists-container">
+            <p>Loading recent setlists...</p>
+        </div>
+    </div>
+</div>
+
+<script>
+// Load recent setlists on page load
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Dashboard loaded, refreshing stats...');
+    // Always refresh stats on page load to ensure they're current
+    refreshAdminStats();
+    loadRecentSetlists();
+    
+    // Listen for storage events to update stats when other admin pages make changes
+    window.addEventListener('storage', function(e) {
+        if (e.key === 'admin_stats_updated') {
+            console.log('Storage event detected, refreshing stats...');
+            refreshAdminStats();
+        }
+    });
+    
+    // Listen for BroadcastChannel events (more reliable cross-tab communication)
+    if (typeof BroadcastChannel !== 'undefined') {
+        const channel = new BroadcastChannel('admin_updates');
+        channel.addEventListener('message', function(event) {
+            if (event.data.type === 'stats_updated') {
+                console.log('BroadcastChannel event detected, refreshing stats...');
+                refreshAdminStats();
+            }
+        });
+    }
+    
+    // Listen for custom events on the same tab
+    window.addEventListener('admin_stats_updated', function(event) {
+        console.log('Custom event detected, refreshing stats...');
+        refreshAdminStats();
+    });
+    
+    // Also listen for focus events to refresh stats when returning to the dashboard tab
+    window.addEventListener('focus', function() {
+        console.log('Dashboard tab focused, refreshing stats...');
+        refreshAdminStats();
+    });
+    
+    // Set up periodic refresh every 30 seconds to ensure stats stay current
+    setInterval(function() {
+        console.log('Periodic stats refresh...');
+        refreshAdminStats();
+    }, 30000);
+});
+
+async function refreshAdminStats() {
+    console.log('Fetching fresh admin stats...');
+    try {
+        // Add loading indicators
+        const festivalsCount = document.getElementById('festivals-count');
+        const artistsCount = document.getElementById('artists-count');
+        const usersCount = document.getElementById('users-count');
+        
+        if (festivalsCount) {
+            festivalsCount.style.opacity = '0.6';
+            festivalsCount.style.transform = 'scale(0.95)';
+        }
+        if (artistsCount) {
+            artistsCount.style.opacity = '0.6';
+            artistsCount.style.transform = 'scale(0.95)';
+        }
+        if (usersCount) {
+            usersCount.style.opacity = '0.6';
+            usersCount.style.transform = 'scale(0.95)';
+        }
+        
+        const response = await fetch('/admin/api/stats');
+        const data = await response.json();
+        
+        console.log('Stats API response:', data);
+        
+        if (data.success && data.data) {
+            // Update the stat cards with animation
+            if (festivalsCount) {
+                festivalsCount.textContent = data.data.festivals_count;
+                festivalsCount.style.opacity = '1';
+                festivalsCount.style.transform = 'scale(1)';
+                // Add a brief highlight effect
+                festivalsCount.style.background = '#e0f2fe';
+                setTimeout(() => {
+                    festivalsCount.style.background = '';
+                }, 1000);
+                console.log('Updated festivals count to:', data.data.festivals_count);
+            }
+            if (artistsCount) {
+                artistsCount.textContent = data.data.artists_count;
+                artistsCount.style.opacity = '1';
+                artistsCount.style.transform = 'scale(1)';
+                // Add a brief highlight effect
+                artistsCount.style.background = '#e0f2fe';
+                setTimeout(() => {
+                    artistsCount.style.background = '';
+                }, 1000);
+                console.log('Updated artists count to:', data.data.artists_count);
+            }
+            if (usersCount) {
+                usersCount.textContent = data.data.users_count;
+                usersCount.style.opacity = '1';
+                usersCount.style.transform = 'scale(1)';
+                // Add a brief highlight effect
+                usersCount.style.background = '#e0f2fe';
+                setTimeout(() => {
+                    usersCount.style.background = '';
+                }, 1000);
+                console.log('Updated users count to:', data.data.users_count);
+            }
+        }
+    } catch (error) {
+        console.error('Error refreshing admin stats:', error);
+        // Reset opacity and transform on error
+        const festivalsCount = document.getElementById('festivals-count');
+        const artistsCount = document.getElementById('artists-count');
+        const usersCount = document.getElementById('users-count');
+        if (festivalsCount) {
+            festivalsCount.style.opacity = '1';
+            festivalsCount.style.transform = 'scale(1)';
+        }
+        if (artistsCount) {
+            artistsCount.style.opacity = '1';
+            artistsCount.style.transform = 'scale(1)';
+        }
+        if (usersCount) {
+            usersCount.style.opacity = '1';
+            usersCount.style.transform = 'scale(1)';
+        }
+    }
+}
+
+async function loadRecentSetlists() {
+    const container = document.getElementById('setlists-container');
+    const countElement = document.getElementById('setlists-count');
+    
+    try {
+        const response = await fetch('/api/v1/setlists/?limit=10');
+        const data = await response.json();
+        
+        if (data.success && data.data) {
+            countElement.textContent = data.data.length;
+            
+            if (data.data.length > 0) {
+                container.innerHTML = data.data.map(setlist => `
+                    <div class="setlist-item">
+                        <div class="setlist-header">
+                            <strong>${setlist.artist_name}</strong>
+                            <span class="setlist-date">${setlist.date}</span>
+                        </div>
+                        <div class="setlist-venue">${setlist.venue}</div>
+                        <div class="setlist-songs">${setlist.song_count} songs</div>
+                    </div>
+                `).join('');
+            } else {
+                container.innerHTML = '<p>No recent setlists found.</p>';
+            }
+        } else {
+            container.innerHTML = '<p>Error loading setlists.</p>';
+            countElement.textContent = '0';
+        }
+    } catch (error) {
+        console.error('Error loading setlists:', error);
+        container.innerHTML = '<p>Error loading setlists.</p>';
+        countElement.textContent = '0';
+    }
+}
+
+async function refreshRecentSetlists() {
+    const container = document.getElementById('setlists-container');
+    container.innerHTML = '<p>Refreshing setlists data...</p>';
+    
+    try {
+        // Get all artists and refresh their setlists
+        const artistsResponse = await fetch('/api/v1/artists/?limit=5');
+        const artistsData = await artistsResponse.json();
+        
+        if (artistsData.success && artistsData.data) {
+            let refreshCount = 0;
+            
+            for (const artist of artistsData.data) {
+                try {
+                    const refreshResponse = await fetch(`/api/v1/setlists/refresh/${artist.id}`, {
+                        method: 'POST'
+                    });
+                    
+                    if (refreshResponse.ok) {
+                        refreshCount++;
+                    }
+                } catch (error) {
+                    console.error(`Error refreshing setlists for ${artist.name}:`, error);
+                }
+            }
+            
+            container.innerHTML = `<p>Refreshed setlists for ${refreshCount} artists. Reloading...</p>`;
+            
+            // Reload the setlists after a short delay
+            setTimeout(loadRecentSetlists, 2000);
+        } else {
+            container.innerHTML = '<p>Error refreshing setlists: No artists found.</p>';
+        }
+    } catch (error) {
+        console.error('Error refreshing setlists:', error);
+        container.innerHTML = '<p>Error refreshing setlists. Please try again later.</p>';
+    }
+}
+
+async function warmImageCache() {
+    const button = document.getElementById('warm-cache-btn');
+    const originalText = button.innerHTML;
+    
+    try {
+        // Disable button and show loading state
+        button.disabled = true;
+        button.innerHTML = '⏳ Warming cache...';
+        button.style.opacity = '0.6';
+        
+        const response = await fetch('/admin/api/cache/warm', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Show success message
+            button.innerHTML = '✅ Cache warmed!';
+            button.style.background = '#10b981';
+            
+            // Show detailed stats
+            const stats = data.data;
+            alert(
+                `Cache warming complete!\n\n` +
+                `Total images: ${stats.total_images}\n` +
+                `Successfully cached: ${stats.successful}\n` +
+                `Failed: ${stats.failed}\n` +
+                `Skipped: ${stats.skipped}`
+            );
+            
+            // Reset button after 3 seconds
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.style.background = '';
+                button.style.opacity = '1';
+                button.disabled = false;
+            }, 3000);
+        } else {
+            throw new Error(data.message || 'Failed to warm cache');
+        }
+    } catch (error) {
+        console.error('Error warming cache:', error);
+        button.innerHTML = '❌ Error';
+        button.style.background = '#ef4444';
+        alert(`Error warming cache: ${error.message}`);
+        
+        // Reset button after 3 seconds
+        setTimeout(() => {
+            button.innerHTML = originalText;
+            button.style.background = '';
+            button.style.opacity = '1';
+            button.disabled = false;
+        }, 3000);
+    }
+}
+</script>
+
+
+<style>
+.admin-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.admin-header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.admin-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.stat-card h3 {
+    font-size: 2.5em;
+    margin: 0;
+    color: #6366f1;
+    transition: opacity 0.3s ease, transform 0.3s ease, background-color 0.3s ease;
+    border-radius: 8px;
+    padding: 5px;
+}
+
+.stat-card p {
+    margin: 10px 0;
+    color: #666;
+    font-size: 1.1em;
+}
+
+.admin-actions {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.action-buttons {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: bold;
+    cursor: pointer;
+    display: inline-block;
+    transition: background-color 0.3s;
+}
+
+.btn-primary {
+    background: #6366f1;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #5856eb;
+}
+
+.btn-success {
+    background: #10b981;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #059669;
+}
+
+.btn-warning {
+    background: #f59e0b;
+    color: white;
+}
+
+.btn-warning:hover {
+    background: #d97706;
+}
+
+.btn-warning:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-info {
+    background: #3b82f6;
+    color: white;
+}
+
+.btn-info:hover {
+    background: #2563eb;
+}
+
+.alert {
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+}
+
+.alert-error {
+    background: #fee2e2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+}
+
+.recent-setlists {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-top: 20px;
+}
+
+.setlist-item {
+    padding: 15px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    background: #f9fafb;
+}
+
+.setlist-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.setlist-date {
+    color: #6b7280;
+    font-size: 0.9em;
+}
+
+.setlist-venue {
+    color: #374151;
+    font-size: 0.9em;
+    margin-bottom: 3px;
+}
+
+.setlist-songs {
+    color: #6b7280;
+    font-size: 0.8em;
+}
+</style>
+{% endblock %}

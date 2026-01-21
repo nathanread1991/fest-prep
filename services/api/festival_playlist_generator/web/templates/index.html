@@ -1,0 +1,312 @@
+{% extends "base.html" %}
+
+{% block title %}Festival Playlist Generator - Discover Music for Your Next Festival{% endblock %}
+
+{% block content %}
+<!-- Welcome Banner for New Users -->
+{% if welcome_new_user %}
+<div class="welcome-banner" id="welcome-banner">
+    <div class="welcome-content">
+        <div class="welcome-header">
+            <h3>🎉 Welcome to Festival Playlists!</h3>
+            <button class="welcome-close" onclick="closeWelcomeBanner()" aria-label="Close welcome banner">×</button>
+        </div>
+        <p>
+            You're all set! Your privacy preferences have been saved and you can change them anytime in your account settings.
+            Let's start discovering some amazing festival music!
+        </p>
+        <div class="welcome-actions">
+            <button class="btn btn-primary btn-sm" onclick="showFestivalSearch()">
+                🎪 Explore Festivals
+            </button>
+            <a href="/auth/settings" class="btn btn-secondary btn-sm">
+                ⚙️ Account Settings
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+.welcome-banner {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    animation: slideInDown 0.5s ease-out;
+}
+
+@keyframes slideInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.welcome-content {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.welcome-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.welcome-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+}
+
+.welcome-close {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease;
+}
+
+.welcome-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.welcome-content p {
+    margin: 0 0 1rem 0;
+    line-height: 1.5;
+    opacity: 0.95;
+}
+
+.welcome-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+}
+
+@media (max-width: 768px) {
+    .welcome-banner {
+        margin: 1rem;
+        padding: 1rem;
+    }
+    
+    .welcome-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .welcome-close {
+        align-self: flex-end;
+    }
+    
+    .welcome-actions {
+        flex-direction: column;
+    }
+}
+</style>
+{% endif %}
+
+<!-- Hero Section -->
+<section class="hero">
+    <div class="hero-content">
+        <h2 class="hero-title">Discover Your Festival Soundtrack</h2>
+        <p class="hero-subtitle">
+            Get ready for any festival with personalized playlists based on artists' recent setlists.
+            Never miss a song you should know!
+        </p>
+        
+        <!-- Search Form -->
+        <form class="search-form" id="festival-search-form">
+            <div class="search-input-group">
+                <input 
+                    type="text" 
+                    id="festival-search" 
+                    class="search-input" 
+                    placeholder="Search festivals or artists..."
+                    autocomplete="off"
+                >
+                <button type="submit" class="search-button">
+                    <span class="search-icon">🔍</span>
+                    Search
+                </button>
+            </div>
+        </form>
+        
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <button class="btn btn-primary" onclick="showFestivalSearch()">
+                🎪 Find Festivals
+            </button>
+            <button class="btn btn-secondary" onclick="showArtistSearch()">
+                🎤 Search Artists
+            </button>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="features">
+    <h3 class="section-title">How It Works</h3>
+    <div class="features-grid">
+        <div class="feature-card">
+            <div class="feature-icon">🎪</div>
+            <h4 class="feature-title">Find Festivals</h4>
+            <p class="feature-description">
+                Search for upcoming festivals and discover their lineups
+            </p>
+        </div>
+        
+        <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <h4 class="feature-title">Analyze Setlists</h4>
+            <p class="feature-description">
+                We analyze recent performances to predict what songs artists will play
+            </p>
+        </div>
+        
+        <div class="feature-card">
+            <div class="feature-icon">🎵</div>
+            <h4 class="feature-title">Create Playlists</h4>
+            <p class="feature-description">
+                Generate playlists on Spotify, Apple Music, or YouTube Music
+            </p>
+        </div>
+        
+        <div class="feature-card">
+            <div class="feature-icon">✅</div>
+            <h4 class="feature-title">Track Progress</h4>
+            <p class="feature-description">
+                Mark songs you know and focus on discovering new music
+            </p>
+        </div>
+    </div>
+</section>
+
+<!-- Recent Festivals -->
+<section class="recent-festivals">
+    <h3 class="section-title">Popular Festivals</h3>
+    <div class="festivals-grid" id="popular-festivals">
+        <!-- Festivals will be loaded dynamically -->
+        <div class="loading">Loading festivals...</div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Welcome banner functions
+function closeWelcomeBanner() {
+    const banner = document.getElementById('welcome-banner');
+    if (banner) {
+        banner.style.animation = 'slideOutUp 0.3s ease-in';
+        setTimeout(() => banner.remove(), 300);
+        
+        // Track welcome banner dismissal
+        if (typeof gtag !== 'undefined') {
+            gtag('event', 'welcome_banner_dismissed');
+        }
+    }
+}
+
+// Load popular festivals on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadPopularFestivals();
+    
+    // Auto-hide welcome banner after 10 seconds
+    const welcomeBanner = document.getElementById('welcome-banner');
+    if (welcomeBanner) {
+        setTimeout(() => {
+            closeWelcomeBanner();
+        }, 10000);
+        
+        // Track welcome banner view
+        if (typeof gtag !== 'undefined') {
+            gtag('event', 'welcome_banner_viewed');
+        }
+    }
+});
+
+// Add slideOutUp animation
+const indexStyle = document.createElement('style');
+indexStyle.textContent = `
+    @keyframes slideOutUp {
+        from {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        to {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+    }
+`;
+document.head.appendChild(indexStyle);
+
+function showFestivalSearch() {
+    document.getElementById('festival-search').placeholder = 'Search festivals...';
+    document.getElementById('festival-search').focus();
+}
+
+function showArtistSearch() {
+    document.getElementById('festival-search').placeholder = 'Search artists...';
+    document.getElementById('festival-search').focus();
+}
+
+async function loadPopularFestivals() {
+    try {
+        const response = await fetch('/api/v1/festivals?limit=6');
+        const data = await response.json();
+        
+        const container = document.getElementById('popular-festivals');
+        if (data.festivals && data.festivals.length > 0) {
+            container.innerHTML = data.festivals.map(festival => `
+                <div class="festival-card" onclick="viewFestival('${festival.id}')">
+                    <h4 class="festival-name">${festival.name}</h4>
+                    <p class="festival-location">${festival.location}</p>
+                    <p class="festival-dates">${formatDates(festival.dates)}</p>
+                    <p class="festival-artists">${festival.artists.slice(0, 3).join(', ')}${festival.artists.length > 3 ? '...' : ''}</p>
+                </div>
+            `).join('');
+        } else {
+            container.innerHTML = '<p class="no-results">No festivals found. Check back soon!</p>';
+        }
+    } catch (error) {
+        console.error('Error loading festivals:', error);
+        document.getElementById('popular-festivals').innerHTML = 
+            '<p class="error">Unable to load festivals. Please try again later.</p>';
+    }
+}
+
+function formatDates(dates) {
+    if (!dates || dates.length === 0) return 'Dates TBA';
+    const date = new Date(dates[0]);
+    return date.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric', 
+        year: 'numeric' 
+    });
+}
+
+function viewFestival(festivalId) {
+    window.location.href = `/festivals/${festivalId}`;
+}
+</script>
+{% endblock %}

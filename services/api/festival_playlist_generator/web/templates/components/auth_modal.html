@@ -1,0 +1,368 @@
+<!-- Authentication Modal Component -->
+<div id="auth-modal" class="auth-modal" style="display: none;">
+    <div class="auth-modal-overlay" id="auth-modal-overlay"></div>
+    <div class="auth-modal-content">
+        <div class="auth-modal-header">
+            <h2>Sign In to Festival Playlists</h2>
+            <button class="auth-modal-close" id="auth-modal-close" aria-label="Close modal">×</button>
+        </div>
+        
+        <div class="auth-modal-body">
+            <p class="auth-modal-subtitle">Choose your preferred sign-in method</p>
+            
+            <!-- Error message container -->
+            <div id="auth-modal-error" class="auth-error-message" style="display: none;"></div>
+            
+            <!-- OAuth providers -->
+            <div class="oauth-providers-modal">
+                <button class="oauth-button-modal google" data-provider="google">
+                    <span class="provider-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24">
+                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                        </svg>
+                    </span>
+                    <span>Continue with Google</span>
+                </button>
+                
+                <button class="oauth-button-modal spotify coming-soon" data-provider="spotify" disabled>
+                    <span class="coming-soon-badge-modal">Coming Soon</span>
+                    <span class="provider-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="#1DB954">
+                            <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.42 1.56-.299.421-1.02.599-1.559.3z"/>
+                        </svg>
+                    </span>
+                    <span>Continue with Spotify</span>
+                </button>
+                
+                <button class="oauth-button-modal apple coming-soon" data-provider="apple" disabled>
+                    <span class="coming-soon-badge-modal">Coming Soon</span>
+                    <span class="provider-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="#000000">
+                            <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                        </svg>
+                    </span>
+                    <span>Continue with Apple</span>
+                </button>
+                
+                <button class="oauth-button-modal youtube coming-soon" data-provider="youtube" disabled>
+                    <span class="coming-soon-badge-modal">Coming Soon</span>
+                    <span class="provider-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="#FF0000">
+                            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                        </svg>
+                    </span>
+                    <span>Continue with YouTube</span>
+                </button>
+                
+                <button class="oauth-button-modal x coming-soon" data-provider="x" disabled>
+                    <span class="coming-soon-badge-modal">Coming Soon</span>
+                    <span class="provider-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="#1DA1F2">
+                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                        </svg>
+                    </span>
+                    <span>Continue with X</span>
+                </button>
+            </div>
+            
+            <!-- Privacy notice -->
+            <div class="auth-privacy-notice">
+                <p>
+                    By signing in, you agree to our <a href="/terms" target="_blank">Terms of Service</a> 
+                    and <a href="/privacy" target="_blank">Privacy Policy</a>.
+                </p>
+                <p>
+                    <strong>Privacy First:</strong> Marketing communications are opt-out by default. 
+                    We'll only contact you about product updates and essential notifications.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Authentication Modal Styles */
+.auth-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.auth-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+}
+
+.auth-modal-content {
+    position: relative;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    max-width: 400px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.auth-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.5rem 1.5rem 0 1.5rem;
+    border-bottom: 1px solid #f1f5f9;
+    margin-bottom: 1.5rem;
+}
+
+.auth-modal-header h2 {
+    color: #1f2937;
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.auth-modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.auth-modal-close:hover {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.auth-modal-body {
+    padding: 0 1.5rem 1.5rem 1.5rem;
+}
+
+.auth-modal-subtitle {
+    color: #6b7280;
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.auth-error-message {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #dc2626;
+    padding: 0.75rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+
+.oauth-providers-modal {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.oauth-button-modal {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    background: white;
+    color: #374151;
+    font-weight: 500;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+}
+
+.oauth-button-modal:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.oauth-button-modal:active {
+    transform: translateY(0);
+}
+
+.oauth-button-modal.google {
+    border-color: #db4437;
+}
+
+.oauth-button-modal.google:hover {
+    border-color: #db4437;
+    background: #fef2f2;
+}
+
+.oauth-button-modal.spotify {
+    border-color: #1db954;
+}
+
+.oauth-button-modal.spotify:hover {
+    border-color: #1db954;
+    background: #f0fdf4;
+}
+
+.oauth-button-modal.apple {
+    border-color: #000000;
+}
+
+.oauth-button-modal.apple:hover {
+    border-color: #000000;
+    background: #f9fafb;
+}
+
+.oauth-button-modal.youtube {
+    border-color: #ff0000;
+}
+
+.oauth-button-modal.youtube:hover {
+    border-color: #ff0000;
+    background: #fef2f2;
+}
+
+.oauth-button-modal.x {
+    border-color: #1da1f2;
+}
+
+.oauth-button-modal.x:hover {
+    border-color: #1da1f2;
+    background: #eff6ff;
+}
+
+.oauth-button-modal.coming-soon {
+    opacity: 0.6;
+    cursor: not-allowed;
+    position: relative;
+}
+
+.oauth-button-modal.coming-soon:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.coming-soon-badge-modal {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #f59e0b;
+    color: white;
+    font-size: 0.65rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.provider-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+}
+
+.auth-privacy-notice {
+    font-size: 0.8rem;
+    color: #6b7280;
+    text-align: center;
+    line-height: 1.4;
+}
+
+.auth-privacy-notice p {
+    margin: 0.5rem 0;
+}
+
+.auth-privacy-notice a {
+    color: #6366f1;
+    text-decoration: none;
+}
+
+.auth-privacy-notice a:hover {
+    text-decoration: underline;
+}
+
+/* Loading state */
+.oauth-button-modal.loading {
+    opacity: 0.7;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.oauth-button-modal.loading .provider-icon {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Mobile responsive */
+@media (max-width: 480px) {
+    .auth-modal {
+        padding: 0.5rem;
+    }
+    
+    .auth-modal-content {
+        max-height: 95vh;
+    }
+    
+    .auth-modal-header {
+        padding: 1rem 1rem 0 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .auth-modal-header h2 {
+        font-size: 1.1rem;
+    }
+    
+    .auth-modal-body {
+        padding: 0 1rem 1rem 1rem;
+    }
+    
+    .oauth-button-modal {
+        padding: 0.875rem 1rem;
+        font-size: 0.85rem;
+    }
+}
+</style>

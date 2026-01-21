@@ -1,0 +1,393 @@
+name: Pull Request Validation
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'services/api/**'
+      - '.github/workflows/pr.yml'
+      - 'infrastructure/terraform/**'
+
+# Cancel in-progress runs for the same PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  # Job 1: Code Quality - Linting and Formatting
+  lint:
+    name: Code Quality (Linting & Formatting)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/api
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: services/api/requirements.txt
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install black isort flake8
+      
+      - name: Run Black (code formatting check)
+        run: |
+          black --check --diff .
+        continue-on-error: false
+      
+      - name: Run isort (import sorting check)
+        run: |
+          isort --check-only --diff .
+        continue-on-error: false
+      
+      - name: Run flake8 (linting)
+        run: |
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        continue-on-error: false
+
+  # Job 2: Type Checking
+  type-check:
+    name: Type Checking (mypy)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/api
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: services/api/requirements.txt
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install mypy types-redis types-requests
+      
+      - name: Run mypy
+        run: |
+          mypy festival_playlist_generator --ignore-missing-imports --no-strict-optional
+        continue-on-error: false
+
+  # Job 3: Security Scanning
+  security:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/api
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: services/api/requirements.txt
+      
+      - name: Install security tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install bandit safety
+      
+      - name: Run Bandit (security linter)
+        run: |
+          bandit -r festival_playlist_generator -f json -o bandit-report.json || true
+          bandit -r festival_playlist_generator -ll
+        continue-on-error: false
+      
+      - name: Run Safety (dependency vulnerability check)
+        run: |
+          pip install -r requirements.txt
+          safety check --json || true
+          safety check
+        continue-on-error: true  # Don't fail on safety warnings for now
+      
+      - name: Upload Bandit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandit-security-report
+          path: services/api/bandit-report.json
+          retention-days: 30
+
+  # Job 4: Unit Tests
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/api
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: services/api/requirements.txt
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest-cov
+      
+      - name: Run unit tests with coverage
+        run: |
+          pytest tests/ -m "not integration" \
+            --cov=festival_playlist_generator \
+            --cov-report=xml \
+            --cov-report=term \
+            --cov-report=html \
+            -v
+      
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: |
+            services/api/coverage.xml
+            services/api/htmlcov/
+          retention-days: 30
+      
+      - name: Check coverage threshold
+        run: |
+          coverage report --fail-under=80
+
+  # Job 5: Integration Tests
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/api
+    
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: services/api/requirements.txt
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest-cov
+      
+      - name: Wait for services to be ready
+        run: |
+          echo "Waiting for PostgreSQL..."
+          until pg_isready -h localhost -p 5432 -U test_user; do
+            sleep 1
+          done
+          echo "PostgreSQL is ready!"
+          
+          echo "Waiting for Redis..."
+          until redis-cli -h localhost -p 6379 ping; do
+            sleep 1
+          done
+          echo "Redis is ready!"
+      
+      - name: Run integration tests with coverage
+        env:
+          DATABASE_URL: postgresql+asyncpg://test_user:test_password@localhost:5432/test_db
+          REDIS_URL: redis://localhost:6379/0
+          ENVIRONMENT: test
+        run: |
+          pytest tests/ -m integration \
+            --cov=festival_playlist_generator \
+            --cov-report=xml \
+            --cov-report=term \
+            -v
+      
+      - name: Upload integration test coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-coverage-reports
+          path: services/api/coverage.xml
+          retention-days: 30
+
+  # Job 6: Upload Coverage to Codecov
+  upload-coverage:
+    name: Upload Coverage to Codecov
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests]
+    if: always()
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Download coverage reports
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-reports
+          path: coverage-reports
+      
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage-reports/coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+      
+      - name: Check combined coverage threshold
+        run: |
+          echo "Coverage threshold check completed"
+          # Note: Actual threshold enforcement happens in individual test jobs
+
+  # Job 7: Docker Build and Validation
+  docker-build:
+    name: Docker Build & Validation
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Validate Dockerfile
+        run: |
+          docker run --rm -i hadolint/hadolint < services/api/Dockerfile || true
+      
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: services/api
+          file: services/api/Dockerfile
+          push: false
+          tags: festival-api:pr-${{ github.event.pull_request.number }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          load: true
+      
+      - name: Test Docker image
+        run: |
+          # Run the container in detached mode
+          docker run -d --name test-container \
+            -e DATABASE_URL=postgresql://test:test@localhost/test \
+            -e REDIS_URL=redis://localhost:6379 \
+            -p 8000:8000 \
+            festival-api:pr-${{ github.event.pull_request.number }} \
+            sleep 30
+          
+          # Wait a moment for container to start
+          sleep 5
+          
+          # Check if container is running
+          docker ps | grep test-container
+          
+          # Clean up
+          docker stop test-container
+          docker rm test-container
+      
+      - name: Scan Docker image for vulnerabilities
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: festival-api:pr-${{ github.event.pull_request.number }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '0'  # Don't fail on vulnerabilities for now
+      
+      - name: Upload Trivy scan results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trivy-scan-results
+          path: trivy-results.sarif
+          retention-days: 30
+
+  # Summary job to check all quality gates
+  quality-gate:
+    name: Quality Gate Summary
+    runs-on: ubuntu-latest
+    needs: [lint, type-check, security, unit-tests, integration-tests, docker-build]
+    if: always()
+    
+    steps:
+      - name: Check quality gate status
+        run: |
+          if [ "${{ needs.lint.result }}" != "success" ]; then
+            echo "❌ Linting failed"
+            exit 1
+          fi
+          if [ "${{ needs.type-check.result }}" != "success" ]; then
+            echo "❌ Type checking failed"
+            exit 1
+          fi
+          if [ "${{ needs.security.result }}" != "success" ]; then
+            echo "❌ Security scanning failed"
+            exit 1
+          fi
+          if [ "${{ needs.unit-tests.result }}" != "success" ]; then
+            echo "❌ Unit tests failed"
+            exit 1
+          fi
+          if [ "${{ needs.integration-tests.result }}" != "success" ]; then
+            echo "❌ Integration tests failed"
+            exit 1
+          fi
+          if [ "${{ needs.docker-build.result }}" != "success" ]; then
+            echo "❌ Docker build failed"
+            exit 1
+          fi
+          echo "✅ All quality gates passed!"

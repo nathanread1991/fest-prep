@@ -1,0 +1,299 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Users - Admin{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="admin-header">
+        <h1>Manage Users</h1>
+        <div class="header-actions">
+            <a href="/admin" class="btn btn-secondary">← Back to Dashboard</a>
+        </div>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-error">
+        <strong>Error:</strong> {{ error }}
+    </div>
+    {% endif %}
+
+    {% if request.query_params.get('error') == 'delete_failed' %}
+    <div class="alert alert-error">
+        <strong>Error:</strong> Failed to delete user. Please try again.
+    </div>
+    {% endif %}
+
+    <div class="users-list">
+        {% if users %}
+            <div class="stats-summary">
+                <p><strong>Total Users:</strong> {{ users|length }}</p>
+            </div>
+            
+            <div class="table-container">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Email</th>
+                            <th>Display Name</th>
+                            <th>OAuth Provider</th>
+                            <th>Created At</th>
+                            <th>Last Login</th>
+                            <th>Marketing Opt-In</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr>
+                            <td>
+                                <strong>{{ user.email }}</strong>
+                                {% if user.profile_picture_url %}
+                                <br><img src="{{ user.profile_picture_url }}" alt="Profile" class="profile-pic-small">
+                                {% endif %}
+                            </td>
+                            <td>{{ user.display_name or 'N/A' }}</td>
+                            <td>
+                                {% if user.oauth_provider %}
+                                    <span class="provider-badge provider-{{ user.oauth_provider }}">
+                                        {{ user.oauth_provider|upper }}
+                                    </span>
+                                {% else %}
+                                    <em>None</em>
+                                {% endif %}
+                            </td>
+                            <td>{{ user.created_at.strftime('%Y-%m-%d %H:%M') if user.created_at else 'N/A' }}</td>
+                            <td>{{ user.last_login.strftime('%Y-%m-%d %H:%M') if user.last_login else 'Never' }}</td>
+                            <td>
+                                {% if user.marketing_opt_in %}
+                                    <span class="status-badge status-yes">Yes</span>
+                                {% else %}
+                                    <span class="status-badge status-no">No</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <form method="post" action="/admin/users/{{ user.id }}/delete" style="display: inline;" 
+                                          onsubmit="return confirm('Are you sure you want to delete user {{ user.email }}? This will permanently remove all their data including playlists, preferences, and audit logs.')">
+                                        <button type="submit" class="btn btn-sm btn-danger">Delete User</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <h3>No users found</h3>
+                <p>No users have registered yet.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.admin-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.header-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.stats-summary {
+    background: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.stats-summary p {
+    margin: 0;
+    color: #374151;
+}
+
+.table-container {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    overflow-x: auto;
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.admin-table th,
+.admin-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.admin-table th {
+    background: #f9fafb;
+    font-weight: 600;
+    color: #374151;
+}
+
+.admin-table tr:hover {
+    background: #f9fafb;
+}
+
+.profile-pic-small {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    margin-top: 5px;
+    border: 2px solid #e5e7eb;
+}
+
+.provider-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.75em;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.provider-google {
+    background: #e8f0fe;
+    color: #1967d2;
+}
+
+.provider-apple {
+    background: #f5f5f7;
+    color: #000000;
+}
+
+.provider-spotify {
+    background: #e8f5e9;
+    color: #1db954;
+}
+
+.provider-youtube {
+    background: #ffebee;
+    color: #ff0000;
+}
+
+.provider-x {
+    background: #e3f2fd;
+    color: #1da1f2;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.75em;
+    font-weight: 600;
+}
+
+.status-yes {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.status-no {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: bold;
+    cursor: pointer;
+    display: inline-block;
+    transition: background-color 0.3s;
+    font-size: 0.9em;
+}
+
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 0.8em;
+}
+
+.btn-secondary { background: #6b7280; color: white; }
+.btn-secondary:hover { background: #4b5563; }
+
+.btn-danger { background: #ef4444; color: white; }
+.btn-danger:hover { background: #dc2626; }
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.empty-state h3 {
+    color: #6b7280;
+    margin-bottom: 10px;
+}
+
+.empty-state p {
+    color: #9ca3af;
+    margin-bottom: 20px;
+}
+
+.alert {
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+}
+
+.alert-error {
+    background: #fee2e2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+}
+
+@media (max-width: 768px) {
+    .admin-header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+    
+    .header-actions {
+        justify-content: center;
+    }
+    
+    .admin-table {
+        font-size: 0.9em;
+    }
+    
+    .admin-table th,
+    .admin-table td {
+        padding: 8px;
+    }
+}
+</style>
+{% endblock %}

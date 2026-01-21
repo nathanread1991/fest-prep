@@ -1,0 +1,391 @@
+{% extends "base.html" %}
+
+{% block title %}Profile - Festival Playlist Generator{% endblock %}
+
+{% block head %}
+<style>
+.profile-container {
+    max-width: 600px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.profile-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.profile-picture {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: #f3f4f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: #6b7280;
+}
+
+.profile-picture img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.profile-info h2 {
+    margin: 0 0 0.25rem 0;
+    color: #1f2937;
+}
+
+.profile-info p {
+    margin: 0;
+    color: #6b7280;
+    font-size: 0.9rem;
+}
+
+.provider-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    background: #f3f4f6;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    color: #6b7280;
+    margin-top: 0.5rem;
+}
+
+.profile-section {
+    margin-bottom: 2rem;
+}
+
+.profile-section h3 {
+    color: #1f2937;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+}
+
+.profile-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    padding: 1rem;
+    background: #f8fafc;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.stat-number {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #6366f1;
+    display: block;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: #6b7280;
+    margin-top: 0.25rem;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 500;
+    text-align: center;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+}
+
+.btn-primary {
+    background: #6366f1;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #5856eb;
+}
+
+.btn-secondary {
+    background: #f3f4f6;
+    color: #374151;
+    border: 1px solid #d1d5db;
+}
+
+.btn-secondary:hover {
+    background: #e5e7eb;
+}
+
+.btn-danger {
+    background: #ef4444;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #dc2626;
+}
+
+.success-message {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #166534;
+    padding: 0.75rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+
+.privacy-settings {
+    background: #f8fafc;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-top: 1rem;
+}
+
+.privacy-setting {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.privacy-setting:last-child {
+    border-bottom: none;
+}
+
+.privacy-setting label {
+    font-weight: 500;
+    color: #374151;
+}
+
+.privacy-setting small {
+    color: #6b7280;
+    display: block;
+    margin-top: 0.25rem;
+}
+
+.toggle {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+}
+
+.toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 24px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: #6366f1;
+}
+
+input:checked + .slider:before {
+    transform: translateX(20px);
+}
+
+@media (max-width: 480px) {
+    .profile-container {
+        margin: 1rem;
+        padding: 1.5rem;
+    }
+    
+    .profile-header {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    {% if request.query_params.get('updated') == 'privacy' %}
+    <div class="success-message">
+        Privacy preferences updated successfully.
+    </div>
+    {% endif %}
+
+    <div class="profile-header">
+        <div class="profile-picture">
+            {% if user.profile_picture_url %}
+                <img src="{{ user.profile_picture_url }}" alt="Profile Picture">
+            {% else %}
+                👤
+            {% endif %}
+        </div>
+        <div class="profile-info">
+            <h2>{{ user.display_name or user.email.split('@')[0] }}</h2>
+            <p>{{ user.email }}</p>
+            <div class="provider-badge">
+                {% if user.oauth_provider == 'google' %}
+                    🔍 Google
+                {% elif user.oauth_provider == 'spotify' %}
+                    🎵 Spotify
+                {% elif user.oauth_provider == 'apple' %}
+                    🍎 Apple
+                {% elif user.oauth_provider == 'youtube' %}
+                    📺 YouTube
+                {% elif user.oauth_provider == 'x' %}
+                    🐦 X (Twitter)
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="profile-stats">
+        <div class="stat-card">
+            <span class="stat-number">{{ user.festival_history|length }}</span>
+            <div class="stat-label">Festivals Attended</div>
+        </div>
+        <div class="stat-card">
+            <span class="stat-number">{{ user.known_songs|length }}</span>
+            <div class="stat-label">Songs Marked</div>
+        </div>
+        <div class="stat-card">
+            <span class="stat-number">{{ user.connected_platforms|length }}</span>
+            <div class="stat-label">Connected Platforms</div>
+        </div>
+    </div>
+
+    <div class="profile-section">
+        <h3>Privacy Settings</h3>
+        <div class="privacy-settings">
+            <div class="privacy-setting">
+                <div>
+                    <label>Marketing Communications</label>
+                    <small>Receive promotional emails and updates</small>
+                </div>
+                <div class="toggle">
+                    <input type="checkbox" id="marketing" {{ 'checked' if user.marketing_opt_in else '' }}>
+                    <span class="slider"></span>
+                </div>
+            </div>
+            <div class="privacy-setting">
+                <div>
+                    <label>Analytics</label>
+                    <small>Help improve the service with usage analytics</small>
+                </div>
+                <div class="toggle">
+                    <input type="checkbox" id="analytics" {{ 'checked' if user.preferences.get('analytics_opt_in', True) else '' }}>
+                    <span class="slider"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="profile-section">
+        <h3>Account Information</h3>
+        <p><strong>Member since:</strong> {{ user.created_at.strftime('%B %d, %Y') }}</p>
+        <p><strong>Last login:</strong> {{ user.last_login.strftime('%B %d, %Y at %I:%M %p') }}</p>
+    </div>
+
+    <div class="action-buttons">
+        <a href="/auth/privacy-preferences" class="btn btn-primary">Manage Privacy</a>
+        <a href="/auth/export-data" class="btn btn-secondary">Export My Data</a>
+        <a href="/playlists" class="btn btn-secondary">My Playlists</a>
+        <form method="post" action="/auth/logout" style="display: inline;">
+            <button type="submit" class="btn btn-secondary">Sign Out</button>
+        </form>
+    </div>
+    
+    <div class="profile-section" style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
+        <h3 style="color: #dc2626;">Danger Zone</h3>
+        <p style="color: #6b7280; font-size: 0.9rem; margin-bottom: 1rem;">
+            These actions are permanent and cannot be undone.
+        </p>
+        <a href="/auth/delete-account" class="btn btn-danger">Delete My Account</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Handle privacy toggle changes
+document.addEventListener('DOMContentLoaded', function() {
+    const marketingToggle = document.getElementById('marketing');
+    const analyticsToggle = document.getElementById('analytics');
+    
+    function updatePrivacySettings() {
+        const formData = new FormData();
+        formData.append('marketing_opt_in', marketingToggle.checked);
+        formData.append('analytics_opt_in', analyticsToggle.checked);
+        
+        fetch('/auth/privacy-preferences', {
+            method: 'POST',
+            body: formData
+        }).then(response => {
+            if (response.ok) {
+                // Show success feedback
+                const successDiv = document.createElement('div');
+                successDiv.className = 'success-message';
+                successDiv.textContent = 'Privacy preferences updated.';
+                document.querySelector('.profile-container').insertBefore(
+                    successDiv, 
+                    document.querySelector('.profile-header')
+                );
+                
+                // Remove after 3 seconds
+                setTimeout(() => successDiv.remove(), 3000);
+            }
+        }).catch(error => {
+            console.error('Error updating privacy settings:', error);
+        });
+    }
+    
+    marketingToggle.addEventListener('change', updatePrivacySettings);
+    analyticsToggle.addEventListener('change', updatePrivacySettings);
+});
+</script>
+{% endblock %}

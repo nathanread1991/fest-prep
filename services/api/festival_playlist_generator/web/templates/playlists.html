@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block title %}My Playlists - Festival Playlist Generator{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="playlists-page">
+        <header class="page-header">
+            <h1>My Playlists</h1>
+            <p class="lead">Manage your festival playlists and discover new music</p>
+        </header>
+
+        <div class="playlists-actions">
+            <button class="btn btn-primary" onclick="createNewPlaylist()">
+                ➕ Create New Playlist
+            </button>
+            <button class="btn btn-secondary" onclick="importPlaylist()">
+                📥 Import Playlist
+            </button>
+        </div>
+
+        <div class="playlists-filters">
+            <div class="filter-tabs">
+                <button class="filter-tab active" onclick="filterPlaylists('all')">All</button>
+                <button class="filter-tab" onclick="filterPlaylists('festival')">Festival</button>
+                <button class="filter-tab" onclick="filterPlaylists('artist')">Artist</button>
+                <button class="filter-tab" onclick="filterPlaylists('custom')">Custom</button>
+            </div>
+            
+            <div class="search-box">
+                <input type="text" id="playlist-search" placeholder="Search playlists..." 
+                       onkeyup="searchPlaylists()" />
+            </div>
+        </div>
+
+        <div class="playlists-grid" id="playlists-container">
+            <div class="loading">
+                <p>Loading your playlists...</p>
+            </div>
+        </div>
+
+        <div class="empty-state" id="empty-state" style="display: none;">
+            <div class="empty-icon">🎵</div>
+            <h3>No playlists yet</h3>
+            <p>Create your first playlist from a festival lineup or artist setlist</p>
+            <button class="btn btn-primary" onclick="window.location.href='/festivals'">
+                Browse Festivals
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+let allPlaylists = [];
+let currentFilter = 'all';
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadUserPlaylists();
+});
+
+async function loadUserPlaylists() {
+    try {
+        const response = await fetch('/api/v1/playlists');
+        const data = await response.json();
+        
+        if (data.success && data.data) {
+            allPlaylists = data.data;
+            displayPlaylists(allPlaylists);
+        } else {
+            showEmptyState();
+        }
+    } catch (error) {
+        console.error('Error loading playlists:', error);
+        showError('Unable to load playlists. Please try again later.');
+    }
+}
+
+function displayPlaylists(playlists) {
+    const container = document.getElementById('playlists-container');
+    const emptyState = document.getElementById('empty-state');
+    
+    if (!playlists || playlists.length === 0) {
+        showEmptyState();
+        return;
+    }
+    
+    emptyState.style.display = 'none';
+    
+    const html = playlists.map(playlist => `
+        <div class="playlist-card" onclick="viewPlaylist('${playlist.id}')">
+            <div class="playlist-header">
+                <h3 class="playlist-name">${playlist.name}</h3>
+                <span class="playlist-type">${playlist.type || 'Custom'}</span>
+            </div>
+            
+            <div class="playlist-info">
+                <p class="playlist-description">${playlist.description || 'No description'}</p>
+                <div class="playlist-meta">
+                    <span class="song-count">${playlist.songs?.length || 0} songs</span>
+                    <span class="created-date">${formatDate(playlist.created_at)}</span>
+                </div>
+            </div>
+            
+            <div class="playlist-actions" onclick="event.stopPropagation()">
+                <button class="btn-icon" onclick="playPlaylist('${playlist.id}')" title="Play">
+                    ▶️
+                </button>
+                <button class="btn-icon" onclick="sharePlaylist('${playlist.id}')" title="Share">
+                    🔗
+                </button>
+                <button class="btn-icon" onclick="editPlaylist('${playlist.id}')" title="Edit">
+                    ✏️
+                </button>
+                <button class="btn-icon" onclick="deletePlaylist('${playlist.id}')" title="Delete">
+                    🗑️
+                </button>
+            </div>
+        </div>
+    `).join('');
+    
+    container.innerHTML = html;
+}
+
+function showEmptyState() {
+    document.getElementById('playlists-container').innerHTML = '';
+    document.getElementById('empty-state').style.display = 'block';
+}
+
+function showError(message) {
+    document.getElementById('playlists-container').innerHTML = `
+        <div class="error-state">
+            <p class="error-message">${message}</p>
+            <button class="btn btn-secondary" onclick="loadUserPlaylists()">Try Again</button>
+        </div>
+    `;
+}
+
+function filterPlaylists(type) {
+    // Update active tab
+    document.querySelectorAll('.filter-tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    
+    currentFilter = type;
+    
+    let filteredPlaylists = allPlaylists;
+    if (type !== 'all') {
+        filteredPlaylists = allPlaylists.filter(playlist => 
+            playlist.type?.toLowerCase() === type.toLowerCase()
+        );
+    }
+    
+    displayPlaylists(filteredPlaylists);
+}
+
+function searchPlaylists() {
+    const query = document.getElementById('playlist-search').value.toLowerCase();
+    
+    let filteredPlaylists = allPlaylists;
+    
+    // Apply type filter
+    if (currentFilter !== 'all') {
+        filteredPlaylists = filteredPlaylists.filter(playlist => 
+            playlist.type?.toLowerCase() === currentFilter.toLowerCase()
+        );
+    }
+    
+    // Apply search filter
+    if (query) {
+        filteredPlaylists = filteredPlaylists.filter(playlist =>
+            playlist.name.toLowerCase().includes(query) ||
+            (playlist.description && playlist.description.toLowerCase().includes(query))
+        );
+    }
+    
+    displayPlaylists(filteredPlaylists);
+}
+
+function createNewPlaylist() {
+    // Redirect to playlist creation
+    window.location.href = '/festivals';
+}
+
+function importPlaylist() {
+    // Show import dialog
+    alert('Import functionality coming soon!');
+}
+
+function viewPlaylist(playlistId) {
+    window.location.href = `/playlists/${playlistId}`;
+}
+
+function playPlaylist(playlistId) {
+    // Implement play functionality
+    alert('Play functionality coming soon!');
+}
+
+function sharePlaylist(playlistId) {
+    // Implement share functionality
+    const url = `${window.location.origin}/playlists/${playlistId}`;
+    navigator.clipboard.writeText(url).then(() => {
+        alert('Playlist link copied to clipboard!');
+    });
+}
+
+function editPlaylist(playlistId) {
+    // Redirect to edit page
+    window.location.href = `/playlists/${playlistId}/edit`;
+}
+
+function deletePlaylist(playlistId) {
+    if (confirm('Are you sure you want to delete this playlist?')) {
+        fetch(`/api/v1/playlists/${playlistId}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                loadUserPlaylists(); // Reload the list
+            } else {
+                alert('Error deleting playlist');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error deleting playlist');
+        });
+    }
+}
+
+function formatDate(dateString) {
+    if (!dateString) return 'Unknown';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric', 
+        year: 'numeric' 
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}About - Festival Playlist Generator{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="about-page">
+        <header class="page-header">
+            <h1>About Festival Playlist Generator</h1>
+            <p class="lead">Discover new music through festival lineups and create personalized playlists</p>
+        </header>
+
+        <div class="about-content">
+            <section class="about-section">
+                <h2>What We Do</h2>
+                <p>
+                    Festival Playlist Generator helps music lovers discover new artists and create personalized 
+                    playlists based on festival lineups. By analyzing artist setlists and performance history, 
+                    we curate the perfect playlist for any festival experience.
+                </p>
+            </section>
+
+            <section class="about-section">
+                <h2>How It Works</h2>
+                <div class="steps-grid">
+                    <div class="step">
+                        <h3>1. Discover Festivals</h3>
+                        <p>Browse upcoming festivals and explore their lineups</p>
+                    </div>
+                    <div class="step">
+                        <h3>2. Analyze Setlists</h3>
+                        <p>We analyze artist setlists to find their most popular songs</p>
+                    </div>
+                    <div class="step">
+                        <h3>3. Generate Playlists</h3>
+                        <p>Create custom playlists optimized for your music taste</p>
+                    </div>
+                    <div class="step">
+                        <h3>4. Stream Anywhere</h3>
+                        <p>Export to Spotify, YouTube Music, and other platforms</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="about-section">
+                <h2>Features</h2>
+                <ul class="features-list">
+                    <li>🎵 Festival lineup discovery and exploration</li>
+                    <li>🎤 Artist setlist analysis and song recommendations</li>
+                    <li>📱 Mobile-first responsive design</li>
+                    <li>🎧 Integration with major streaming platforms</li>
+                    <li>⚡ Real-time playlist updates</li>
+                    <li>🔍 Advanced search and filtering</li>
+                    <li>👤 Personalized recommendations</li>
+                    <li>📊 Music taste analysis</li>
+                </ul>
+            </section>
+
+            <section class="about-section">
+                <h2>Technology</h2>
+                <p>
+                    Built with modern web technologies including FastAPI, PostgreSQL, Redis, and React. 
+                    Our system integrates with Setlist.fm for setlist data and major streaming platforms 
+                    for playlist creation and management.
+                </p>
+            </section>
+
+            <section class="about-section">
+                <h2>Get Started</h2>
+                <p>
+                    Ready to discover your next favorite artist? 
+                    <a href="/festivals" class="btn btn-primary">Browse Festivals</a>
+                    or <a href="/search" class="btn btn-secondary">Search Artists</a>
+                </p>
+            </section>
+        </div>
+    </div>
+</div>
+{% endblock %}

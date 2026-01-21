@@ -1,0 +1,321 @@
+{% extends "base.html" %}
+
+{% block title %}Streaming Services - Festival Playlist Generator{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<section class="page-header">
+    <h2 class="page-title">Streaming Services</h2>
+    <p class="page-subtitle">Connect your music streaming accounts to create playlists</p>
+</section>
+
+<!-- Connection Status Overview -->
+<section class="connection-overview">
+    <div class="overview-card">
+        <h3>Connection Status</h3>
+        <div class="connection-summary" id="connection-summary">
+            <div class="summary-stat">
+                <span class="stat-number" id="connected-count">0</span>
+                <span class="stat-label">Connected</span>
+            </div>
+            <div class="summary-stat">
+                <span class="stat-number">4</span>
+                <span class="stat-label">Available</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Streaming Services -->
+<section class="streaming-services">
+    <div class="services-grid">
+        <!-- Spotify -->
+        <div class="service-card">
+            <div class="service-header">
+                <img src="/static/images/spotify-icon.png" alt="Spotify" class="service-icon">
+                <div class="service-info">
+                    <h4 class="service-name">Spotify</h4>
+                    <p class="service-description">World's largest music streaming platform</p>
+                </div>
+                <div class="connection-status" data-platform="spotify">❌ Not connected</div>
+            </div>
+            
+            <div class="service-features">
+                <ul>
+                    <li>✅ 100M+ songs</li>
+                    <li>✅ Playlist creation</li>
+                    <li>✅ Social sharing</li>
+                    <li>✅ Mobile & desktop apps</li>
+                </ul>
+            </div>
+            
+            <div class="service-actions">
+                <button class="btn btn-primary" data-connect-service="spotify">
+                    Connect Spotify
+                </button>
+                <button class="btn btn-secondary" data-disconnect-service="spotify" style="display: none;">
+                    Disconnect
+                </button>
+            </div>
+        </div>
+        
+        <!-- YouTube Music -->
+        <div class="service-card">
+            <div class="service-header">
+                <img src="/static/images/youtube-music-icon.png" alt="YouTube Music" class="service-icon">
+                <div class="service-info">
+                    <h4 class="service-name">YouTube Music</h4>
+                    <p class="service-description">Music streaming by Google</p>
+                </div>
+                <div class="connection-status" data-platform="youtube_music">❌ Not connected</div>
+            </div>
+            
+            <div class="service-features">
+                <ul>
+                    <li>✅ Official songs & covers</li>
+                    <li>✅ Music videos</li>
+                    <li>✅ Live performances</li>
+                    <li>✅ Free tier available</li>
+                </ul>
+            </div>
+            
+            <div class="service-actions">
+                <button class="btn btn-primary" data-connect-service="youtube_music">
+                    Connect YouTube Music
+                </button>
+                <button class="btn btn-secondary" data-disconnect-service="youtube_music" style="display: none;">
+                    Disconnect
+                </button>
+            </div>
+        </div>
+        
+        <!-- Apple Music -->
+        <div class="service-card">
+            <div class="service-header">
+                <img src="/static/images/apple-music-icon.png" alt="Apple Music" class="service-icon">
+                <div class="service-info">
+                    <h4 class="service-name">Apple Music</h4>
+                    <p class="service-description">Apple's music streaming service</p>
+                </div>
+                <div class="connection-status" data-platform="apple_music">❌ Not connected</div>
+            </div>
+            
+            <div class="service-features">
+                <ul>
+                    <li>✅ High-quality audio</li>
+                    <li>✅ Exclusive releases</li>
+                    <li>✅ Radio stations</li>
+                    <li>✅ iOS integration</li>
+                </ul>
+            </div>
+            
+            <div class="service-actions">
+                <button class="btn btn-primary" data-connect-service="apple_music">
+                    Connect Apple Music
+                </button>
+                <button class="btn btn-secondary" data-disconnect-service="apple_music" style="display: none;">
+                    Disconnect
+                </button>
+            </div>
+        </div>
+        
+        <!-- YouTube -->
+        <div class="service-card">
+            <div class="service-header">
+                <img src="/static/images/youtube-icon.png" alt="YouTube" class="service-icon">
+                <div class="service-info">
+                    <h4 class="service-name">YouTube</h4>
+                    <p class="service-description">Video platform with music content</p>
+                </div>
+                <div class="connection-status" data-platform="youtube">❌ Not connected</div>
+            </div>
+            
+            <div class="service-features">
+                <ul>
+                    <li>✅ Music videos</li>
+                    <li>✅ Live performances</li>
+                    <li>✅ Covers & remixes</li>
+                    <li>✅ Free access</li>
+                </ul>
+            </div>
+            
+            <div class="service-actions">
+                <button class="btn btn-primary" data-connect-service="youtube">
+                    Connect YouTube
+                </button>
+                <button class="btn btn-secondary" data-disconnect-service="youtube" style="display: none;">
+                    Disconnect
+                </button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Quick Actions -->
+<section class="quick-actions-section">
+    <h3>Quick Actions</h3>
+    <div class="quick-actions">
+        <button class="btn btn-primary" onclick="connectAllServices()">
+            🔗 Connect All Services
+        </button>
+        <button class="btn btn-secondary" onclick="testConnections()">
+            🧪 Test Connections
+        </button>
+        <button class="btn btn-secondary" onclick="showConnectionHelp()">
+            ❓ Need Help?
+        </button>
+    </div>
+</section>
+
+<!-- Help Section -->
+<section class="help-section" id="help-section" style="display: none;">
+    <div class="help-content">
+        <h3>Connection Help</h3>
+        
+        <div class="help-item">
+            <h4>Why connect streaming services?</h4>
+            <p>Connecting your streaming accounts allows you to:</p>
+            <ul>
+                <li>Create playlists directly on your preferred platforms</li>
+                <li>Access your music library anywhere</li>
+                <li>Share playlists with friends</li>
+                <li>Keep your festival preparation organized</li>
+            </ul>
+        </div>
+        
+        <div class="help-item">
+            <h4>Is my data safe?</h4>
+            <p>Yes! We only request the minimum permissions needed to create playlists. We never access your personal information or existing playlists without permission.</p>
+        </div>
+        
+        <div class="help-item">
+            <h4>Connection issues?</h4>
+            <p>If you're having trouble connecting:</p>
+            <ul>
+                <li>Make sure you're logged into your streaming service</li>
+                <li>Check that pop-ups are enabled in your browser</li>
+                <li>Try refreshing the page and connecting again</li>
+                <li>Clear your browser cache if problems persist</li>
+            </ul>
+        </div>
+        
+        <div class="help-item">
+            <h4>Supported features by platform:</h4>
+            <div class="feature-comparison">
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Feature</th>
+                            <th>Spotify</th>
+                            <th>YouTube Music</th>
+                            <th>Apple Music</th>
+                            <th>YouTube</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Playlist Creation</td>
+                            <td>✅</td>
+                            <td>✅</td>
+                            <td>✅</td>
+                            <td>✅</td>
+                        </tr>
+                        <tr>
+                            <td>Song Search</td>
+                            <td>✅</td>
+                            <td>✅</td>
+                            <td>✅</td>
+                            <td>✅</td>
+                        </tr>
+                        <tr>
+                            <td>Public Playlists</td>
+                            <td>✅</td>
+                            <td>✅</td>
+                            <td>❌</td>
+                            <td>✅</td>
+                        </tr>
+                        <tr>
+                            <td>Offline Access</td>
+                            <td>✅ (Premium)</td>
+                            <td>✅ (Premium)</td>
+                            <td>✅</td>
+                            <td>✅ (Premium)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/streaming.js"></script>
+<script>
+// Update connection summary
+function updateConnectionSummary() {
+    if (window.streamingIntegration) {
+        const summary = window.streamingIntegration.getConnectionSummary();
+        document.getElementById('connected-count').textContent = summary.connected;
+        
+        // Update overview card color
+        const overviewCard = document.querySelector('.overview-card');
+        if (summary.connected > 0) {
+            overviewCard.classList.add('has-connections');
+        } else {
+            overviewCard.classList.remove('has-connections');
+        }
+    }
+}
+
+// Connect all services
+async function connectAllServices() {
+    if (window.streamingIntegration) {
+        const platforms = ['spotify', 'youtube_music', 'apple_music', 'youtube'];
+        
+        const shouldConnect = confirm('This will open authentication windows for all streaming services. Continue?');
+        if (shouldConnect) {
+            await window.streamingIntegration.connectMultipleServices(platforms);
+        }
+    }
+}
+
+// Test connections
+async function testConnections() {
+    if (window.streamingIntegration) {
+        window.streamingIntegration.showLoading('Testing connections...');
+        
+        try {
+            await window.streamingIntegration.checkAuthStatus();
+            window.streamingIntegration.showSuccess('Connection test completed!');
+        } catch (error) {
+            window.streamingIntegration.showError('Connection test failed');
+        } finally {
+            window.streamingIntegration.hideLoading();
+        }
+    }
+}
+
+// Show connection help
+function showConnectionHelp() {
+    const helpSection = document.getElementById('help-section');
+    helpSection.style.display = helpSection.style.display === 'none' ? 'block' : 'none';
+    
+    if (helpSection.style.display === 'block') {
+        helpSection.scrollIntoView({ behavior: 'smooth' });
+    }
+}
+
+// Update summary when page loads and when connections change
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(updateConnectionSummary, 1000);
+    
+    // Listen for connection changes
+    document.addEventListener('click', function(e) {
+        if (e.target.matches('[data-connect-service], [data-disconnect-service]')) {
+            setTimeout(updateConnectionSummary, 2000);
+        }
+    });
+});
+</script>
+{% endblock %}
