@@ -1,0 +1,37 @@
+# Gitleaks configuration file
+# https://github.com/gitleaks/gitleaks
+
+title = "Gitleaks Configuration for fest-prep"
+
+[extend]
+# useDefault will extend the base configuration with the default gitleaks config:
+# https://github.com/gitleaks/gitleaks/blob/master/config/gitleaks.toml
+useDefault = true
+
+[allowlist]
+description = "Allowlist for known false positives"
+
+# Allow example/dummy values
+regexes = [
+    '''example\.com''',
+    '''your-.*-here''',
+    '''REPLACE_ME''',
+    '''TODO:''',
+]
+
+# Allow specific files that contain test data or examples
+paths = [
+    '''.env.example''',
+    '''terraform.tfvars.example''',
+    '''.*test.*''',
+    '''.*mock.*''',
+]
+
+# Stopwords to ignore
+stopwords = [
+    '''example''',
+    '''test''',
+    '''mock''',
+    '''dummy''',
+    '''sample''',
+]
