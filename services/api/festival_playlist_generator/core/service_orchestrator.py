@@ -74,7 +74,7 @@ class ServiceOrchestrator:
             f"Starting complete festival workflow for festival {festival_id}"
         )
 
-        workflow_result = {
+        workflow_result: Dict[str, Any] = {
             "festival_id": str(festival_id),
             "user_id": str(user_id),
             "steps_completed": [],
@@ -167,7 +167,7 @@ class ServiceOrchestrator:
             self.logger.info("Step 5: Generating recommendations")
             try:
                 recommendations = await self.recommendation_engine.recommend_festivals(
-                    user_id
+                    str(user_id)
                 )
                 workflow_result["recommendations"] = [
                     {
@@ -193,9 +193,8 @@ class ServiceOrchestrator:
                 user = result.scalar_one_or_none()
                 if user and user.preferences.get("notifications_enabled", False):
                     await self.notification_service.send_playlist_ready_notification(
-                        user_id=user_id,
-                        playlist_id=playlist.id,
-                        festival_name=festival.name,
+                        user_id=str(user_id),
+                        playlist_id=str(playlist.id),
                     )
                     workflow_result["steps_completed"].append("notification_sent")
             except Exception as e:
@@ -227,7 +226,7 @@ class ServiceOrchestrator:
         """Complete end-to-end artist playlist workflow."""
         self.logger.info(f"Starting complete artist workflow for artist {artist_id}")
 
-        workflow_result = {
+        workflow_result: Dict[str, Any] = {
             "artist_id": str(artist_id),
             "user_id": str(user_id),
             "steps_completed": [],
@@ -306,7 +305,7 @@ class ServiceOrchestrator:
         """Run daily maintenance tasks across all services."""
         self.logger.info("Starting daily maintenance workflow")
 
-        maintenance_result = {
+        maintenance_result: Dict[str, Any] = {
             "started_at": datetime.utcnow().isoformat(),
             "tasks_completed": [],
             "errors": [],
