@@ -59,6 +59,9 @@ Thumbs.db
 .pytest_cache/
 .tox/
 htmlcov/
+playwright-report/
+test-results/
+*.webm
 
 # Celery
 celerybeat-schedule
