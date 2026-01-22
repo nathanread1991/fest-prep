@@ -3,7 +3,7 @@
 import logging
 import signal
 import sys
-from typing import Optional
+from typing import Any, Callable, Optional
 
 from celery import Celery
 
@@ -15,16 +15,16 @@ logger = logging.getLogger(__name__)
 class WorkerManager:
     """Manages Celery worker lifecycle."""
 
-    def __init__(self, app: Celery):
+    def __init__(self, app: Celery) -> None:
         self.app = app
-        self.worker = None
+        self.worker: Optional[Any] = None
 
     def start_worker(
         self,
         loglevel: str = "INFO",
         concurrency: Optional[int] = None,
-        queues: Optional[list] = None,
-    ):
+        queues: Optional[list[str]] = None,
+    ) -> None:
         """Start a Celery worker with specified configuration."""
         try:
             # Default queues
@@ -54,17 +54,17 @@ class WorkerManager:
             logger.error(f"Error starting worker: {e}")
             raise
 
-    def stop_worker(self):
+    def stop_worker(self) -> None:
         """Stop the Celery worker gracefully."""
         if self.worker:
             logger.info("Stopping Celery worker...")
             self.worker.stop()
             self.worker = None
 
-    def setup_signal_handlers(self):
+    def setup_signal_handlers(self) -> None:
         """Setup signal handlers for graceful shutdown."""
 
-        def signal_handler(signum, frame):
+        def signal_handler(signum: int, frame: Any) -> None:
             logger.info(f"Received signal {signum}, shutting down worker...")
             self.stop_worker()
             sys.exit(0)
@@ -73,7 +73,7 @@ class WorkerManager:
         signal.signal(signal.SIGTERM, signal_handler)
 
 
-def start_worker_cli():
+def start_worker_cli() -> None:
     """CLI entry point for starting a worker."""
     import argparse
 

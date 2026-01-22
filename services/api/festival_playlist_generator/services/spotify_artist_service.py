@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class SpotifyArtistInfo:
     """Artist information from Spotify."""
 
-    def __init__(self, data: Dict[str, Any]):
+    def __init__(self, data: Dict[str, Any]) -> None:
         self.id = data.get("id")
         self.name = data.get("name")
         self.genres = data.get("genres", [])
@@ -35,7 +35,7 @@ class SpotifyArtistInfo:
             key=lambda img: (img.get("width", 0) * img.get("height", 0)),
             reverse=True,
         )
-        return sorted_images[0].get("url")
+        return sorted_images[0].get("url")  # type: ignore[no-any-return]
 
     @property
     def medium_image_url(self) -> Optional[str]:
@@ -48,7 +48,7 @@ class SpotifyArtistInfo:
         best_image = min(
             self.images, key=lambda img: abs(img.get("width", 0) - target_width)
         )
-        return best_image.get("url")
+        return best_image.get("url")  # type: ignore[no-any-return]
 
     @property
     def small_image_url(self) -> Optional[str]:
@@ -61,24 +61,24 @@ class SpotifyArtistInfo:
         best_image = min(
             self.images, key=lambda img: abs(img.get("width", 0) - target_width)
         )
-        return best_image.get("url")
+        return best_image.get("url")  # type: ignore[no-any-return]
 
     @property
     def spotify_url(self) -> Optional[str]:
         """Get Spotify URL for the artist."""
-        return self.external_urls.get("spotify")
+        return self.external_urls.get("spotify")  # type: ignore[no-any-return]
 
 
 class SpotifyArtistService:
     """Service for fetching artist information from Spotify."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.client_id = settings.SPOTIFY_CLIENT_ID
         self.client_secret = settings.SPOTIFY_CLIENT_SECRET
-        self._spotify = None
+        self._spotify: Optional[Any] = None
         self._initialize_client()
 
-    def _initialize_client(self):
+    def _initialize_client(self) -> None:
         """Initialize Spotify client with client credentials flow."""
         if not self.client_id or not self.client_secret:
             logger.warning("Spotify credentials not configured")
@@ -170,7 +170,8 @@ class SpotifyArtistService:
 
         try:
             results = self._spotify.artist_top_tracks(spotify_id, country=country)
-            return results.get("tracks", [])
+            tracks: List[Dict[str, Any]] = results.get("tracks", [])
+            return tracks
 
         except Exception as e:
             logger.error(f"Error fetching top tracks for artist {spotify_id}: {e}")

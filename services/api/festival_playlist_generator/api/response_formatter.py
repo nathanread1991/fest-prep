@@ -1,7 +1,8 @@
 """API response formatting and versioning utilities."""
 
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional, Union
+from typing import Any, Callable, Dict, Optional, Union
+from uuid import UUID
 
 from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
@@ -36,7 +37,7 @@ class APIError(BaseModel):
 class ResponseFormatter:
     """Handles API response formatting and versioning."""
 
-    def __init__(self, version: str = "1.0"):
+    def __init__(self, version: str = "1.0") -> None:
         self.version = version
 
     def success_response(
@@ -93,7 +94,7 @@ class ResponseFormatter:
         )
 
     def not_found_response(
-        self, resource: str, identifier: Union[str, int]
+        self, resource: str, identifier: Union[str, int, UUID]
     ) -> JSONResponse:
         """Create a 404 Not Found response."""
         return self.error_response(
@@ -182,7 +183,7 @@ def format_response_v1_0(data: Any, message: Optional[str] = None) -> Dict[str, 
 
 def format_response_v1_1(data: Any, message: Optional[str] = None) -> Dict[str, Any]:
     """Format response for API version 1.1 (enhanced with metadata)."""
-    response = {
+    response: Dict[str, Any] = {
         "success": True,
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "version": "1.1",

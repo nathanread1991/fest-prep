@@ -2,6 +2,7 @@
 
 import logging
 import os
+from typing import Any, Dict
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,7 +18,7 @@ def verify_api_key(api_key: str) -> bool:
     # For now, check against environment variable
     # In production, this should check against a database of valid API keys
     valid_api_key = os.getenv("API_KEY")
-    return valid_api_key and api_key == valid_api_key
+    return bool(valid_api_key) and api_key == valid_api_key
 
 
 # Create API router
@@ -25,7 +26,7 @@ api_auth_router = APIRouter(prefix="/api/auth", tags=["api-authentication"])
 
 
 @api_auth_router.get("/me")
-async def get_current_user_api(request: Request, db: AsyncSession = Depends(get_db)):
+async def get_current_user_api(request: Request, db: AsyncSession = Depends(get_db)) -> Dict[str, Any]:
     """API endpoint to get current authenticated user."""
     session_id = request.cookies.get("session_id")
 
@@ -47,12 +48,12 @@ async def get_current_user_api(request: Request, db: AsyncSession = Depends(get_
         "preferences": user.preferences,
         "connected_platforms": user.connected_platforms,
         "created_at": user.created_at.isoformat(),
-        "last_login": user.last_login.isoformat(),
+        "last_login": user.last_login.isoformat() if user.last_login else None,
     }
 
 
 @api_auth_router.get("/status")
-async def get_auth_status(request: Request, db: AsyncSession = Depends(get_db)):
+async def get_auth_status(request: Request, db: AsyncSession = Depends(get_db)) -> Dict[str, Any]:
     """Check authentication status without returning user data."""
     session_id = request.cookies.get("session_id")
 

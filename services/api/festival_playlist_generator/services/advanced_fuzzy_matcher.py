@@ -15,7 +15,7 @@ import asyncio
 import logging
 import re
 from functools import lru_cache
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -40,7 +40,7 @@ def levenshtein_distance(s1: str, s2: str) -> int:
     if len(s2) == 0:
         return len(s1)
 
-    previous_row = range(len(s2) + 1)
+    previous_row: List[int] = list(range(len(s2) + 1))
     for i, c1 in enumerate(s1):
         current_row = [i + 1]
         for j, c2 in enumerate(s2):
@@ -146,7 +146,7 @@ def double_metaphone(name: str) -> Tuple[str, str]:
     last = length - 1
 
     # Helper function
-    def get_at(index):
+    def get_at(index: int) -> str:
         if 0 <= index < length:
             return name[index]
         return ""
@@ -407,11 +407,11 @@ def token_sort_ratio(s1: str, s2: str) -> float:
 class OpenAISemanticMatcher:
     """Use OpenAI embeddings for semantic similarity matching."""
 
-    def __init__(self):
-        self.client = None
+    def __init__(self) -> None:
+        self.client: Optional[Any] = None
         self._initialize_client()
 
-    def _initialize_client(self):
+    def _initialize_client(self) -> None:
         """Initialize OpenAI client if API key is available."""
         if settings.OPENAI_API_KEY:
             try:
@@ -435,7 +435,8 @@ class OpenAISemanticMatcher:
             response = await self.client.embeddings.create(
                 model="text-embedding-3-small", input=text
             )
-            return response.data[0].embedding
+            embedding: List[float] = response.data[0].embedding
+            return embedding
         except Exception as e:
             logger.error(f"Error getting embedding: {e}")
             return None
@@ -452,7 +453,8 @@ class OpenAISemanticMatcher:
         if magnitude1 == 0 or magnitude2 == 0:
             return 0.0
 
-        return dot_product / (magnitude1 * magnitude2)
+        result: float = dot_product / (magnitude1 * magnitude2)
+        return result
 
     async def semantic_similarity(self, s1: str, s2: str) -> float:
         """Calculate semantic similarity between two strings."""
@@ -462,7 +464,8 @@ class OpenAISemanticMatcher:
             )
 
             if emb1 and emb2:
-                return await self.cosine_similarity(emb1, emb2)
+                similarity: float = await self.cosine_similarity(emb1, emb2)
+                return similarity
         except Exception as e:
             logger.error(f"Error calculating semantic similarity: {e}")
 
@@ -480,7 +483,7 @@ class AdvancedFuzzyMatcher:
     Target: 95%+ accuracy on misspelled/variant artist names.
     """
 
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: AsyncSession) -> None:
         self.db = db
         self.semantic_matcher = OpenAISemanticMatcher()
 
@@ -539,19 +542,20 @@ class AdvancedFuzzyMatcher:
                 )
 
         # Sort by score and limit
-        scored_artists.sort(key=lambda x: x["score"], reverse=True)
+        scored_artists.sort(key=lambda x: float(x["score"]), reverse=True)  # type: ignore[arg-type]
         scored_artists = scored_artists[:limit]
 
         # Format results
         formatted_results = []
         for item in scored_artists:
-            artist = item["artist"]
+            from festival_playlist_generator.models.artist import Artist
+            matched_artist: Artist = item["artist"]  # type: ignore[assignment]
             formatted_results.append(
                 {
-                    "id": str(artist.id),
-                    "name": artist.name,
-                    "festival_count": len(artist.festivals) if artist.festivals else 0,
-                    "setlist_count": len(artist.setlists) if artist.setlists else 0,
+                    "id": str(matched_artist.id),
+                    "name": matched_artist.name,
+                    "festival_count": len(matched_artist.festivals) if matched_artist.festivals else 0,
+                    "setlist_count": len(matched_artist.setlists) if matched_artist.setlists else 0,
                     "has_spotify": bool(artist.spotify_id),
                     "genres": artist.genres if artist.genres else [],
                     "match_score": item["score"],
@@ -705,7 +709,7 @@ class AdvancedFuzzyMatcher:
             return 0.0
 
         # Generate n-grams
-        def get_ngrams(s, n):
+        def get_ngrams(s: str, n: int) -> set[str]:
             s = " " + s + " "  # Add padding
             return set(s[i : i + n] for i in range(len(s) - n + 1))
 

@@ -28,7 +28,7 @@ api_router = APIRouter()
 # Basic health check endpoint
 @api_router.get("/health")
 @api_router.options("/health")
-async def api_health(request: Request):
+async def api_health(request: Request) -> JSONResponse:
     """API health check endpoint with proper response formatting."""
     return JSONResponse(
         content=version_compatible_response(

@@ -2,7 +2,7 @@
 
 import logging
 import time
-from typing import Optional
+from typing import Any, Callable, Dict, Optional
 
 from fastapi import HTTPException, Request
 
@@ -14,11 +14,11 @@ logger = logging.getLogger(__name__)
 class RateLimiter:
     """Redis-based rate limiter using sliding window algorithm."""
 
-    def __init__(self, requests_per_minute: int = 60, requests_per_hour: int = 1000):
+    def __init__(self, requests_per_minute: int = 60, requests_per_hour: int = 1000) -> None:
         self.requests_per_minute = requests_per_minute
         self.requests_per_hour = requests_per_hour
 
-    async def is_allowed(self, identifier: str) -> tuple[bool, dict]:
+    async def is_allowed(self, identifier: str) -> tuple[bool, Dict[str, Any]]:
         """
         Check if request is allowed for the given identifier.
         Returns (is_allowed, rate_limit_info)
@@ -87,7 +87,7 @@ def get_client_identifier(request: Request, api_key: Optional[str] = None) -> st
         return f"api_key:{api_key}"
 
     # Use IP address as fallback
-    client_ip = request.client.host
+    client_ip = request.client.host if request.client else "unknown"
     forwarded_for = request.headers.get("X-Forwarded-For")
 
     if forwarded_for:
@@ -101,7 +101,7 @@ async def check_rate_limit(
     request: Request,
     rate_limiter: RateLimiter = default_rate_limiter,
     api_key: Optional[str] = None,
-) -> dict:
+) -> Dict[str, Any]:
     """Check rate limit and raise HTTPException if exceeded."""
     identifier = get_client_identifier(request, api_key)
 
@@ -128,7 +128,7 @@ async def check_rate_limit(
     return rate_info
 
 
-async def add_rate_limit_headers(response, rate_info: dict):
+async def add_rate_limit_headers(response: Any, rate_info: Dict[str, Any]) -> None:
     """Add rate limiting headers to response."""
     if "minute_remaining" in rate_info:
         response.headers["X-RateLimit-Limit-Minute"] = str(rate_info["minute_limit"])

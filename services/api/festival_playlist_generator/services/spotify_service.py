@@ -4,7 +4,7 @@ import asyncio
 import logging
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, cast
 
 import httpx
 
@@ -38,7 +38,7 @@ class CircuitBreaker:
         failure_threshold: int = 5,
         recovery_timeout: int = 60,
         expected_exception: type = Exception,
-    ):
+    ) -> None:
         """
         Initialize circuit breaker.
 
@@ -55,7 +55,7 @@ class CircuitBreaker:
         self.last_failure_time: Optional[datetime] = None
         self.state = CircuitState.CLOSED
 
-    async def call(self, func, *args, **kwargs):
+    async def call(self, func: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
         """
         Execute function with circuit breaker protection.
 
@@ -81,8 +81,9 @@ class CircuitBreaker:
             result = await func(*args, **kwargs)
             self._on_success()
             return result
-        except self.expected_exception as e:
-            self._on_failure()
+        except Exception as e:
+            if isinstance(e, self.expected_exception):
+                self._on_failure()
             raise e
 
     def _should_attempt_reset(self) -> bool:
@@ -94,14 +95,14 @@ class CircuitBreaker:
             datetime.now() - self.last_failure_time
         ).total_seconds() >= self.recovery_timeout
 
-    def _on_success(self):
+    def _on_success(self) -> None:
         """Handle successful request."""
         self.failure_count = 0
         if self.state == CircuitState.HALF_OPEN:
             self.state = CircuitState.CLOSED
             logger.info("Circuit breaker recovered - entering CLOSED state")
 
-    def _on_failure(self):
+    def _on_failure(self) -> None:
         """Handle failed request."""
         self.failure_count += 1
         self.last_failure_time = datetime.now()
@@ -133,7 +134,7 @@ class SpotifyService:
         client_id: Optional[str] = None,
         client_secret: Optional[str] = None,
         redirect_uri: Optional[str] = None,
-    ):
+    ) -> None:
         """
         Initialize Spotify service.
 
@@ -176,20 +177,21 @@ class SpotifyService:
             List of artist data dictionaries
         """
 
-        async def _search():
+        async def _search() -> List[Dict[str, Any]]:
             headers = {"Authorization": f"Bearer {access_token}"}
-            params = {"q": artist_name, "type": "artist", "limit": limit}
+            params: Dict[str, str | int] = {"q": artist_name, "type": "artist", "limit": str(limit)}
 
             response = await self.client.get(
                 f"{self.base_url}/search", headers=headers, params=params
             )
             response.raise_for_status()
 
-            data = response.json()
-            return data.get("artists", {}).get("items", [])
+            data = cast(Dict[str, Any], response.json())
+            return cast(List[Dict[str, Any]], data.get("artists", {}).get("items", []))
 
         try:
-            return await self.circuit_breaker.call(_search)
+            result: List[Dict[str, Any]] = await self.circuit_breaker.call(_search)
+            return result
         except Exception as e:
             logger.error(f"Failed to search artist '{artist_name}': {e}")
             return []
@@ -213,7 +215,7 @@ class SpotifyService:
             Exception: If creation fails
         """
 
-        async def _create():
+        async def _create() -> str:
             # First get user ID
             user_id = await self._get_current_user_id(access_token)
 
@@ -231,9 +233,11 @@ class SpotifyService:
             response.raise_for_status()
 
             data = response.json()
-            return data["id"]
+            playlist_id: str = data["id"]
+            return playlist_id
 
-        return await self.circuit_breaker.call(_create)
+        result: str = await self.circuit_breaker.call(_create)
+        return result
 
     async def add_tracks_to_playlist(
         self, playlist_id: str, track_uris: List[str], access_token: str
@@ -253,7 +257,7 @@ class SpotifyService:
             True if successful
         """
 
-        async def _add_batch(batch: List[str]):
+        async def _add_batch(batch: List[str]) -> bool:
             headers = {
                 "Authorization": f"Bearer {access_token}",
                 "Content-Type": "application/json",
@@ -292,7 +296,7 @@ class SpotifyService:
             Dictionary with access_token, expires_in, etc., or None on failure
         """
 
-        async def _refresh():
+        async def _refresh() -> Dict[str, Any]:
             import base64
 
             # Encode client credentials
@@ -308,10 +312,11 @@ class SpotifyService:
             response = await self.client.post(self.auth_url, headers=headers, data=data)
             response.raise_for_status()
 
-            return response.json()
+            return cast(Dict[str, Any], response.json())
 
         try:
-            return await self.circuit_breaker.call(_refresh)
+            result: Dict[str, Any] = await self.circuit_breaker.call(_refresh)
+            return result
         except Exception as e:
             logger.error(f"Failed to refresh access token: {e}")
             return None
@@ -330,7 +335,7 @@ class SpotifyService:
             Track data dictionary or None on failure
         """
 
-        async def _get():
+        async def _get() -> Dict[str, Any]:
             headers = {"Authorization": f"Bearer {access_token}"}
 
             response = await self.client.get(
@@ -338,10 +343,11 @@ class SpotifyService:
             )
             response.raise_for_status()
 
-            return response.json()
+            return cast(Dict[str, Any], response.json())
 
         try:
-            return await self.circuit_breaker.call(_get)
+            result: Dict[str, Any] = await self.circuit_breaker.call(_get)
+            return result
         except Exception as e:
             logger.error(f"Failed to get track {track_id}: {e}")
             return None
@@ -362,12 +368,12 @@ class SpotifyService:
             List of track data dictionaries
         """
 
-        async def _search():
+        async def _search() -> List[Dict[str, Any]]:
             headers = {"Authorization": f"Bearer {access_token}"}
-            params = {
+            params: Dict[str, str | int] = {
                 "q": f"track:{track_name} artist:{artist_name}",
                 "type": "track",
-                "limit": limit,
+                "limit": str(limit),
             }
 
             response = await self.client.get(
@@ -375,11 +381,12 @@ class SpotifyService:
             )
             response.raise_for_status()
 
-            data = response.json()
-            return data.get("tracks", {}).get("items", [])
+            data = cast(Dict[str, Any], response.json())
+            return cast(List[Dict[str, Any]], data.get("tracks", {}).get("items", []))
 
         try:
-            return await self.circuit_breaker.call(_search)
+            result: List[Dict[str, Any]] = await self.circuit_breaker.call(_search)
+            return result
         except Exception as e:
             logger.error(
                 f"Failed to search track '{track_name}' by '{artist_name}': {e}"
@@ -402,8 +409,9 @@ class SpotifyService:
         response.raise_for_status()
 
         data = response.json()
-        return data["id"]
+        user_id: str = data["id"]
+        return user_id
 
-    async def close(self):
+    async def close(self) -> None:
         """Close HTTP client."""
         await self.client.aclose()

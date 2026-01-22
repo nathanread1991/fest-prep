@@ -2,7 +2,7 @@
 
 import os
 from datetime import datetime
-from typing import List, Optional
+from typing import Any, Callable, List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -40,7 +40,7 @@ async def get_artist_setlists(
         False, description="Fetch from external API if no local data"
     ),
     db: AsyncSession = Depends(get_db),
-):
+) -> JSONResponse:
     """Get setlists for a specific artist."""
     version = get_request_version(request)
     formatter = APIVersionManager.get_formatter(version)
@@ -59,11 +59,11 @@ async def get_artist_setlists(
         .order_by(SetlistModel.date.desc())
     )
     query = query.offset(skip).limit(limit)
-    result = await db.execute(query)
-    setlists = result.scalars().all()
+    result_setlists = await db.execute(query)
+    setlists_list = result_setlists.scalars().all()
 
     # If no setlists found and external fetch is requested, try to fetch from external API
-    if not setlists and fetch_external:
+    if not setlists_list and fetch_external:
         try:
             setlist_fm_api_key = settings.SETLIST_FM_API_KEY
             if setlist_fm_api_key:
@@ -73,8 +73,8 @@ async def get_artist_setlists(
                 )
 
                 # Refresh the query to get newly stored setlists
-                result = await db.execute(query)
-                setlists = result.scalars().all()
+                result_setlists = await db.execute(query)
+                setlists_list = result_setlists.scalars().all()
         except Exception as e:
             # Log error but don't fail the request
             import logging
@@ -86,21 +86,21 @@ async def get_artist_setlists(
 
     # Convert to response format
     setlist_data = []
-    for setlist in setlists:
+    for setlist_item in setlists_list:
         setlist_data.append(
             {
-                "id": str(setlist.id),
-                "artist_id": str(setlist.artist_id),
+                "id": str(setlist_item.id),
+                "artist_id": str(setlist_item.artist_id),
                 "artist_name": artist.name,
-                "venue": setlist.venue,
-                "date": setlist.date.isoformat(),
-                "songs": setlist.songs,
-                "tour_name": setlist.tour_name,
-                "festival_name": setlist.festival_name,
-                "source": setlist.source,
-                "created_at": setlist.created_at.isoformat(),
+                "venue": setlist_item.venue,
+                "date": setlist_item.date.isoformat(),
+                "songs": setlist_item.songs,
+                "tour_name": setlist_item.tour_name,
+                "festival_name": setlist_item.festival_name,
+                "source": setlist_item.source,
+                "created_at": setlist_item.created_at.isoformat(),
                 "updated_at": (
-                    setlist.updated_at.isoformat() if setlist.updated_at else None
+                    setlist_item.updated_at.isoformat() if setlist_item.updated_at else None
                 ),
             }
         )
@@ -121,7 +121,7 @@ async def get_recent_artist_setlists(
     fetch_external: bool = Query(
         True, description="Fetch from external API if no local data"
     ),
-):
+) -> JSONResponse:
     """Get recent setlists for an artist (optimized for UI display)."""
     version = get_request_version(request)
     formatter = APIVersionManager.get_formatter(version)
@@ -147,11 +147,11 @@ async def get_recent_artist_setlists(
                 .order_by(SetlistModel.date.desc())
                 .limit(limit)
             )
-            result = await db.execute(query)
-            setlists = result.scalars().all()
+            result_recent = await db.execute(query)
+            setlists_recent = result_recent.scalars().all()
 
             # If no setlists found and external fetch is requested, try to fetch from external API
-            if not setlists and fetch_external:
+            if not setlists_recent and fetch_external:
                 try:
                     setlist_fm_api_key = settings.SETLIST_FM_API_KEY
                     if setlist_fm_api_key:
@@ -161,8 +161,8 @@ async def get_recent_artist_setlists(
                         )
 
                         # Refresh the query to get newly stored setlists
-                        result = await db.execute(query)
-                        setlists = result.scalars().all()
+                        result_recent = await db.execute(query)
+                        setlists_recent = result_recent.scalars().all()
                 except Exception as e:
                     # Log error but don't fail the request
                     import logging
@@ -174,19 +174,19 @@ async def get_recent_artist_setlists(
 
             # Convert to simplified response format for UI
             setlist_data = []
-            for setlist in setlists:
+            for setlist_item in setlists_recent:
                 setlist_data.append(
                     {
-                        "id": str(setlist.id),
-                        "venue": setlist.venue,
-                        "date": setlist.date.strftime("%Y-%m-%d"),
-                        "song_count": len(setlist.songs),
-                        "songs": setlist.songs[
+                        "id": str(setlist_item.id),
+                        "venue": setlist_item.venue,
+                        "date": setlist_item.date.strftime("%Y-%m-%d"),
+                        "song_count": len(setlist_item.songs),
+                        "songs": setlist_item.songs[
                             :10
                         ],  # Limit to first 10 songs for preview
-                        "tour_name": setlist.tour_name,
-                        "festival_name": setlist.festival_name,
-                        "source": setlist.source,
+                        "tour_name": setlist_item.tour_name,
+                        "festival_name": setlist_item.festival_name,
+                        "source": setlist_item.source,
                     }
                 )
 
@@ -257,7 +257,7 @@ async def get_recent_artist_setlists(
 @router.get("/{setlist_id}")
 async def get_setlist(
     request: Request, setlist_id: UUID, db: AsyncSession = Depends(get_db)
-):
+) -> JSONResponse:
     """Get a specific setlist by ID."""
     version = get_request_version(request)
     formatter = APIVersionManager.get_formatter(version)
@@ -299,7 +299,7 @@ async def refresh_artist_setlists(
     artist_id: UUID,
     limit: int = Query(10, ge=1, le=50, description="Number of setlists to fetch"),
     db: AsyncSession = Depends(get_db),
-):
+) -> JSONResponse:
     """Refresh setlists for an artist from external API."""
     version = get_request_version(request)
     formatter = APIVersionManager.get_formatter(version)
@@ -351,7 +351,7 @@ async def list_setlists(
     artist_name: Optional[str] = Query(None, description="Filter by artist name"),
     venue: Optional[str] = Query(None, description="Filter by venue"),
     db: AsyncSession = Depends(get_db),
-):
+) -> JSONResponse:
     """List all setlists with optional filtering."""
     version = get_request_version(request)
     formatter = APIVersionManager.get_formatter(version)

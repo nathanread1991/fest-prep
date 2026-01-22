@@ -1,6 +1,6 @@
 """Artist API endpoints."""
 
-from typing import List, Optional
+from typing import Any, Callable, Dict, List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -28,7 +28,7 @@ async def create_artist(
     artist: ArtistCreate,
     db: AsyncSession = Depends(get_db),
     artist_service: ArtistService = Depends(get_artist_service),
-):
+) -> JSONResponse:
     """Create a new artist."""
     version = get_request_version(request)
     formatter = APIVersionManager.get_formatter(version)
@@ -78,7 +78,7 @@ async def list_artists(
     festival: Optional[str] = Query(None, description="Filter by festival name"),
     db: AsyncSession = Depends(get_db),
     artist_service: ArtistService = Depends(get_artist_service),
-):
+) -> JSONResponse:
     """List artists with optional filtering."""
     version = get_request_version(request)
     formatter = APIVersionManager.get_formatter(version)
@@ -118,6 +118,7 @@ async def list_artists(
     ]
 
     # For v1.1, include pagination metadata
+    response_data: Dict[str, Any]
     if version == "1.1":
         response_data = {
             "items": artist_data,
@@ -129,7 +130,7 @@ async def list_artists(
             },
         }
     else:
-        response_data = artist_data
+        response_data = {"items": artist_data}
 
     return formatter.success_response(
         data=response_data, message="Artists retrieved successfully"
@@ -142,7 +143,7 @@ async def get_artist(
     artist_id: UUID,
     db: AsyncSession = Depends(get_db),
     artist_service: ArtistService = Depends(get_artist_service),
-):
+) -> JSONResponse:
     """Get a specific artist by ID."""
     version = get_request_version(request)
     formatter = APIVersionManager.get_formatter(version)
@@ -174,7 +175,7 @@ async def update_artist(
     artist_update: ArtistUpdate,
     db: AsyncSession = Depends(get_db),
     artist_service: ArtistService = Depends(get_artist_service),
-):
+) -> JSONResponse:
     """Update an artist."""
     version = get_request_version(request)
     formatter = APIVersionManager.get_formatter(version)
@@ -214,7 +215,7 @@ async def delete_artist(
     artist_id: UUID,
     db: AsyncSession = Depends(get_db),
     artist_service: ArtistService = Depends(get_artist_service),
-):
+) -> JSONResponse:
     """Delete an artist."""
     version = get_request_version(request)
     formatter = APIVersionManager.get_formatter(version)
@@ -236,7 +237,7 @@ async def search_artists(
     limit: int = Query(100, ge=1, le=1000, description="Number of artists to return"),
     db: AsyncSession = Depends(get_db),
     artist_service: ArtistService = Depends(get_artist_service),
-):
+) -> JSONResponse:
     """Search artists by name or genre."""
     version = get_request_version(request)
     formatter = APIVersionManager.get_formatter(version)
@@ -263,6 +264,7 @@ async def search_artists(
     ]
 
     # For v1.1, include search metadata
+    response_data: Dict[str, Any]
     if version == "1.1":
         response_data = {
             "items": artist_data,
@@ -275,7 +277,7 @@ async def search_artists(
             },
         }
     else:
-        response_data = artist_data
+        response_data = {"items": artist_data}
 
     return formatter.success_response(
         data=response_data, message=f"Found {len(artist_data)} artists matching '{q}'"
@@ -288,7 +290,7 @@ async def get_artist_festivals(
     artist_id: UUID,
     db: AsyncSession = Depends(get_db),
     artist_service: ArtistService = Depends(get_artist_service),
-):
+) -> JSONResponse:
     """Get festivals where an artist is performing."""
     version = get_request_version(request)
     formatter = APIVersionManager.get_formatter(version)

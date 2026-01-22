@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 import redis.asyncio as redis
 
@@ -11,10 +11,10 @@ from festival_playlist_generator.core.config import settings
 logger = logging.getLogger(__name__)
 
 # Redis connection pool
-redis_pool = None
+redis_pool: Optional[redis.ConnectionPool] = None
 
 
-async def init_redis():
+async def init_redis() -> None:
     """Initialize Redis connection pool."""
     global redis_pool
     try:
@@ -37,8 +37,8 @@ async def get_redis() -> redis.Redis:
 class CacheManager:
     """Redis cache management utilities."""
 
-    def __init__(self):
-        self.redis_client = None
+    def __init__(self) -> None:
+        self.redis_client: Optional[redis.Redis] = None
 
     async def get_client(self) -> redis.Redis:
         """Get Redis client."""

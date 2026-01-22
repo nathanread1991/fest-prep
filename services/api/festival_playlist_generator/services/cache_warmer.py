@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from typing import Any, Dict, List
+from typing import Any, Callable, Dict, List
 
 import httpx
 from sqlalchemy import select
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 class CacheWarmer:
     """Service to warm up the nginx image cache by pre-fetching images."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.timeout = httpx.Timeout(10.0, connect=5.0)
         self.max_concurrent = 20  # Can handle many more with no rate limiting
         self.batch_delay = 0  # No delay needed without rate limiting

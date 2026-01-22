@@ -1,16 +1,15 @@
 """Application configuration settings."""
 
 import os
-from typing import List
+from typing import Any, Callable, List
 
-from pydantic import ConfigDict
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     """Application settings."""
 
-    model_config = ConfigDict(env_file=".env", case_sensitive=True)
+    model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
 
     # Database settings
     DATABASE_URL: str = (

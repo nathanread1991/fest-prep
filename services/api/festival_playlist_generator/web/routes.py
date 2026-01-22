@@ -1,9 +1,9 @@
 """Web interface routes for the Festival Playlist Generator."""
 
 import logging
-from typing import Optional
+from typing import Any, Callable, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -28,7 +28,7 @@ templates.env.globals.update(
 )
 
 
-def add_no_cache_headers(response):
+def add_no_cache_headers(response: Any) -> Any:
     """Add no-cache headers to prevent stale data."""
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
     response.headers["Pragma"] = "no-cache"
@@ -37,7 +37,7 @@ def add_no_cache_headers(response):
 
 
 @web_router.get("/", response_class=HTMLResponse)
-async def home(request: Request):
+async def home(request: Request) -> Response:
     """Home page with festival search and features."""
     # Check for welcome parameter for new users
     welcome = request.query_params.get("welcome") == "true"
@@ -54,13 +54,13 @@ async def home(request: Request):
 
 
 @web_router.get("/debug-auth", response_class=HTMLResponse)
-async def debug_auth(request: Request):
+async def debug_auth(request: Request) -> Response:
     """Debug page for authentication issues."""
     return templates.TemplateResponse("debug_auth.html", {"request": request})
 
 
 @web_router.get("/artists", response_class=HTMLResponse)
-async def artists_page(request: Request, db: AsyncSession = Depends(get_db)):
+async def artists_page(request: Request, db: AsyncSession = Depends(get_db)) -> Response:
     """Artists listing page."""
     from sqlalchemy import func, select
 
@@ -99,7 +99,7 @@ async def artists_page(request: Request, db: AsyncSession = Depends(get_db)):
 
 
 @web_router.get("/festivals", response_class=HTMLResponse)
-async def festivals_page(request: Request, db: AsyncSession = Depends(get_db)):
+async def festivals_page(request: Request, db: AsyncSession = Depends(get_db)) -> Response:
     """Festivals listing page."""
     from sqlalchemy import select
 
@@ -115,7 +115,7 @@ async def festivals_page(request: Request, db: AsyncSession = Depends(get_db)):
     # Convert festival logo URLs to use proxy cache
     # Add cached URLs as temporary attributes
     for festival in festivals:
-        festival._cached_logo = convert_to_proxy_url(festival.logo_url)
+        festival._cached_logo = convert_to_proxy_url(festival.logo_url)  # type: ignore[attr-defined]
 
     response = templates.TemplateResponse(
         "festivals.html", {"request": request, "festivals": festivals}
@@ -131,7 +131,7 @@ async def festivals_page(request: Request, db: AsyncSession = Depends(get_db)):
 @web_router.get("/festivals/{festival_id}", response_class=HTMLResponse)
 async def festival_detail(
     request: Request, festival_id: str, db: AsyncSession = Depends(get_db)
-):
+) -> Response:
     """Individual festival detail page with branding and tiered artist grouping."""
     from sqlalchemy import select
     from sqlalchemy.orm import selectinload
@@ -270,7 +270,7 @@ async def festival_detail(
 
 
 @web_router.get("/playlists", response_class=HTMLResponse)
-async def playlists_page(request: Request, db: AsyncSession = Depends(get_db)):
+async def playlists_page(request: Request, db: AsyncSession = Depends(get_db)) -> Response:
     """User playlists page (requires authentication)."""
     # Check authentication
     from festival_playlist_generator.services.oauth_service import oauth_service
@@ -309,7 +309,7 @@ async def playlists_page(request: Request, db: AsyncSession = Depends(get_db)):
 @web_router.get("/playlists/{playlist_id}", response_class=HTMLResponse)
 async def playlist_detail(
     request: Request, playlist_id: str, db: AsyncSession = Depends(get_db)
-):
+) -> Response:
     """Individual playlist detail page."""
     # Get playlist from database
     from sqlalchemy import select
@@ -328,7 +328,7 @@ async def playlist_detail(
 @web_router.get("/artists/{artist_id}", response_class=HTMLResponse)
 async def artist_detail(
     request: Request, artist_id: str, db: AsyncSession = Depends(get_db)
-):
+) -> Response:
     """Individual artist detail page with setlists and song frequency analysis."""
     from collections import Counter
     from uuid import UUID
@@ -395,6 +395,8 @@ async def artist_detail(
                         .filter(ArtistModel.id == UUID(artist_id))
                     )
                     artist = result.scalar_one_or_none()
+                    if not artist:
+                        raise HTTPException(status_code=404, detail="Artist not found")
                     # Continue without Spotify info update
 
         # Get recent setlists (last 10)
@@ -431,8 +433,8 @@ async def artist_detail(
         # Analyze song frequency across all setlists
         all_songs = []
         for setlist in recent_setlists:
-            if setlist.songs:
-                all_songs.extend(setlist.songs)
+            if setlist.songs:  # type: ignore[attr-defined]
+                all_songs.extend(setlist.songs)  # type: ignore[attr-defined]
 
         # Count song occurrences and get top songs
         song_counter = Counter(all_songs)
@@ -528,7 +530,7 @@ async def artist_detail(
 @web_router.get("/search", response_class=HTMLResponse)
 async def search_page(
     request: Request, q: Optional[str] = None, type: Optional[str] = None
-):
+) -> Response:
     """Search results page."""
     return templates.TemplateResponse(
         "search.html", {"request": request, "query": q, "search_type": type}
@@ -536,30 +538,30 @@ async def search_page(
 
 
 @web_router.get("/about", response_class=HTMLResponse)
-async def about_page(request: Request):
+async def about_page(request: Request) -> Response:
     """About page."""
     return templates.TemplateResponse("about.html", {"request": request})
 
 
 @web_router.get("/privacy", response_class=HTMLResponse)
-async def privacy_page(request: Request):
+async def privacy_page(request: Request) -> Response:
     """Privacy policy page."""
     return templates.TemplateResponse("privacy.html", {"request": request})
 
 
 @web_router.get("/streaming", response_class=HTMLResponse)
-async def streaming_page(request: Request):
+async def streaming_page(request: Request) -> Response:
     """Streaming services management page."""
     return templates.TemplateResponse("streaming.html", {"request": request})
 
 
 @web_router.get("/terms", response_class=HTMLResponse)
-async def terms_page(request: Request):
+async def terms_page(request: Request) -> Response:
     """Terms of service page."""
     return templates.TemplateResponse("terms.html", {"request": request})
 
 
 @web_router.get("/offline", response_class=HTMLResponse)
-async def offline_page(request: Request):
+async def offline_page(request: Request) -> Response:
     """Offline page for PWA functionality."""
     return templates.TemplateResponse("offline.html", {"request": request})

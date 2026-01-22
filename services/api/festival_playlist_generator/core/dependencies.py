@@ -1,6 +1,7 @@
 """Dependency injection for services."""
 
 from functools import lru_cache
+from typing import Any, Callable, Type
 
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -51,25 +52,28 @@ def get_streaming_integration_service() -> StreamingIntegrationService:
     return StreamingIntegrationService(default_config)
 
 
-@lru_cache()
-def get_recommendation_engine() -> RecommendationEngine:
-    """Get Recommendation Engine instance."""
-    # Note: This returns a factory function, actual instance created per request
-    return RecommendationEngine  # type: ignore
+from typing import Any, Callable, Type
 
 
 @lru_cache()
-def get_notification_service() -> NotificationService:
-    """Get Notification Service instance."""
-    # Note: This returns a factory function, actual instance created per request
-    return NotificationService  # type: ignore
+def get_recommendation_engine() -> Type[RecommendationEngine]:
+    """Get Recommendation Engine class."""
+    # Note: This returns a class, actual instance created per request
+    return RecommendationEngine
 
 
 @lru_cache()
-def get_service_orchestrator() -> ServiceOrchestrator:
-    """Get Service Orchestrator instance."""
-    # Note: This returns a factory function, actual instance created per request
-    return ServiceOrchestrator  # type: ignore
+def get_notification_service() -> Type[NotificationService]:
+    """Get Notification Service class."""
+    # Note: This returns a class, actual instance created per request
+    return NotificationService
+
+
+@lru_cache()
+def get_service_orchestrator() -> Type[ServiceOrchestrator]:
+    """Get Service Orchestrator class."""
+    # Note: This returns a class, actual instance created per request
+    return ServiceOrchestrator
 
 
 # Service dependencies for FastAPI
@@ -121,7 +125,7 @@ def get_recommendation_service(
     service: RecommendationEngine = Depends(get_recommendation_engine),
 ) -> RecommendationEngine:
     """Get Recommendation Engine with database session."""
-    service.db = db
+    service.db = db  # type: ignore[assignment]
     return service
 
 
@@ -130,5 +134,5 @@ def get_notification_service_dep(
     service: NotificationService = Depends(get_notification_service),
 ) -> NotificationService:
     """Get Notification Service with database session."""
-    service.db = db
+    service.db = db  # type: ignore[assignment]
     return service

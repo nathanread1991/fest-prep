@@ -1,7 +1,7 @@
 """Festival repository for database operations."""
 
 from datetime import datetime
-from typing import List, Optional, Tuple
+from typing import Any, Callable, List, Optional, Tuple
 from uuid import UUID
 
 from sqlalchemy import func, or_, select
@@ -15,7 +15,7 @@ from festival_playlist_generator.repositories.base_repository import BaseReposit
 class FestivalRepository(BaseRepository[Festival]):
     """Repository for Festival database operations following enterprise patterns."""
 
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: AsyncSession) -> None:
         """
         Initialize the festival repository.
 
@@ -197,8 +197,10 @@ class FestivalRepository(BaseRepository[Festival]):
         # Execute query
         result = await self.db.execute(base_query)
         festivals = list(result.scalars().all())
+        
+        total_count_int = total_count if total_count is not None else 0
 
-        return festivals, total_count
+        return festivals, total_count_int
 
     async def get_by_location(self, location: str, limit: int = 10) -> List[Festival]:
         """
@@ -233,7 +235,8 @@ class FestivalRepository(BaseRepository[Festival]):
         result = await self.db.execute(
             select(func.count(Festival.id)).where(Festival.name == name)
         )
-        return result.scalar() > 0
+        count = result.scalar()
+        return count is not None and count > 0
 
     async def count_by_location(self, location: str) -> int:
         """
@@ -250,4 +253,16 @@ class FestivalRepository(BaseRepository[Festival]):
                 func.lower(Festival.location).like(f"%{location.lower()}%")
             )
         )
-        return result.scalar()
+        count = result.scalar()
+        return count if count is not None else 0
+
+    async def count_total(self) -> int:
+        """
+        Get total count of all festivals.
+
+        Returns:
+            Total number of festivals
+        """
+        result = await self.db.execute(select(func.count(Festival.id)))
+        count = result.scalar()
+        return count if count is not None else 0

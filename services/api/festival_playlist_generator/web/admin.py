@@ -4,14 +4,15 @@ import hashlib
 import logging
 import os
 import secrets
-from typing import Optional
+from typing import Any, Callable, Dict, Optional
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response, status
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from festival_playlist_generator.core.config import settings
 from festival_playlist_generator.core.database import get_db
@@ -34,7 +35,7 @@ templates.env.globals.update(
 )
 
 
-def add_no_cache_headers(response):
+def add_no_cache_headers(response: Any) -> Any:
     """Add no-cache headers to prevent stale data."""
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
     response.headers["Pragma"] = "no-cache"
@@ -49,7 +50,7 @@ ADMIN_PASSWORD = settings.ADMIN_PASSWORD
 security = HTTPBasic()
 
 
-def verify_admin_credentials(credentials: HTTPBasicCredentials = Depends(security)):
+def verify_admin_credentials(credentials: HTTPBasicCredentials = Depends(security)) -> str:
     """Verify admin credentials."""
     is_correct_username = secrets.compare_digest(credentials.username, ADMIN_USERNAME)
     is_correct_password = secrets.compare_digest(credentials.password, ADMIN_PASSWORD)
@@ -68,7 +69,7 @@ async def admin_dashboard(
     request: Request,
     admin_user: str = Depends(verify_admin_credentials),
     db: AsyncSession = Depends(get_db),
-):
+) -> Response:
     """Admin dashboard with overview."""
     try:
         # Get counts
@@ -123,7 +124,7 @@ async def admin_festivals(
     request: Request,
     admin_user: str = Depends(verify_admin_credentials),
     db: AsyncSession = Depends(get_db),
-):
+) -> Response:
     """Admin festivals management page."""
     try:
         from sqlalchemy.orm import selectinload
@@ -166,7 +167,7 @@ async def admin_festivals(
 @admin_router.get("/festivals/new", response_class=HTMLResponse)
 async def admin_new_festival(
     request: Request, admin_user: str = Depends(verify_admin_credentials)
-):
+) -> Response:
     """New festival form."""
     return templates.TemplateResponse(
         "admin/festival_form.html",
@@ -185,7 +186,7 @@ async def admin_edit_festival(
     festival_id: str,
     admin_user: str = Depends(verify_admin_credentials),
     db: AsyncSession = Depends(get_db),
-):
+) -> Response:
     """Edit festival form."""
     try:
         from uuid import UUID
@@ -290,7 +291,7 @@ async def admin_create_festival(
     secondary_color: Optional[str] = Form(None),
     text_color: Optional[str] = Form(None),
     accent_colors: Optional[str] = Form(None),
-):
+) -> Response:
     """Create a new festival."""
     try:
         from datetime import datetime
@@ -484,7 +485,7 @@ async def admin_artists(
     search: Optional[str] = None,
     filter_orphaned: bool = False,
     filter_with_festivals: bool = False,
-):
+) -> Response:
     """
     Admin artists management page with server-side search, filtering, and pagination.
 
@@ -573,7 +574,7 @@ async def admin_artists(
 @admin_router.get("/artists/new", response_class=HTMLResponse)
 async def admin_new_artist(
     request: Request, admin_user: str = Depends(verify_admin_credentials)
-):
+) -> Response:
     """New artist form."""
     return templates.TemplateResponse(
         "admin/artist_form.html",
@@ -589,7 +590,7 @@ async def admin_new_artist(
 @admin_router.post("/api/spotify/search")
 async def admin_spotify_search(
     request: Request, admin_user: str = Depends(verify_admin_credentials)
-):
+) -> Dict[str, Any]:
     """Search for artist on Spotify (admin API) - returns top 5 results."""
     try:
         body = await request.json()
@@ -645,7 +646,7 @@ async def admin_create_artist(
     spotify_popularity: Optional[float] = Form(None),
     spotify_followers: Optional[float] = Form(None),
     logo_url: Optional[str] = Form(None),
-):
+) -> Response:
     """Create a new artist."""
     try:
         # Parse genres
@@ -822,7 +823,7 @@ async def admin_delete_festival(
     festival_id: str,
     admin_user: str = Depends(verify_admin_credentials),
     db: AsyncSession = Depends(get_db),
-):
+) -> Response:
     """Delete a festival."""
     logger.info(f"Attempting to delete festival {festival_id}")
     try:
@@ -856,7 +857,7 @@ async def admin_delete_festival(
         await db.commit()
 
         logger.info(
-            f"Successfully deleted festival {festival_id}, rows affected: {result.rowcount}"
+            f"Successfully deleted festival {festival_id}, rows affected: {result.rowcount}"  # type: ignore[attr-defined]
         )
         return RedirectResponse(url="/admin/festivals?deleted=success", status_code=303)
     except Exception as e:
@@ -885,7 +886,7 @@ async def admin_update_festival(
     secondary_color: Optional[str] = Form(None),
     text_color: Optional[str] = Form(None),
     accent_colors: Optional[str] = Form(None),
-):
+) -> Response:
     """Update an existing festival."""
     try:
         from datetime import datetime
@@ -963,10 +964,10 @@ async def admin_update_festival(
                 )
                 artist = result.scalar_one_or_none()
                 if not artist:
-                    artist = ArtistModel(name=artist_name)
+                    artist = ArtistModel(name=artist_name)  # type: ignore[assignment]
                     db.add(artist)
                     await db.flush()
-                    new_artist_ids.append(str(artist.id))
+                    new_artist_ids.append(str(artist.id))  # type: ignore[union-attr]
                 festival.artists.append(artist)
 
         await db.commit()
@@ -1076,7 +1077,7 @@ async def admin_bulk_delete_festivals(
     request: Request,
     admin_user: str = Depends(verify_admin_credentials),
     db: AsyncSession = Depends(get_db),
-):
+) -> Response:
     """Bulk delete festivals."""
     try:
         from uuid import UUID
@@ -1114,14 +1115,14 @@ async def admin_bulk_delete_festivals(
         result = await db.execute(delete_stmt)
         await db.commit()
 
-        logger.info(f"Successfully bulk deleted {result.rowcount} festivals")
+        logger.info(f"Successfully bulk deleted {result.rowcount} festivals")  # type: ignore[attr-defined]
 
         return JSONResponse(
             status_code=200,
             content={
                 "success": True,
-                "message": f"Successfully deleted {result.rowcount} festival(s)",
-                "deleted_count": result.rowcount,
+                "message": f"Successfully deleted {result.rowcount} festival(s)",  # type: ignore[attr-defined]
+                "deleted_count": result.rowcount,  # type: ignore[attr-defined]
             },
         )
 
@@ -1139,7 +1140,7 @@ async def admin_edit_artist(
     artist_id: str,
     admin_user: str = Depends(verify_admin_credentials),
     db: AsyncSession = Depends(get_db),
-):
+) -> Response:
     """Edit artist form."""
     try:
         from uuid import UUID
@@ -1223,7 +1224,7 @@ async def admin_search_artists(
     source: str = "database",  # "database" or "spotify"
     admin_user: str = Depends(verify_admin_credentials),
     db: AsyncSession = Depends(get_db),
-):
+) -> JSONResponse:
     """
     Search for artists by name.
 
@@ -1328,7 +1329,7 @@ async def admin_search_artists(
 @admin_router.post("/api/setlistfm/search")
 async def admin_setlistfm_search(
     request: Request, admin_user: str = Depends(verify_admin_credentials)
-):
+) -> Dict[str, Any]:
     """Search for artist on Setlist.fm (admin API) - returns top 5 artist matches."""
     try:
         body = await request.json()
@@ -1410,7 +1411,7 @@ async def admin_apply_spotify_data(
     request: Request,
     admin_user: str = Depends(verify_admin_credentials),
     db: AsyncSession = Depends(get_db),
-):
+) -> JSONResponse:
     """Apply selected Spotify artist data to the artist."""
     try:
         from uuid import UUID
@@ -1539,7 +1540,7 @@ async def admin_apply_setlistfm_data(
     request: Request,
     admin_user: str = Depends(verify_admin_credentials),
     db: AsyncSession = Depends(get_db),
-):
+) -> JSONResponse:
     """Apply selected Setlist.fm artist data and fetch setlists."""
     try:
         from uuid import UUID
@@ -1609,7 +1610,7 @@ async def admin_enrich_artist(
     request: Request,
     admin_user: str = Depends(verify_admin_credentials),
     db: AsyncSession = Depends(get_db),
-):
+) -> JSONResponse:
     """Enrich artist with Spotify and Setlist.fm data."""
     try:
         from uuid import UUID
@@ -1635,9 +1636,9 @@ async def admin_enrich_artist(
                 content={"success": False, "message": "Artist not found"},
             )
 
-        enrichment_results = {
-            "spotify": {"success": False},
-            "setlistfm": {"success": False},
+        enrichment_results: Dict[str, Dict[str, Any]] = {
+            "spotify": {"success": False, "message": ""},
+            "setlistfm": {"success": False, "message": ""},
         }
 
         # Enrich with Spotify data
@@ -1732,7 +1733,7 @@ async def admin_update_artist(
     spotify_popularity: Optional[float] = Form(None),
     spotify_followers: Optional[float] = Form(None),
     logo_url: Optional[str] = Form(None),
-):
+) -> Response:
     """Update an existing artist."""
     try:
         from uuid import UUID
@@ -1861,7 +1862,7 @@ async def admin_delete_artist(
     artist_id: str,
     admin_user: str = Depends(verify_admin_credentials),
     db: AsyncSession = Depends(get_db),
-):
+) -> Response:
     """Delete an artist and all related data."""
     try:
         from uuid import UUID
@@ -1938,34 +1939,13 @@ async def admin_delete_artist(
         return RedirectResponse(
             url="/admin/artists?error=delete_failed", status_code=303
         )
-        await db.execute(delete_setlists)
-
-        # Delete any playlists for this artist
-        from festival_playlist_generator.models.playlist import Playlist
-
-        delete_playlists = delete(Playlist).where(Playlist.artist_id == artist_uuid)
-        await db.execute(delete_playlists)
-
-        # Finally, delete the artist
-        delete_artist = delete(ArtistModel).where(ArtistModel.id == artist_uuid)
-        await db.execute(delete_artist)
-
-        await db.commit()
-
-        return RedirectResponse(url="/admin/artists?deleted=success", status_code=303)
-    except Exception as e:
-        logger.error(f"Error deleting artist {artist_id}: {e}")
-        await db.rollback()
-        return RedirectResponse(
-            url="/admin/artists?error=delete_failed", status_code=303
-        )
 
 
 @admin_router.get("/api/stats")
 async def admin_get_stats(
     admin_user: str = Depends(verify_admin_credentials),
     db: AsyncSession = Depends(get_db),
-):
+) -> Dict[str, Any]:
     """Get current admin dashboard statistics."""
     try:
         # Get counts
@@ -1995,7 +1975,7 @@ async def admin_get_stats(
 async def admin_warm_cache(
     admin_user: str = Depends(verify_admin_credentials),
     db: AsyncSession = Depends(get_db),
-):
+) -> Dict[str, Any]:
     """Warm the nginx image cache by pre-fetching all images."""
     try:
         from festival_playlist_generator.services.cache_warmer import cache_warmer
@@ -2020,7 +2000,7 @@ async def admin_bulk_delete_artists(
     request: Request,
     admin_user: str = Depends(verify_admin_credentials),
     db: AsyncSession = Depends(get_db),
-):
+) -> Dict[str, Any]:
     """Bulk delete multiple artists and all their related data."""
     try:
         from uuid import UUID
@@ -2055,7 +2035,8 @@ async def admin_bulk_delete_artists(
 
         artists_with_festivals = [a for a in artists if a.festivals]
         if artists_with_festivals:
-            artist_names = ", ".join([a.name for a in artists_with_festivals[:3]])
+            artist_names_list = [a.name for a in artists_with_festivals[:3]]
+            artist_names = ", ".join(artist_names_list)
             if len(artists_with_festivals) > 3:
                 artist_names += f" and {len(artists_with_festivals) - 3} more"
             return {
@@ -2064,7 +2045,7 @@ async def admin_bulk_delete_artists(
             }
 
         # Get artist names for logging
-        artist_names = [a.name for a in artists]
+        artist_names_for_logging = [a.name for a in artists]
 
         # Delete in the correct order to avoid foreign key constraint violations
 
@@ -2094,8 +2075,8 @@ async def admin_bulk_delete_artists(
 
         await db.commit()
 
-        deleted_count = result.rowcount
-        logger.info(f"Bulk deleted {deleted_count} artists: {', '.join(artist_names)}")
+        deleted_count = result.rowcount  # type: ignore[attr-defined]
+        logger.info(f"Bulk deleted {deleted_count} artists: {', '.join(artist_names_for_logging)}")
 
         return {
             "success": True,
@@ -2114,7 +2095,7 @@ async def admin_users(
     request: Request,
     admin_user: str = Depends(verify_admin_credentials),
     db: AsyncSession = Depends(get_db),
-):
+) -> Response:
     """Admin users management page."""
     try:
         # Get all users
@@ -2156,7 +2137,7 @@ async def admin_users(
 async def admin_enrich_all_artists(
     admin_user: str = Depends(verify_admin_credentials),
     db: AsyncSession = Depends(get_db),
-):
+) -> JSONResponse:
     """Enrich all artists that don't have Spotify data yet."""
     try:
         from festival_playlist_generator.services.artist_enrichment_service import (
@@ -2211,7 +2192,7 @@ async def admin_delete_user(
     user_id: str,
     admin_user: str = Depends(verify_admin_credentials),
     db: AsyncSession = Depends(get_db),
-):
+) -> Response:
     """Delete a user and all related data (un-onboard)."""
     try:
         from uuid import UUID
@@ -2288,7 +2269,7 @@ async def admin_refresh_festival_branding(
     festival_id: str,
     admin_user: str = Depends(verify_admin_credentials),
     db: AsyncSession = Depends(get_db),
-):
+) -> JSONResponse:
     """Refresh festival branding by re-scraping from the website."""
     try:
         from uuid import UUID
@@ -2394,7 +2375,7 @@ async def admin_duplicates(
     request: Request,
     admin_user: str = Depends(verify_admin_credentials),
     db: AsyncSession = Depends(get_db),
-):
+) -> Response:
     """Admin duplicate artists detection page."""
     try:
         from sqlalchemy import create_engine
@@ -2460,7 +2441,7 @@ async def admin_preview_merge(
     request: Request,
     admin_user: str = Depends(verify_admin_credentials),
     db: AsyncSession = Depends(get_db),
-):
+) -> JSONResponse:
     """Preview a merge operation."""
     try:
         from sqlalchemy import create_engine
@@ -2530,7 +2511,7 @@ async def admin_merge_artists(
     request: Request,
     admin_user: str = Depends(verify_admin_credentials),
     db: AsyncSession = Depends(get_db),
-):
+) -> JSONResponse:
     """Merge duplicate artists."""
     try:
         from sqlalchemy import create_engine

@@ -3,7 +3,7 @@
 import asyncio
 import logging
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, cast
 
 import httpx
 
@@ -20,7 +20,7 @@ class RateLimiter:
     Setlist.fm has rate limits, so we need to be aware and throttle requests.
     """
 
-    def __init__(self, max_requests: int = 10, time_window: int = 1):
+    def __init__(self, max_requests: int = 10, time_window: int = 1) -> None:
         """
         Initialize rate limiter.
 
@@ -32,7 +32,7 @@ class RateLimiter:
         self.time_window = time_window
         self.requests: List[datetime] = []
 
-    async def acquire(self):
+    async def acquire(self) -> None:
         """Wait if necessary to respect rate limit."""
         now = datetime.now()
 
@@ -69,7 +69,7 @@ class SetlistFmService:
     Requirements: US-7.6
     """
 
-    def __init__(self, api_key: Optional[str] = None):
+    def __init__(self, api_key: Optional[str] = None) -> None:
         """
         Initialize Setlist.fm service.
 
@@ -106,12 +106,12 @@ class SetlistFmService:
             Dictionary with setlists data or None on failure
         """
 
-        async def _get():
+        async def _get() -> Dict[str, Any]:
             # Respect rate limit
             await self.rate_limiter.acquire()
 
-            headers = {"x-api-key": self.api_key, "Accept": "application/json"}
-            params = {"p": page, "artistMbid": artist_mbid}
+            headers: Dict[str, str] = {"x-api-key": str(self.api_key), "Accept": "application/json"}
+            params: Dict[str, str | int] = {"p": str(page), "artistMbid": artist_mbid}
 
             response = await self.client.get(
                 f"{self.base_url}/artist/{artist_mbid}/setlists",
@@ -120,10 +120,11 @@ class SetlistFmService:
             )
             response.raise_for_status()
 
-            return response.json()
+            return cast(Dict[str, Any], response.json())
 
         try:
-            return await self._retry_with_backoff(_get)
+            result: Dict[str, Any] = await self._retry_with_backoff(_get)
+            return result
         except Exception as e:
             logger.error(f"Failed to get setlists for artist {artist_mbid}: {e}")
             return None
@@ -139,21 +140,22 @@ class SetlistFmService:
             Setlist data dictionary or None on failure
         """
 
-        async def _get():
+        async def _get() -> Dict[str, Any]:
             # Respect rate limit
             await self.rate_limiter.acquire()
 
-            headers = {"x-api-key": self.api_key, "Accept": "application/json"}
+            headers: Dict[str, str] = {"x-api-key": str(self.api_key), "Accept": "application/json"}
 
             response = await self.client.get(
                 f"{self.base_url}/setlist/{setlist_id}", headers=headers
             )
             response.raise_for_status()
 
-            return response.json()
+            return cast(Dict[str, Any], response.json())
 
         try:
-            return await self._retry_with_backoff(_get)
+            result: Dict[str, Any] = await self._retry_with_backoff(_get)
+            return result
         except Exception as e:
             logger.error(f"Failed to get setlist {setlist_id}: {e}")
             return None
@@ -173,22 +175,23 @@ class SetlistFmService:
             Dictionary with artist search results or None on failure
         """
 
-        async def _search():
+        async def _search() -> Dict[str, Any]:
             # Respect rate limit
             await self.rate_limiter.acquire()
 
-            headers = {"x-api-key": self.api_key, "Accept": "application/json"}
-            params = {"artistName": artist_name, "p": page, "sort": "relevance"}
+            headers: Dict[str, str] = {"x-api-key": str(self.api_key), "Accept": "application/json"}
+            params: Dict[str, str | int] = {"artistName": artist_name, "p": str(page), "sort": "relevance"}
 
             response = await self.client.get(
                 f"{self.base_url}/search/artists", headers=headers, params=params
             )
             response.raise_for_status()
 
-            return response.json()
+            return cast(Dict[str, Any], response.json())
 
         try:
-            return await self._retry_with_backoff(_search)
+            result: Dict[str, Any] = await self._retry_with_backoff(_search)
+            return result
         except Exception as e:
             logger.error(f"Failed to search artist '{artist_name}': {e}")
             return None
@@ -215,12 +218,12 @@ class SetlistFmService:
             Dictionary with setlist search results or None on failure
         """
 
-        async def _search():
+        async def _search() -> Dict[str, Any]:
             # Respect rate limit
             await self.rate_limiter.acquire()
 
-            headers = {"x-api-key": self.api_key, "Accept": "application/json"}
-            params = {"p": page}
+            headers: Dict[str, str] = {"x-api-key": str(self.api_key), "Accept": "application/json"}
+            params: Dict[str, str | int] = {"p": str(page)}
 
             if artist_name:
                 params["artistName"] = artist_name
@@ -229,17 +232,18 @@ class SetlistFmService:
             if city_name:
                 params["cityName"] = city_name
             if year:
-                params["year"] = year
+                params["year"] = str(year)
 
             response = await self.client.get(
                 f"{self.base_url}/search/setlists", headers=headers, params=params
             )
             response.raise_for_status()
 
-            return response.json()
+            return cast(Dict[str, Any], response.json())
 
         try:
-            return await self._retry_with_backoff(_search)
+            result: Dict[str, Any] = await self._retry_with_backoff(_search)
+            return result
         except Exception as e:
             logger.error(f"Failed to search setlists: {e}")
             return None
@@ -255,32 +259,33 @@ class SetlistFmService:
             Venue data dictionary or None on failure
         """
 
-        async def _get():
+        async def _get() -> Dict[str, Any]:
             # Respect rate limit
             await self.rate_limiter.acquire()
 
-            headers = {"x-api-key": self.api_key, "Accept": "application/json"}
+            headers: Dict[str, str] = {"x-api-key": str(self.api_key), "Accept": "application/json"}
 
             response = await self.client.get(
                 f"{self.base_url}/venue/{venue_id}", headers=headers
             )
             response.raise_for_status()
 
-            return response.json()
+            return cast(Dict[str, Any], response.json())
 
         try:
-            return await self._retry_with_backoff(_get)
+            result: Dict[str, Any] = await self._retry_with_backoff(_get)
+            return result
         except Exception as e:
             logger.error(f"Failed to get venue {venue_id}: {e}")
             return None
 
     async def _retry_with_backoff(
         self,
-        func,
+        func: Callable[[], Any],
         max_retries: int = 3,
         initial_delay: float = 1.0,
         backoff_factor: float = 2.0,
-    ):
+    ) -> Any:
         """
         Retry function with exponential backoff.
 
@@ -297,7 +302,7 @@ class SetlistFmService:
             Exception: If all retries fail
         """
         delay = initial_delay
-        last_exception = None
+        last_exception: Optional[Exception] = None
 
         for attempt in range(max_retries + 1):
             try:
@@ -340,7 +345,8 @@ class SetlistFmService:
         # Should never reach here, but just in case
         if last_exception:
             raise last_exception
+        raise Exception("Retry failed with no exception recorded")
 
-    async def close(self):
+    async def close(self) -> None:
         """Close HTTP client."""
         await self.client.aclose()

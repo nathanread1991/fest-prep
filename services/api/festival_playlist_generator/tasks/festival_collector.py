@@ -2,7 +2,7 @@
 
 import logging
 from datetime import datetime, timedelta
-from typing import Any, Dict, List
+from typing import Any, Callable, Dict, List, Union
 
 from celery import current_task
 
@@ -24,7 +24,7 @@ logger = get_logger("tasks.festival_collector")
 class MockFestivalSource(WebScrapingSource):
     """Mock festival data source for testing and development."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("https://mock-festival-source.com", "mock_source")
 
     async def fetch_festivals(self) -> List[RawFestivalData]:
@@ -75,8 +75,8 @@ class MockFestivalSource(WebScrapingSource):
         return True  # Mock data is always valid
 
 
-@celery_app.task(bind=True, max_retries=3, default_retry_delay=300)
-def collect_daily_festivals(self):
+@celery_app.task(bind=True, max_retries=3, default_retry_delay=300)  # type: ignore[untyped-decorator]
+def collect_daily_festivals(self: Any) -> Dict[str, Any]:
     """
     Collect festival data daily using the service orchestrator.
 
@@ -88,7 +88,7 @@ def collect_daily_festivals(self):
     Validates: Requirements 1.1
     """
 
-    async def run_workflow():
+    async def run_workflow() -> Dict[str, Any]:
         async with AsyncSessionLocal() as db:
             try:
                 logger.info("Starting daily festival collection task via orchestrator")
@@ -173,6 +173,8 @@ def collect_daily_festivals(self):
                 f"Retrying festival collection in {retry_delay} seconds (attempt {self.request.retries + 1}/{self.max_retries})"
             )
             self.retry(countdown=retry_delay, exc=e)
+            # retry() raises an exception, so this line is never reached
+            return {"status": "retrying"}  # For type checker
         except self.MaxRetriesExceededError:
             logger.error(f"Max retries exceeded for festival collection task")
             return {
@@ -183,8 +185,8 @@ def collect_daily_festivals(self):
             }
 
 
-@celery_app.task(bind=True, max_retries=2, default_retry_delay=600)
-def collect_festivals_from_source(self, source_config: Dict[str, Any]):
+@celery_app.task(bind=True, max_retries=2, default_retry_delay=600)  # type: ignore[untyped-decorator]
+def collect_festivals_from_source(self: Any, source_config: Dict[str, Any]) -> Dict[str, Any]:
     """
     Collect festivals from a specific source.
 
@@ -205,6 +207,7 @@ def collect_festivals_from_source(self, source_config: Dict[str, Any]):
         )
 
         # Create appropriate data source based on config
+        source: Union[WebScrapingSource, APISource]
         if source_config["type"] == "web_scraping":
             source = WebScrapingSource(
                 base_url=source_config["url"],
@@ -243,6 +246,8 @@ def collect_festivals_from_source(self, source_config: Dict[str, Any]):
         try:
             retry_delay = 600 * (2**self.request.retries)  # 10 min, 20 min
             self.retry(countdown=retry_delay, exc=e)
+            # retry() raises an exception, so this line is never reached
+            return {"status": "retrying"}  # For type checker
         except self.MaxRetriesExceededError:
             return {
                 "status": "failed",
@@ -252,8 +257,8 @@ def collect_festivals_from_source(self, source_config: Dict[str, Any]):
             }
 
 
-@celery_app.task(bind=True)
-def cleanup_old_festivals(self, days_old: int = 30):
+@celery_app.task(bind=True)  # type: ignore[untyped-decorator]
+def cleanup_old_festivals(self: Any, days_old: int = 30) -> Dict[str, Any]:
     """
     Clean up old festival data that's no longer relevant.
 

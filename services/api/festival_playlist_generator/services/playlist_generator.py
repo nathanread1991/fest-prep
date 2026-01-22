@@ -2,7 +2,7 @@
 
 import logging
 from datetime import datetime
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 from uuid import UUID, uuid4
 
 from sqlalchemy import and_, or_
@@ -24,9 +24,10 @@ logger = logging.getLogger(__name__)
 class PlaylistGeneratorService:
     """Main service for generating playlists based on setlist analysis."""
 
-    def __init__(self, setlist_fm_api_key: Optional[str] = None):
+    def __init__(self, setlist_fm_api_key: Optional[str] = None) -> None:
         self.logger = logging.getLogger(f"{__name__}.PlaylistGeneratorService")
         self.artist_analyzer = ArtistAnalyzerService(setlist_fm_api_key)
+        self.db: Optional[Any] = None  # Set by dependency injection
 
     async def generate_artist_playlist(
         self, artist_id: UUID, user_id: UUID, limit: int = 10
@@ -45,7 +46,7 @@ class PlaylistGeneratorService:
         self.logger.info(f"Generating playlist for artist {artist_id}, user {user_id}")
 
         try:
-            db = next(get_db())
+            db = next(get_db())  # type: ignore[call-overload]
 
             # Get artist information
             artist = db.query(ArtistModel).filter(ArtistModel.id == artist_id).first()
@@ -96,6 +97,9 @@ class PlaylistGeneratorService:
             playlist_create = PlaylistCreate(
                 name=playlist_name,
                 description=playlist_description,
+                platform=None,
+                external_id=None,
+                festival_id=None,
                 artist_id=artist_id,
                 user_id=user_id,
                 song_ids=[song.id for song in song_objects],
@@ -136,7 +140,7 @@ class PlaylistGeneratorService:
         )
 
         try:
-            db = next(get_db())
+            db = next(get_db())  # type: ignore[call-overload]
 
             # Get festival information
             festival = (
@@ -162,8 +166,8 @@ class PlaylistGeneratorService:
                 return None
 
             # Collect setlists for all artists
-            all_song_frequency = {}
-            artist_song_mapping = {}  # Track which artist performs each song
+            all_song_frequency: Dict[str, Dict[str, Any]] = {}
+            artist_song_mapping: Dict[str, List[str]] = {}  # Track which artist performs each song
             processed_artists = 0
 
             for artist in artists:
@@ -267,7 +271,10 @@ class PlaylistGeneratorService:
             playlist_create = PlaylistCreate(
                 name=playlist_name,
                 description=playlist_description,
+                platform=None,
+                external_id=None,
                 festival_id=festival_id,
+                artist_id=None,
                 user_id=user_id,
                 song_ids=[song.id for song in song_objects],
             )
@@ -332,7 +339,7 @@ class PlaylistGeneratorService:
             Existing Playlist object or None if not found
         """
         try:
-            db = next(get_db())
+            db = next(get_db())  # type: ignore[call-overload]
 
             query = db.query(PlaylistModel)
 
@@ -402,7 +409,7 @@ class PlaylistGeneratorService:
         self.logger.info(f"Updating playlist {playlist_id} with {len(new_songs)} songs")
 
         try:
-            db = next(get_db())
+            db = next(get_db())  # type: ignore[call-overload]
 
             # Get existing playlist
             playlist_model = (
@@ -570,7 +577,7 @@ class PlaylistGeneratorService:
     async def _create_or_find_festival_songs(
         self,
         ranked_songs: List[Tuple[str, int]],
-        all_song_frequency: Dict[str, Dict],
+        all_song_frequency: Dict[str, Dict[str, Any]],
         artist_song_mapping: Dict[str, List[str]],
         db: Session,
     ) -> List[Song]:
@@ -691,6 +698,12 @@ class PlaylistGeneratorService:
         db.commit()
 
         # Convert to Pydantic model
+        # Convert model StreamingPlatform enum to schema StreamingPlatform enum
+        platform_value = None
+        if playlist_model.platform:
+            from festival_playlist_generator.schemas.playlist import StreamingPlatform as SchemaStreamingPlatform
+            platform_value = SchemaStreamingPlatform(playlist_model.platform.value)
+        
         playlist = Playlist(
             id=playlist_model.id,
             name=playlist_model.name,
@@ -698,7 +711,7 @@ class PlaylistGeneratorService:
             festival_id=playlist_model.festival_id,
             artist_id=playlist_model.artist_id,
             user_id=playlist_model.user_id,
-            platform=playlist_model.platform,
+            platform=platform_value,
             external_id=playlist_model.external_id,
             created_at=playlist_model.created_at,
             updated_at=playlist_model.updated_at,

@@ -4,7 +4,7 @@ import hashlib
 import logging
 import re
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 import httpx
 
@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 class FestivalEnrichmentService:
     """Service to enrich festival data from Clashfinder and other sources."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.clashfinder_username = settings.CLASHFINDER_USERNAME
         self.clashfinder_private_key = settings.CLASHFINDER_PRIVATE_KEY
         self.base_url = "https://clashfinder.com"
@@ -92,7 +92,10 @@ class FestivalEnrichmentService:
     ) -> Dict[str, Any]:
         """Parse Clashfinder API response into a standardized format."""
         try:
-            enriched_data = {"source": "clashfinder", "clashfinder_id": clashfinder_id}
+            enriched_data: Dict[str, Any] = {
+                "source": "clashfinder",
+                "clashfinder_id": clashfinder_id,
+            }
 
             # Extract festival name
             enriched_data["name"] = (

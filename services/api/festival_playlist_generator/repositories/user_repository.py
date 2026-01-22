@@ -1,7 +1,7 @@
 """User repository for database operations."""
 
 from datetime import datetime
-from typing import List, Optional
+from typing import Any, Callable, Dict, List, Optional, cast
 from uuid import UUID
 
 from sqlalchemy import func, select, update
@@ -15,7 +15,7 @@ from festival_playlist_generator.repositories.base_repository import BaseReposit
 class UserRepository(BaseRepository[User]):
     """Repository for User database operations following enterprise patterns."""
 
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: AsyncSession) -> None:
         """
         Initialize the user repository.
 
@@ -122,7 +122,8 @@ class UserRepository(BaseRepository[User]):
         result = await self.db.execute(
             select(func.count(User.id)).where(func.lower(User.email) == email.lower())
         )
-        return result.scalar() > 0
+        count = result.scalar()
+        return count is not None and count > 0
 
     async def exists_by_oauth_provider(self, provider: str, provider_id: str) -> bool:
         """
@@ -140,7 +141,8 @@ class UserRepository(BaseRepository[User]):
                 User.oauth_provider == provider, User.oauth_provider_id == provider_id
             )
         )
-        return result.scalar() > 0
+        count = result.scalar()
+        return count is not None and count > 0
 
     async def update_last_login(self, user_id: UUID) -> bool:
         """
@@ -155,9 +157,10 @@ class UserRepository(BaseRepository[User]):
         result = await self.db.execute(
             update(User).where(User.id == user_id).values(last_login=datetime.utcnow())
         )
-        return result.rowcount > 0
+        rowcount = cast(Any, result).rowcount
+        return rowcount is not None and rowcount > 0
 
-    async def update_preferences(self, user_id: UUID, preferences: dict) -> bool:
+    async def update_preferences(self, user_id: UUID, preferences: Dict[str, Any]) -> bool:
         """
         Update user preferences.
 
@@ -171,7 +174,8 @@ class UserRepository(BaseRepository[User]):
         result = await self.db.execute(
             update(User).where(User.id == user_id).values(preferences=preferences)
         )
-        return result.rowcount > 0
+        rowcount = cast(Any, result).rowcount
+        return rowcount is not None and rowcount > 0
 
     async def add_connected_platform(self, user_id: UUID, platform: str) -> bool:
         """
@@ -279,7 +283,8 @@ class UserRepository(BaseRepository[User]):
         result = await self.db.execute(
             select(func.count(User.id)).where(User.oauth_provider == provider)
         )
-        return result.scalar()
+        count = result.scalar()
+        return count if count is not None else 0
 
     async def count_with_marketing_opt_in(self) -> int:
         """
@@ -291,7 +296,8 @@ class UserRepository(BaseRepository[User]):
         result = await self.db.execute(
             select(func.count(User.id)).where(User.marketing_opt_in == True)
         )
-        return result.scalar()
+        count = result.scalar()
+        return count if count is not None else 0
 
     async def get_recently_active(self, days: int = 30, limit: int = 100) -> List[User]:
         """

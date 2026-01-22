@@ -1,6 +1,6 @@
 """Authentication API endpoints."""
 
-from typing import Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,7 +13,7 @@ router = APIRouter()
 
 
 @router.get("/me", response_model=UserSchema)
-async def get_current_user_api(request: Request, db: AsyncSession = Depends(get_db)):
+async def get_current_user_api(request: Request, db: AsyncSession = Depends(get_db)) -> UserSchema:
     """Get current authenticated user information."""
     session_id = request.cookies.get("session_id")
 
@@ -29,13 +29,13 @@ async def get_current_user_api(request: Request, db: AsyncSession = Depends(get_
 
 
 @router.get("/providers")
-async def get_oauth_providers():
+async def get_oauth_providers() -> Dict[str, List[str]]:
     """Get list of available OAuth providers."""
     return {"providers": oauth_service.get_available_providers()}
 
 
 @router.get("/session")
-async def get_session_info(request: Request):
+async def get_session_info(request: Request) -> Dict[str, Any]:
     """Get current session information."""
     session_id = request.cookies.get("session_id")
 

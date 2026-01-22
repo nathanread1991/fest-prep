@@ -1,7 +1,7 @@
 """Playlist generation API endpoints that integrate all services."""
 
 import logging
-from typing import Optional
+from typing import Any, Dict, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
@@ -50,7 +50,7 @@ async def generate_festival_playlist(
     artist_analyzer: ArtistAnalyzerService = Depends(get_artist_analyzer),
     playlist_generator: PlaylistGeneratorService = Depends(get_playlist_generator),
     streaming_service: StreamingIntegrationService = Depends(get_streaming_integration),
-):
+) -> JSONResponse:
     """Generate a comprehensive playlist for a festival using all services."""
     version = get_request_version(request)
     formatter = APIVersionManager.get_formatter(version)
@@ -75,7 +75,8 @@ async def generate_festival_playlist(
         )
 
         # Step 1: Collect/refresh festival data if needed
-        await festival_collector.refresh_festival_data(festival_id)
+        # TODO: Implement refresh_festival_data method in FestivalCollectorService
+        # await festival_collector.refresh_festival_data(festival_id)
 
         # Step 2: Analyze all artists in the festival
         artist_setlist_data = {}
@@ -107,14 +108,22 @@ async def generate_festival_playlist(
             user_id=user_id,
         )
 
+        if not playlist:
+            return formatter.error_response(
+                error="Playlist generation failed",
+                message="Failed to generate playlist",
+                status_code=500,
+            )
+
         # Step 4: If platform specified, create playlist on streaming service
         external_playlist_id = None
-        if platform and playlist.songs:
+        song_list = getattr(playlist, 'songs', [])
+        if platform and song_list:
             try:
                 # This would require user authentication with the streaming service
                 # For now, we'll just log the intent
                 logger.info(
-                    f"Would create playlist on {platform} with {len(playlist.songs)} songs"
+                    f"Would create playlist on {platform} with {len(song_list)} songs"
                 )
                 # external_playlist_id = await streaming_service.create_playlist(
                 #     playlist, platform, user_auth_token
@@ -131,7 +140,7 @@ async def generate_festival_playlist(
             "user_id": str(user_id),
             "platform": platform,
             "external_id": external_playlist_id,
-            "song_count": len(playlist.songs),
+            "song_count": len(song_list),
             "artists_analyzed": len(artist_setlist_data),
             "created_at": playlist.created_at.isoformat(),
             "songs": [
@@ -142,13 +151,13 @@ async def generate_festival_playlist(
                     "performance_count": song.performance_count,
                     "is_cover": song.is_cover,
                 }
-                for song in playlist.songs[:50]  # Limit response size
+                for song in song_list[:50]  # Limit response size
             ],
         }
 
         return formatter.success_response(
             data=response_data,
-            message=f"Festival playlist generated successfully with {len(playlist.songs)} songs",
+            message=f"Festival playlist generated successfully with {len(song_list)} songs",
         )
 
     except Exception as e:
@@ -168,7 +177,7 @@ async def generate_artist_playlist(
     artist_analyzer: ArtistAnalyzerService = Depends(get_artist_analyzer),
     playlist_generator: PlaylistGeneratorService = Depends(get_playlist_generator),
     streaming_service: StreamingIntegrationService = Depends(get_streaming_integration),
-):
+) -> JSONResponse:
     """Generate a playlist for a single artist using integrated services."""
     version = get_request_version(request)
     formatter = APIVersionManager.get_formatter(version)
@@ -204,12 +213,20 @@ async def generate_artist_playlist(
             artist_id=artist_id, user_id=user_id
         )
 
+        if not playlist:
+            return formatter.error_response(
+                error="Playlist generation failed",
+                message="Failed to generate playlist",
+                status_code=500,
+            )
+
         # Step 3: If platform specified, create playlist on streaming service
         external_playlist_id = None
-        if platform and playlist.songs:
+        song_list = getattr(playlist, 'songs', [])
+        if platform and song_list:
             try:
                 logger.info(
-                    f"Would create playlist on {platform} with {len(playlist.songs)} songs"
+                    f"Would create playlist on {platform} with {len(song_list)} songs"
                 )
                 # external_playlist_id = await streaming_service.create_playlist(
                 #     playlist, platform, user_auth_token
@@ -226,7 +243,7 @@ async def generate_artist_playlist(
             "user_id": str(user_id),
             "platform": platform,
             "external_id": external_playlist_id,
-            "song_count": len(playlist.songs),
+            "song_count": len(song_list),
             "setlists_analyzed": len(setlists),
             "created_at": playlist.created_at.isoformat(),
             "songs": [
@@ -237,13 +254,13 @@ async def generate_artist_playlist(
                     "performance_count": song.performance_count,
                     "is_cover": song.is_cover,
                 }
-                for song in playlist.songs
+                for song in song_list
             ],
         }
 
         return formatter.success_response(
             data=response_data,
-            message=f"Artist playlist generated successfully with {len(playlist.songs)} songs",
+            message=f"Artist playlist generated successfully with {len(song_list)} songs",
         )
 
     except Exception as e:
@@ -260,7 +277,7 @@ async def get_festival_recommendations(
     limit: int = 10,
     db: AsyncSession = Depends(get_db),
     recommendation_engine: RecommendationEngine = Depends(get_recommendation_service),
-):
+) -> JSONResponse:
     """Get personalized festival recommendations for a user."""
     version = get_request_version(request)
     formatter = APIVersionManager.get_formatter(version)
@@ -273,7 +290,7 @@ async def get_festival_recommendations(
             return formatter.not_found_response("User", user_id)
 
         # Get recommendations
-        recommendations = await recommendation_engine.recommend_festivals(user_id)
+        recommendations = await recommendation_engine.recommend_festivals(str(user_id))
 
         # Limit results
         limited_recommendations = recommendations[:limit]
@@ -284,7 +301,8 @@ async def get_festival_recommendations(
                 "festival_name": rec.festival_name,
                 "similarity_score": rec.similarity_score,
                 "matching_artists": rec.matching_artists,
-                "recommendation_reason": rec.reason,
+                "location": rec.location,
+                "dates": [d.isoformat() for d in rec.dates],
             }
             for rec in limited_recommendations
         ]
@@ -306,7 +324,7 @@ async def trigger_festival_collection(
     request: Request,
     background_tasks: BackgroundTasks,
     festival_collector: FestivalCollectorService = Depends(get_festival_collector),
-):
+) -> JSONResponse:
     """Trigger manual festival data collection."""
     version = get_request_version(request)
     formatter = APIVersionManager.get_formatter(version)

@@ -2,7 +2,7 @@
 
 import logging
 import re
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, cast
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,7 +10,7 @@ from sqlalchemy.orm import selectinload
 
 from festival_playlist_generator.models.artist import Artist as ArtistModel
 from festival_playlist_generator.services.name_normalization_service import (
-    normalize_artist_name,
+    NameNormalizationService,
 )
 
 logger = logging.getLogger(__name__)
@@ -27,7 +27,7 @@ def levenshtein_distance(s1: str, s2: str) -> int:
     if len(s2) == 0:
         return len(s1)
 
-    previous_row = range(len(s2) + 1)
+    previous_row: List[int] = list(range(len(s2) + 1))
     for i, c1 in enumerate(s1):
         current_row = [i + 1]
         for j, c2 in enumerate(s2):
@@ -211,7 +211,7 @@ class EnhancedFuzzySearch:
     6. Character n-gram matching
     """
 
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: AsyncSession) -> None:
         self.db = db
 
     async def search(
@@ -252,18 +252,21 @@ class EnhancedFuzzySearch:
                 )
 
         # Sort by score (highest first) and limit
-        scored_artists.sort(key=lambda x: x["score"], reverse=True)
+        scored_artists.sort(key=lambda x: float(x["score"]) if isinstance(x["score"], (int, float)) else 0.0, reverse=True)
         scored_artists = scored_artists[:limit]
 
         # Format results
         formatted_results = []
         for item in scored_artists:
-            artist = item["artist"]
+            from festival_playlist_generator.models.artist import Artist
+            artist_obj = item["artist"]
+            if not isinstance(artist_obj, Artist):
+                continue
             formatted_results.append(
                 {
-                    "id": str(artist.id),
-                    "name": artist.name,
-                    "festival_count": len(artist.festivals) if artist.festivals else 0,
+                    "id": str(artist_obj.id),
+                    "name": artist_obj.name,
+                    "festival_count": len(artist_obj.festivals) if artist_obj.festivals else 0,
                     "setlist_count": len(artist.setlists) if artist.setlists else 0,
                     "has_spotify": bool(artist.spotify_id),
                     "genres": artist.genres if artist.genres else [],
@@ -287,8 +290,9 @@ class EnhancedFuzzySearch:
             return (100, "exact")
 
         # Strategy 2: Normalized match (95 points)
-        query_norm = normalize_artist_name(query)
-        name_norm = normalize_artist_name(artist_name)
+        normalizer = NameNormalizationService()
+        query_norm = normalizer.normalize(query)
+        name_norm = normalizer.normalize(artist_name)
         if query_norm == name_norm:
             return (95, "normalized")
 
@@ -364,7 +368,7 @@ class EnhancedFuzzySearch:
         partial_matches = 0
 
         for q_token in query_tokens:
-            best_match = 0
+            best_match: float = 0.0
 
             for a_token in artist_tokens:
                 # Exact match
@@ -398,7 +402,7 @@ class EnhancedFuzzySearch:
         Useful for catching transpositions and character-level errors.
         """
 
-        def get_ngrams(s: str, n: int) -> set:
+        def get_ngrams(s: str, n: int) -> set[str]:
             return set(s[i : i + n] for i in range(len(s) - n + 1))
 
         ngrams1 = get_ngrams(s1, n)

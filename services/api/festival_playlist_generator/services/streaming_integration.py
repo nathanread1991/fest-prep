@@ -4,7 +4,7 @@ import asyncio
 import logging
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, cast
 from uuid import UUID
 
 import httpx
@@ -81,7 +81,7 @@ class StreamingPlatformClient(ABC):
 class SpotifyClient(StreamingPlatformClient):
     """Spotify streaming platform client."""
 
-    def __init__(self, client_id: str, client_secret: str, redirect_uri: str):
+    def __init__(self, client_id: str, client_secret: str, redirect_uri: str) -> None:
         self.client_id = client_id
         self.client_secret = client_secret
         self.redirect_uri = redirect_uri
@@ -119,7 +119,7 @@ class SpotifyClient(StreamingPlatformClient):
                 refresh_token=token_info.get("refresh_token"),
                 expires_at=expires_at,
                 platform=StreamingPlatform.SPOTIFY,
-                user_id=user_info["id"],
+                user_id=str(user_info["id"]),
             )
         except Exception as e:
             logger.error(f"Spotify authentication failed: {e}")
@@ -178,7 +178,7 @@ class SpotifyClient(StreamingPlatformClient):
                 description=description,
                 public=False,
             )
-            return playlist["id"]
+            return str(playlist["id"])
         except Exception as e:
             logger.error(f"Failed to create Spotify playlist: {e}")
             raise
@@ -202,8 +202,8 @@ class SpotifyClient(StreamingPlatformClient):
 class YouTubeMusicClient(StreamingPlatformClient):
     """YouTube Music streaming platform client."""
 
-    def __init__(self):
-        self.ytmusic = None
+    def __init__(self) -> None:
+        self.ytmusic: Optional[YTMusic] = None
 
     async def authenticate(self, credentials: Dict[str, Any]) -> AuthToken:
         """Authenticate with YouTube Music."""
@@ -279,8 +279,11 @@ class YouTubeMusicClient(StreamingPlatformClient):
             if not self.ytmusic:
                 raise ValueError("YouTube Music client not authenticated")
 
-            playlist_id = self.ytmusic.create_playlist(name, description)
-            return playlist_id
+            result = self.ytmusic.create_playlist(name, description)
+            # ytmusic.create_playlist can return either a string or a dict
+            if isinstance(result, dict):
+                return str(result.get("playlistId", ""))
+            return str(result)
         except Exception as e:
             logger.error(f"Failed to create YouTube Music playlist: {e}")
             raise
@@ -303,7 +306,7 @@ class YouTubeMusicClient(StreamingPlatformClient):
 class AppleMusicClient(StreamingPlatformClient):
     """Apple Music streaming platform client (placeholder implementation)."""
 
-    def __init__(self, developer_token: str):
+    def __init__(self, developer_token: str) -> None:
         self.developer_token = developer_token
 
     async def authenticate(self, credentials: Dict[str, Any]) -> AuthToken:
@@ -347,12 +350,13 @@ class AppleMusicClient(StreamingPlatformClient):
 class StreamingIntegrationService:
     """Main service for streaming platform integration."""
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: Dict[str, Any]) -> None:
         self.config = config
         self.clients: Dict[StreamingPlatform, StreamingPlatformClient] = {}
+        self.db: Optional[Any] = None  # Set by dependency injection
         self._initialize_clients()
 
-    def _initialize_clients(self):
+    def _initialize_clients(self) -> None:
         """Initialize streaming platform clients."""
         # Initialize Spotify client
         if "spotify" in self.config:

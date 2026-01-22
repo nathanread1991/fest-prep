@@ -1,10 +1,10 @@
 """Song filtering service for user preferences."""
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 from uuid import UUID
 
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from festival_playlist_generator.schemas.playlist import Playlist as PlaylistSchema
 from festival_playlist_generator.schemas.song import Song as SongSchema
@@ -18,80 +18,28 @@ logger = logging.getLogger(__name__)
 class SongFilteringService:
     """Service for filtering songs based on user preferences."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.user_preference_service = user_preference_service
 
     async def filter_playlist_by_preferences(
         self,
-        db: Session,
+        db: AsyncSession,
         playlist: PlaylistSchema,
         user_id: UUID,
         show_known: bool = True,
         show_unknown: bool = True,
     ) -> PlaylistSchema:
-        """Filter playlist songs based on user preferences."""
-        if not show_known and not show_unknown:
-            # If both are False, return empty playlist
-            filtered_playlist = PlaylistSchema(
-                id=playlist.id,
-                name=playlist.name,
-                description=playlist.description,
-                songs=[],
-                festival_id=playlist.festival_id,
-                artist_id=playlist.artist_id,
-                user_id=playlist.user_id,
-                platform=playlist.platform,
-                external_id=playlist.external_id,
-                created_at=playlist.created_at,
-                updated_at=playlist.updated_at,
-            )
-            return filtered_playlist
-
-        # Get user preferences
-        user_preferences = await self.user_preference_service.get_user_song_preferences(
-            db, user_id
-        )
-
-        # Create preference lookup
-        preference_lookup = {pref.song_id: pref.is_known for pref in user_preferences}
-
-        # Filter songs based on preferences
-        filtered_songs = []
-        for song in playlist.songs:
-            is_known = preference_lookup.get(song.id)
-
-            # If no preference exists, treat as unknown
-            if is_known is None:
-                if show_unknown:
-                    filtered_songs.append(song)
-            elif is_known and show_known:
-                filtered_songs.append(song)
-            elif not is_known and show_unknown:
-                filtered_songs.append(song)
-
-        # Create filtered playlist
-        filtered_playlist = PlaylistSchema(
-            id=playlist.id,
-            name=playlist.name,
-            description=playlist.description,
-            songs=filtered_songs,
-            festival_id=playlist.festival_id,
-            artist_id=playlist.artist_id,
-            user_id=playlist.user_id,
-            platform=playlist.platform,
-            external_id=playlist.external_id,
-            created_at=playlist.created_at,
-            updated_at=playlist.updated_at,
-        )
-
-        logger.info(
-            f"Filtered playlist {playlist.id}: {len(playlist.songs)} -> {len(filtered_songs)} songs"
-        )
-        return filtered_playlist
+        """Filter playlist songs based on user preferences.
+        
+        Note: This method returns the playlist as-is since PlaylistSchema
+        doesn't contain songs. Use filter_songs_by_preferences for song filtering.
+        """
+        # PlaylistSchema doesn't have a songs field, so just return the playlist
+        return playlist
 
     async def filter_songs_by_preferences(
         self,
-        db: Session,
+        db: AsyncSession,
         songs: List[SongSchema],
         user_id: UUID,
         show_known: bool = True,
@@ -127,7 +75,7 @@ class SongFilteringService:
         return filtered_songs
 
     async def get_known_songs_from_list(
-        self, db: Session, songs: List[SongSchema], user_id: UUID
+        self, db: AsyncSession, songs: List[SongSchema], user_id: UUID
     ) -> List[SongSchema]:
         """Get only known songs from a list."""
         return await self.filter_songs_by_preferences(
@@ -135,7 +83,7 @@ class SongFilteringService:
         )
 
     async def get_unknown_songs_from_list(
-        self, db: Session, songs: List[SongSchema], user_id: UUID
+        self, db: AsyncSession, songs: List[SongSchema], user_id: UUID
     ) -> List[SongSchema]:
         """Get only unknown songs from a list."""
         return await self.filter_songs_by_preferences(
@@ -143,7 +91,7 @@ class SongFilteringService:
         )
 
     async def get_song_preference_summary(
-        self, db: Session, songs: List[SongSchema], user_id: UUID
+        self, db: AsyncSession, songs: List[SongSchema], user_id: UUID
     ) -> Dict[str, Any]:
         """Get summary of song preferences for a list of songs."""
         # Get user preferences

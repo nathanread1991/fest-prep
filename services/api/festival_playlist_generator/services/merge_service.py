@@ -3,7 +3,7 @@
 import uuid
 from dataclasses import dataclass
 from datetime import datetime
-from typing import List, Optional
+from typing import Any, Callable, List, Optional
 
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -44,7 +44,7 @@ class MergePreview:
 class MergeService:
     """Service for merging duplicate artists."""
 
-    def __init__(self, db: Session):
+    def __init__(self, db: Session) -> None:
         """
         Initialize the merge service.
 
@@ -308,7 +308,7 @@ class MergeService:
         setlists_transferred: int,
         spotify_data_source: Optional[str],
         performed_by: str,
-    ):
+    ) -> None:
         """
         Log merge operation to merge_audit_log table.
 

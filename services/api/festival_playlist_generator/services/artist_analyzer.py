@@ -7,7 +7,7 @@ import re
 import unicodedata
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, cast
 
 import httpx
 from sqlalchemy.orm import Session
@@ -40,16 +40,16 @@ class SetlistFmClient:
 
     BASE_URL = "https://api.setlist.fm/rest/1.0"
 
-    def __init__(self, api_key: Optional[str] = None):
+    def __init__(self, api_key: Optional[str] = None) -> None:
         self.api_key = api_key
         self.logger = logging.getLogger(f"{__name__}.SetlistFmClient")
-        self.session = None
+        self.session: Optional[httpx.AsyncClient] = None
 
         # Rate limiting: Setlist.fm allows 2 requests per second
-        self._last_request_time = 0
+        self._last_request_time = 0.0
         self._min_request_interval = 0.5  # 500ms between requests
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "SetlistFmClient":
         """Async context manager entry."""
         self.session = httpx.AsyncClient(
             headers={
@@ -61,12 +61,12 @@ class SetlistFmClient:
         )
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         """Async context manager exit."""
         if self.session:
             await self.session.aclose()
 
-    async def _rate_limit(self):
+    async def _rate_limit(self) -> None:
         """Enforce rate limiting."""
         current_time = asyncio.get_event_loop().time()
         time_since_last = current_time - self._last_request_time
@@ -77,12 +77,15 @@ class SetlistFmClient:
 
         self._last_request_time = asyncio.get_event_loop().time()
 
-    async def search_artist(self, artist_name: str) -> Optional[Dict]:
+    async def search_artist(self, artist_name: str) -> Optional[Dict[str, Any]]:
         """Search for an artist by name using intelligent matching."""
         await self._rate_limit()
 
         try:
-            params = {"artistName": artist_name, "p": 1}  # First page only
+            if self.session is None:
+                raise RuntimeError("Session not initialized. Use async context manager.")
+
+            params: Dict[str, Any] = {"artistName": artist_name, "p": 1}  # First page only
 
             response = await self.session.get(
                 f"{self.BASE_URL}/search/artists", params=params
@@ -112,7 +115,7 @@ class SetlistFmClient:
                             self.logger.info(
                                 f"Using first exact match for '{artist_name}': {exact_matches[0].get('name')}"
                             )
-                            return exact_matches[0]
+                            return cast(Dict[str, Any], exact_matches[0])
                     else:
                         # No exact match, use scoring on all results
                         best_match = await self._score_and_select_artist(
@@ -125,7 +128,7 @@ class SetlistFmClient:
                             self.logger.info(
                                 f"No exact match for '{artist_name}', using first result: {artists[0].get('name')}"
                             )
-                            return artists[0]
+                            return cast(Dict[str, Any], artists[0])
                 else:
                     self.logger.warning(f"No artists found for: {artist_name}")
                     return None
@@ -145,10 +148,10 @@ class SetlistFmClient:
             return None
 
     async def _score_and_select_artist(
-        self, artists: List[Dict], search_name: str
-    ) -> Optional[Dict]:
+        self, artists: List[Dict[str, Any]], search_name: str
+    ) -> Optional[Dict[str, Any]]:
         """Score artists based on multiple factors and select the best match."""
-        scored_artists = []
+        scored_artists: List[Tuple[Dict[str, Any], float]] = []
 
         for artist in artists:
             score = await self._calculate_artist_score(artist, search_name)
@@ -172,7 +175,7 @@ class SetlistFmClient:
 
         return best_artist
 
-    async def _calculate_artist_score(self, artist: Dict, search_name: str) -> float:
+    async def _calculate_artist_score(self, artist: Dict[str, Any], search_name: str) -> float:
         """Calculate a likelihood score for an artist match."""
         score = 0.0
         artist_name = artist.get("name", "")
@@ -190,10 +193,14 @@ class SetlistFmClient:
             return score * 0.1  # Heavily penalize artists without MBID
 
         try:
+            if self.session is None:
+                raise RuntimeError("Session not initialized. Use async context manager.")
+
             # Factor 2: Setlist activity (most important for active bands)
             await self._rate_limit()
+            params_setlist: Dict[str, Any] = {"p": 1}
             setlist_response = await self.session.get(
-                f"{self.BASE_URL}/artist/{mbid}/setlists", params={"p": 1}
+                f"{self.BASE_URL}/artist/{mbid}/setlists", params=params_setlist
             )
 
             if setlist_response.status_code == 200:
@@ -304,10 +311,13 @@ class SetlistFmClient:
         await self._rate_limit()
 
         try:
-            params = {"p": 1}  # Page number
+            if self.session is None:
+                raise RuntimeError("Session not initialized. Use async context manager.")
+
+            params_get: Dict[str, Any] = {"p": 1}  # Page number
 
             response = await self.session.get(
-                f"{self.BASE_URL}/artist/{artist_mbid}/setlists", params=params
+                f"{self.BASE_URL}/artist/{artist_mbid}/setlists", params=params_get
             )
 
             if response.status_code == 200:
@@ -339,7 +349,7 @@ class SetlistFmClient:
             self.logger.error(f"Error getting setlists for artist {artist_mbid}: {e}")
             return []
 
-    def _parse_setlist_data(self, setlist_data: Dict) -> Optional[SetlistData]:
+    def _parse_setlist_data(self, setlist_data: Dict[str, Any]) -> Optional[SetlistData]:
         """Parse raw setlist data from API response."""
         try:
             # Extract basic info
@@ -411,7 +421,7 @@ class SetlistFmClient:
 class SongNormalizer:
     """Handles song title normalization and cover song identification."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.logger = logging.getLogger(f"{__name__}.SongNormalizer")
 
         # Common cover song indicators
@@ -543,7 +553,7 @@ class SongNormalizer:
 class SongDeduplicator:
     """Handles song deduplication logic."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.logger = logging.getLogger(f"{__name__}.SongDeduplicator")
         self.normalizer = SongNormalizer()
 
@@ -612,7 +622,7 @@ class SongDeduplicator:
 class SongFrequencyAnalyzer:
     """Analyzes song performance frequency and creates rankings."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.logger = logging.getLogger(f"{__name__}.SongFrequencyAnalyzer")
 
     def analyze_song_frequency(
@@ -674,13 +684,18 @@ class SongFrequencyAnalyzer:
                     }
 
                 # Update frequency and metadata
-                song_data = song_frequency[normalized_title]
-                song_data["frequency"] += 1
-                song_data["last_seen"] = max(song_data["last_seen"], setlist.date)
-                song_data["first_seen"] = min(song_data["first_seen"], setlist.date)
+                song_data: Dict[str, Any] = song_frequency[normalized_title]
+                song_data["frequency"] = song_data["frequency"] + 1
+                song_data["last_seen"] = max(
+                    song_data["last_seen"], setlist.date
+                )
+                song_data["first_seen"] = min(
+                    song_data["first_seen"], setlist.date
+                )
 
-                if setlist.venue not in song_data["venues"]:
-                    song_data["venues"].append(setlist.venue)
+                venues_list: List[str] = song_data["venues"]
+                if setlist.venue not in venues_list:
+                    venues_list.append(setlist.venue)
 
         self.logger.info(
             f"Analyzed frequency for {len(song_frequency)} unique songs across {len(setlists)} setlists"
@@ -717,11 +732,12 @@ class SongFrequencyAnalyzer:
 class ArtistAnalyzerService:
     """Main service for analyzing artist setlist data."""
 
-    def __init__(self, setlist_fm_api_key: Optional[str] = None):
+    def __init__(self, setlist_fm_api_key: Optional[str] = None) -> None:
         self.logger = logging.getLogger(f"{__name__}.ArtistAnalyzerService")
         self.setlist_fm_api_key = setlist_fm_api_key
         self.deduplicator = SongDeduplicator()
         self.frequency_analyzer = SongFrequencyAnalyzer()
+        self.db: Optional[Any] = None  # Set by dependency injection
 
     async def get_artist_setlists(
         self, artist_name: str, limit: int = 10
@@ -871,24 +887,24 @@ class ArtistAnalyzerService:
                     await db.flush()  # Get the ID
 
                 # Check if setlist already exists
-                result = await db.execute(
+                result_setlist = await db.execute(
                     select(SetlistModel).where(
                         SetlistModel.artist_id == artist.id,
                         SetlistModel.venue == setlist_data.venue,
                         SetlistModel.date == setlist_data.date,
                     )
                 )
-                existing = result.scalar_one_or_none()
+                existing_setlist = result_setlist.scalar_one_or_none()
 
-                if existing:
+                if existing_setlist:
                     # Update existing setlist
-                    existing.songs = setlist_data.songs
-                    existing.tour_name = setlist_data.tour_name
-                    existing.festival_name = setlist_data.festival_name
-                    existing.source = setlist_data.source
-                    existing.updated_at = datetime.utcnow()
+                    existing_setlist.songs = setlist_data.songs
+                    existing_setlist.tour_name = setlist_data.tour_name
+                    existing_setlist.festival_name = setlist_data.festival_name
+                    existing_setlist.source = setlist_data.source
+                    existing_setlist.updated_at = datetime.utcnow()
 
-                    setlist_model = existing
+                    setlist_model = existing_setlist
                 else:
                     # Create new setlist
                     setlist_model = SetlistModel(

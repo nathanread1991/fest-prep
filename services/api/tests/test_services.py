@@ -1372,10 +1372,10 @@ class TestPlaylistServiceAdditional:
 
         playlist = Playlist(id=uuid4(), name="Test")
         track1 = Song(id=uuid4(), title="Song 1")
-        track1.spotify_id = "track1"  # Set after initialization
+        track1.external_id = "track1"  # Use external_id instead of spotify_id
         track2 = Song(id=uuid4(), title="Song 2")
-        track2.spotify_id = "track2"  # Set after initialization
-        playlist.tracks = [track1, track2]
+        track2.external_id = "track2"  # Use external_id instead of spotify_id
+        playlist.songs = [track1, track2]  # Use songs instead of tracks
 
         mock_playlist_repo.get_by_id.return_value = playlist
         mock_spotify_service.create_playlist.return_value = "spotify_playlist_123"
@@ -1781,7 +1781,7 @@ class TestFestivalServiceComplete:
 
         # Assert
         assert len(result) == 1
-        mock_festival_repo.get_upcoming_festivals.assert_called_once_with(5, True)
+        mock_festival_repo.get_upcoming_festivals.assert_called_once_with(5, from_date=None)
         # Should not cache when loading relationships
         mock_cache.set.assert_not_called()
 

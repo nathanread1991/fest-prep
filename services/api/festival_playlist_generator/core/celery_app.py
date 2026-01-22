@@ -1,6 +1,7 @@
 """Celery application configuration."""
 
 import logging
+from typing import Any
 
 from celery import Celery
 from celery.signals import worker_ready, worker_shutting_down
@@ -73,14 +74,14 @@ celery_app.conf.beat_schedule = {
 
 
 # Worker event handlers
-@worker_ready.connect
-def worker_ready_handler(sender=None, **kwargs):
+@worker_ready.connect  # type: ignore[untyped-decorator]
+def worker_ready_handler(sender: Any = None, **kwargs: Any) -> None:
     """Handle worker ready event."""
     logger.info(f"Celery worker {sender} is ready")
 
 
-@worker_shutting_down.connect
-def worker_shutting_down_handler(sender=None, **kwargs):
+@worker_shutting_down.connect  # type: ignore[untyped-decorator]
+def worker_shutting_down_handler(sender: Any = None, **kwargs: Any) -> None:
     """Handle worker shutdown event."""
     logger.info(f"Celery worker {sender} is shutting down")
 

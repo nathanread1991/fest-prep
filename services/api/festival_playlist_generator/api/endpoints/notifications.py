@@ -1,7 +1,7 @@
 """Push notification API endpoints."""
 
 import logging
-from typing import Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
@@ -30,15 +30,15 @@ class NotificationRequest(BaseModel):
 
     title: str
     body: str
-    data: Optional[Dict] = None
-    actions: Optional[List[Dict]] = None
+    data: Optional[Dict[str, Any]] = None
+    actions: Optional[List[Dict[str, Any]]] = None
     icon: Optional[str] = None
     badge: Optional[str] = None
     tag: Optional[str] = None
 
 
 @router.get("/vapid-public-key")
-async def get_vapid_public_key(request: Request):
+async def get_vapid_public_key(request: Request) -> Dict[str, str]:
     """Get VAPID public key for push notification subscription."""
     if not settings.VAPID_PUBLIC_KEY:
         raise HTTPException(status_code=503, detail="Push notifications not configured")
@@ -55,7 +55,7 @@ async def subscribe_to_notifications(
     subscription: PushSubscription,
     request: Request,
     user_id: str = "anonymous",  # In real app, get from auth
-):
+) -> Dict[str, Any]:
     """Subscribe to push notifications."""
     try:
         subscription_data = {
@@ -84,7 +84,7 @@ async def subscribe_to_notifications(
 @router.post("/unsubscribe")
 async def unsubscribe_from_notifications(
     request: Request, user_id: str = "anonymous"  # In real app, get from auth
-):
+) -> Dict[str, str]:
     """Unsubscribe from push notifications."""
     try:
         success = await push_service.unsubscribe_user(user_id)
@@ -108,7 +108,7 @@ async def unsubscribe_from_notifications(
 @router.get("/subscription-status")
 async def get_subscription_status(
     request: Request, user_id: str = "anonymous"  # In real app, get from auth
-):
+) -> Dict[str, Any]:
     """Get user's push notification subscription status."""
     try:
         subscription = await push_service.get_user_subscription(user_id)
@@ -135,7 +135,7 @@ async def send_test_notification(
     notification: NotificationRequest,
     request: Request,
     user_id: str = "anonymous",  # In real app, get from auth
-):
+) -> Dict[str, Any]:
     """Send a test notification (for development/testing)."""
     try:
         success = await push_service.send_notification(
@@ -166,7 +166,7 @@ async def send_test_notification(
 
 
 @router.get("/stats")
-async def get_notification_stats(request: Request):
+async def get_notification_stats(request: Request) -> Dict[str, Any]:
     """Get push notification statistics."""
     try:
         stats = await push_service.get_subscription_stats()
@@ -183,7 +183,7 @@ async def get_notification_stats(request: Request):
 
 
 @router.post("/generate-vapid-keys")
-async def generate_vapid_keys(request: Request):
+async def generate_vapid_keys(request: Request) -> Dict[str, str]:
     """Generate new VAPID keys (admin only)."""
     # In production, this should require admin authentication
     try:

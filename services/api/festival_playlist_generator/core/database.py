@@ -2,7 +2,7 @@
 
 import logging
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
+from typing import Any, AsyncGenerator, Callable
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
@@ -30,7 +30,7 @@ class Base(DeclarativeBase):
     pass
 
 
-async def init_db():
+async def init_db() -> None:
     """Initialize database tables."""
     try:
         async with engine.begin() as conn:
@@ -55,7 +55,7 @@ async def init_db():
         # Don't raise the exception, just log it
 
 
-async def get_db() -> AsyncSession:
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """Dependency to get database session."""
     async with AsyncSessionLocal() as session:
         try:
@@ -69,7 +69,7 @@ async def get_db() -> AsyncSession:
 
 @asynccontextmanager
 async def transaction_context(
-    session: AsyncSession = None,
+    session: AsyncSession | None = None,
 ) -> AsyncGenerator[AsyncSession, None]:
     """Async context manager for database transactions.
 

@@ -3,7 +3,7 @@
 import asyncio
 import logging
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 from uuid import UUID
 
 from celery import current_task
@@ -25,8 +25,8 @@ from festival_playlist_generator.services.playlist_generator import (
 logger = logging.getLogger(__name__)
 
 
-@celery_app.task(bind=True, max_retries=3, default_retry_delay=1800)  # 30 minutes
-def update_all_playlists(self, days_since_update: int = 7):
+@celery_app.task(bind=True, max_retries=3, default_retry_delay=1800)  # type: ignore[untyped-decorator]  # 30 minutes
+def update_all_playlists(self: Any, days_since_update: int = 7) -> Dict[str, Any]:
     """
     Update all playlists with new setlist data while preserving user customizations.
 
@@ -58,7 +58,7 @@ def update_all_playlists(self, days_since_update: int = 7):
         artist_analyzer = ArtistAnalyzerService()
 
         # Get database session
-        db = next(get_db())
+        db = next(get_db())  # type: ignore[call-overload]
 
         try:
             # Find playlists that need updating
@@ -226,6 +226,13 @@ def update_all_playlists(self, days_since_update: int = 7):
             )
 
             self.retry(countdown=retry_delay, exc=e)
+            # self.retry() raises an exception, so this line is never reached
+            # but mypy doesn't know that, so we add a return to satisfy type checker
+            return {
+                "status": "failed",
+                "message": "Retry scheduled",
+                "error": error_msg,
+            }
         except self.MaxRetriesExceededError:
             logger.error(f"Max retries exceeded for playlist update task")
             return {
@@ -236,8 +243,8 @@ def update_all_playlists(self, days_since_update: int = 7):
             }
 
 
-@celery_app.task(bind=True, max_retries=2, default_retry_delay=600)
-def update_single_playlist_task(self, playlist_id: str):
+@celery_app.task(bind=True, max_retries=2, default_retry_delay=600)  # type: ignore[untyped-decorator]
+def update_single_playlist_task(self: Any, playlist_id: str) -> Dict[str, Any]:
     """
     Update a single playlist with new setlist data.
 
@@ -254,7 +261,7 @@ def update_single_playlist_task(self, playlist_id: str):
         artist_analyzer = ArtistAnalyzerService()
 
         # Get database session
-        db = next(get_db())
+        db = next(get_db())  # type: ignore[call-overload]
 
         try:
             # Update the playlist
@@ -284,6 +291,12 @@ def update_single_playlist_task(self, playlist_id: str):
         try:
             retry_delay = 600 * (2**self.request.retries)  # 10 min, 20 min
             self.retry(countdown=retry_delay, exc=e)
+            # self.retry() raises an exception, so this line is never reached
+            return {
+                "status": "failed",
+                "message": "Retry scheduled",
+                "error": error_msg,
+            }
         except self.MaxRetriesExceededError:
             return {
                 "status": "failed",
@@ -466,8 +479,8 @@ async def update_single_playlist(
         return {"status": "failed", "error": str(e)}
 
 
-@celery_app.task(bind=True, max_retries=2, default_retry_delay=300)
-def update_playlists_for_festival(self, festival_id: str):
+@celery_app.task(bind=True, max_retries=2, default_retry_delay=300)  # type: ignore[untyped-decorator]
+def update_playlists_for_festival(self: Any, festival_id: str) -> Dict[str, Any]:
     """
     Update all playlists associated with a specific festival.
 
@@ -484,7 +497,7 @@ def update_playlists_for_festival(self, festival_id: str):
         artist_analyzer = ArtistAnalyzerService()
 
         # Get database session
-        db = next(get_db())
+        db = next(get_db())  # type: ignore[call-overload]
 
         try:
             # Find all playlists for this festival
@@ -577,6 +590,12 @@ def update_playlists_for_festival(self, festival_id: str):
         try:
             retry_delay = 300 * (2**self.request.retries)  # 5 min, 10 min
             self.retry(countdown=retry_delay, exc=e)
+            # self.retry() raises an exception, so this line is never reached
+            return {
+                "status": "failed",
+                "message": "Retry scheduled",
+                "error": error_msg,
+            }
         except self.MaxRetriesExceededError:
             return {
                 "status": "failed",

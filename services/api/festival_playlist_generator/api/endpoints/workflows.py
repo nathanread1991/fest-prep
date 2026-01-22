@@ -1,6 +1,6 @@
 """Workflow API endpoints that orchestrate multiple services."""
 
-from typing import Optional
+from typing import Any, Callable, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Request
@@ -34,7 +34,7 @@ async def complete_festival_workflow(
     platform: Optional[str] = None,
     background_tasks: BackgroundTasks = BackgroundTasks(),
     orchestrator: ServiceOrchestrator = Depends(get_orchestrator),
-):
+) -> JSONResponse:
     """Execute complete festival playlist workflow."""
     version = get_request_version(request)
     formatter = APIVersionManager.get_formatter(version)
@@ -76,7 +76,7 @@ async def complete_artist_workflow(
     create_streaming_playlist: bool = False,
     platform: Optional[str] = None,
     orchestrator: ServiceOrchestrator = Depends(get_orchestrator),
-):
+) -> JSONResponse:
     """Execute complete artist playlist workflow."""
     version = get_request_version(request)
     formatter = APIVersionManager.get_formatter(version)
@@ -115,7 +115,7 @@ async def trigger_daily_maintenance(
     request: Request,
     background_tasks: BackgroundTasks,
     orchestrator: ServiceOrchestrator = Depends(get_orchestrator),
-):
+) -> JSONResponse:
     """Trigger daily maintenance workflow."""
     version = get_request_version(request)
     formatter = APIVersionManager.get_formatter(version)
@@ -141,7 +141,7 @@ async def trigger_daily_maintenance(
 @router.get("/health/services")
 async def check_service_health(
     request: Request, orchestrator: ServiceOrchestrator = Depends(get_orchestrator)
-):
+) -> JSONResponse:
     """Check health status of all integrated services."""
     version = get_request_version(request)
     formatter = APIVersionManager.get_formatter(version)

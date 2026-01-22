@@ -2,11 +2,12 @@
 
 import gzip
 import io
-from typing import Callable
+from typing import Any, Callable, Optional, Set
 
 import brotli
 from fastapi import Request, Response
 from fastapi.responses import StreamingResponse
+
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 
@@ -15,8 +16,11 @@ class CompressionMiddleware(BaseHTTPMiddleware):
     """Middleware to compress responses using gzip or brotli."""
 
     def __init__(
-        self, app: ASGIApp, minimum_size: int = 500, compressible_types: set = None
-    ):
+        self,
+        app: ASGIApp,
+        minimum_size: int = 500,
+        compressible_types: Optional[Set[str]] = None,
+    ) -> None:
         super().__init__(app)
         self.minimum_size = minimum_size
         self.compressible_types = compressible_types or {
@@ -33,9 +37,9 @@ class CompressionMiddleware(BaseHTTPMiddleware):
             "image/svg+xml",
         }
 
-    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+    async def dispatch(self, request: Request, call_next: Callable[..., Any]) -> Response:
         """Process request and compress response if appropriate."""
-        response = await call_next(request)
+        response: Response = await call_next(request)
 
         # Skip compression for certain conditions
         if (
@@ -67,12 +71,16 @@ class CompressionMiddleware(BaseHTTPMiddleware):
         try:
             if isinstance(response, StreamingResponse):
                 # Handle streaming responses
-                body_parts = []
+                body_parts: list[bytes] = []
                 async for chunk in response.body_iterator:
-                    body_parts.append(chunk)
+                    if isinstance(chunk, bytes):
+                        body_parts.append(chunk)
+                    elif isinstance(chunk, (str, memoryview)):
+                        body_parts.append(bytes(chunk) if isinstance(chunk, memoryview) else chunk.encode())
                 body = b"".join(body_parts)
             elif hasattr(response, "body") and response.body:
-                body = response.body
+                body_raw = response.body
+                body = bytes(body_raw) if isinstance(body_raw, memoryview) else body_raw
             else:
                 # Skip compression if we can't get the body
                 return response
@@ -123,12 +131,12 @@ class CompressionMiddleware(BaseHTTPMiddleware):
 class StaticFileCompressionMiddleware(BaseHTTPMiddleware):
     """Middleware to add cache headers for static files."""
 
-    def __init__(self, app: ASGIApp):
+    def __init__(self, app: ASGIApp) -> None:
         super().__init__(app)
 
-    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+    async def dispatch(self, request: Request, call_next: Callable[..., Any]) -> Response:
         """Add cache headers for static files."""
-        response = await call_next(request)
+        response: Response = await call_next(request)
 
         # Add cache headers for static files
         if request.url.path.startswith("/static/"):

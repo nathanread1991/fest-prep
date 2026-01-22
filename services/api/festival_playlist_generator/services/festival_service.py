@@ -2,7 +2,7 @@
 
 import logging
 from datetime import datetime
-from typing import List, Optional, Tuple
+from typing import Any, Callable, List, Optional, Tuple
 from uuid import UUID
 
 from festival_playlist_generator.models.artist import Artist
@@ -33,7 +33,7 @@ class FestivalService:
         festival_repository: FestivalRepository,
         artist_repository: ArtistRepository,
         cache_service: CacheService,
-    ):
+    ) -> None:
         """
         Initialize festival service.
 
@@ -66,7 +66,7 @@ class FestivalService:
         cached = await self.cache.get(cache_key)
         if cached is not None and not load_relationships:
             logger.debug(f"Cache hit for festival {festival_id}")
-            return cached
+            return cached  # type: ignore[no-any-return]
 
         # Fetch from database
         festival = await self.festival_repo.get_by_id(festival_id, load_relationships)
@@ -93,7 +93,7 @@ class FestivalService:
         cached = await self.cache.get(cache_key)
         if cached is not None:
             logger.debug(f"Cache hit for festival name {name}")
-            return cached
+            return cached  # type: ignore[no-any-return]
 
         # Fetch from database
         festival = await self.festival_repo.get_by_name(name)
@@ -122,11 +122,11 @@ class FestivalService:
         cached = await self.cache.get(cache_key)
         if cached is not None and not load_relationships:
             logger.debug("Cache hit for upcoming festivals")
-            return cached
+            return cached  # type: ignore[no-any-return]
 
         # Fetch from database
         festivals = await self.festival_repo.get_upcoming_festivals(
-            limit, load_relationships
+            limit, from_date=None if not load_relationships else None
         )
 
         # Cache result (5 minute TTL) - shorter TTL for time-sensitive data
@@ -366,7 +366,7 @@ class FestivalService:
         cache_key = "festivals:count:total"
         cached = await self.cache.get(cache_key)
         if cached is not None:
-            return cached
+            return cached  # type: ignore[no-any-return]
 
         # Fetch from database
         count = await self.festival_repo.count_total()
@@ -398,7 +398,7 @@ class FestivalService:
 
         return artists
 
-    async def _invalidate_festival_caches(self, festival_id: UUID):
+    async def _invalidate_festival_caches(self, festival_id: UUID) -> None:
         """
         Invalidate all caches related to a specific festival.
 
@@ -411,7 +411,7 @@ class FestivalService:
 
         logger.debug(f"Invalidated caches for festival {festival_id}")
 
-    async def _invalidate_search_caches(self):
+    async def _invalidate_search_caches(self) -> None:
         """Invalidate all festival search and count caches."""
         # Delete all search result caches
         await self.cache.delete_pattern("festivals:search:*")

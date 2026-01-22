@@ -5,7 +5,7 @@ import io
 import json
 import logging
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Union
 from uuid import UUID
 
 from fastapi import HTTPException, status
@@ -30,8 +30,8 @@ class DataExportService:
         db: AsyncSession,
         user_id: UUID,
         format: str = "json",
-        requester_ip: str = None,
-    ) -> Dict[str, Any]:
+        requester_ip: Optional[str] = None,
+    ) -> Union[Dict[str, Any], str]:
         """Export all user data in the specified format."""
         try:
             # Log the data export request
@@ -100,7 +100,7 @@ class DataExportService:
             )
 
     async def delete_user_account(
-        self, db: AsyncSession, user_id: UUID, requester_ip: str = None
+        self, db: AsyncSession, user_id: UUID, requester_ip: Optional[str] = None
     ) -> Dict[str, Any]:
         """Completely delete user account and all associated data."""
         try:
@@ -120,7 +120,7 @@ class DataExportService:
                     status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
                 )
 
-            deletion_summary = {
+            deletion_summary: Dict[str, Any] = {
                 "user_id": str(user_id),
                 "deletion_date": datetime.utcnow().isoformat(),
                 "deleted_records": {},
@@ -132,17 +132,17 @@ class DataExportService:
             )
             deletion_summary["deleted_records"][
                 "song_preferences"
-            ] = preferences_result.rowcount
+            ] = preferences_result.rowcount  # type: ignore[attr-defined]
 
             # Delete user playlists
             playlists_result = await db.execute(
                 delete(Playlist).where(Playlist.user_id == user_id)
             )
-            deletion_summary["deleted_records"]["playlists"] = playlists_result.rowcount
+            deletion_summary["deleted_records"]["playlists"] = playlists_result.rowcount  # type: ignore[attr-defined]
 
             # Delete the user record
             user_result = await db.execute(delete(User).where(User.id == user_id))
-            deletion_summary["deleted_records"]["user_profile"] = user_result.rowcount
+            deletion_summary["deleted_records"]["user_profile"] = user_result.rowcount  # type: ignore[attr-defined]
 
             # Log successful deletion (before committing to ensure it's recorded)
             await self._log_audit_event(
@@ -176,7 +176,7 @@ class DataExportService:
                 delete(AuditLog).where(AuditLog.created_at < cutoff_date)
             )
 
-            deleted_count = result.rowcount
+            deleted_count = result.rowcount  # type: ignore[attr-defined]
             await db.commit()
 
             # Log the cleanup operation
@@ -304,10 +304,10 @@ class DataExportService:
         db: AsyncSession,
         user_id: Optional[UUID],
         action: str,
-        resource_type: str = None,
-        resource_id: str = None,
-        details: Dict[str, Any] = None,
-    ):
+        resource_type: Optional[str] = None,
+        resource_id: Optional[str] = None,
+        details: Optional[Dict[str, Any]] = None,
+    ) -> None:
         """Log an audit event."""
         audit_log = AuditLog(
             user_id=user_id,
@@ -409,7 +409,7 @@ class DataExportService:
     def _convert_to_xml_format(self, data: Dict[str, Any]) -> str:
         """Convert JSON data to XML format."""
 
-        def dict_to_xml(d, root_name="root"):
+        def dict_to_xml(d: Dict[str, Any], root_name: str = "root") -> str:
             xml_str = f"<{root_name}>\n"
             for key, value in d.items():
                 if isinstance(value, dict):

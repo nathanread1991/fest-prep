@@ -1,6 +1,6 @@
 """Artist repository for database operations."""
 
-from typing import List, Optional, Tuple
+from typing import Any, Callable, List, Optional, Tuple, cast
 from uuid import UUID
 
 from sqlalchemy import case, delete, func, or_, select
@@ -15,7 +15,7 @@ from festival_playlist_generator.models.setlist import Setlist
 class ArtistRepository:
     """Repository for Artist database operations following enterprise patterns."""
 
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: AsyncSession) -> None:
         self.db = db
 
     async def get_by_id(
@@ -123,6 +123,7 @@ class ArtistRepository:
         count_query = select(func.count()).select_from(base_query.subquery())
         count_result = await self.db.execute(count_query)
         total_count = count_result.scalar()
+        total_count_int = total_count if total_count is not None else 0
 
         # Apply ordering
         order_column = getattr(Artist, order_by, Artist.created_at)
@@ -139,13 +140,13 @@ class ArtistRepository:
         result = await self.db.execute(base_query)
 
         # Extract artists and add is_orphaned flag
-        artists = []
+        artists: List[Any] = []
         for row in result:
             artist = row[0]
             artist.is_orphaned = row[1]
             artists.append(artist)
 
-        return artists, total_count
+        return artists, total_count_int
 
     async def create(self, artist: Artist) -> Artist:
         """Create a new artist."""
@@ -168,7 +169,8 @@ class ArtistRepository:
             True if deleted, False if not found
         """
         result = await self.db.execute(delete(Artist).where(Artist.id == artist_id))
-        return result.rowcount > 0
+        rowcount = cast(Any, result).rowcount
+        return rowcount is not None and rowcount > 0
 
     async def bulk_delete(self, artist_ids: List[UUID]) -> int:
         """
@@ -178,21 +180,24 @@ class ArtistRepository:
             Number of artists deleted
         """
         result = await self.db.execute(delete(Artist).where(Artist.id.in_(artist_ids)))
-        return result.rowcount
+        rowcount = cast(Any, result).rowcount
+        return rowcount if rowcount is not None else 0
 
     async def exists_by_name(self, name: str) -> bool:
         """Check if artist exists by name."""
         result = await self.db.execute(
             select(func.count(Artist.id)).where(Artist.name == name)
         )
-        return result.scalar() > 0
+        count = result.scalar()
+        return count is not None and count > 0
 
     async def exists_by_spotify_id(self, spotify_id: str) -> bool:
         """Check if artist exists by Spotify ID."""
         result = await self.db.execute(
             select(func.count(Artist.id)).where(Artist.spotify_id == spotify_id)
         )
-        return result.scalar() > 0
+        count = result.scalar()
+        return count is not None and count > 0
 
     async def get_all_ids(self) -> List[UUID]:
         """Get all artist IDs (for bulk operations)."""
@@ -202,7 +207,8 @@ class ArtistRepository:
     async def count_total(self) -> int:
         """Get total count of all artists."""
         result = await self.db.execute(select(func.count(Artist.id)))
-        return result.scalar()
+        count = result.scalar()
+        return count if count is not None else 0
 
     async def count_orphaned(self) -> int:
         """Get count of orphaned artists."""
@@ -218,4 +224,5 @@ class ArtistRepository:
                 (Artist.spotify_id.is_(None)) & (setlist_count_subquery == 0)
             )
         )
-        return result.scalar()
+        count = result.scalar()
+        return count if count is not None else 0

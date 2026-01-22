@@ -3,7 +3,7 @@
 import logging
 import os
 from datetime import datetime
-from typing import Optional
+from typing import Any, Callable, Optional
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -28,7 +28,7 @@ templates.env.globals.update(
 
 
 @auth_router.get("/login", response_class=HTMLResponse)
-async def login_page(request: Request):
+async def login_page(request: Request) -> Response:
     """Login page with OAuth provider selection."""
     available_providers = oauth_service.get_available_providers()
     return_url = request.query_params.get("return_url", "/")
@@ -44,7 +44,7 @@ async def login_page(request: Request):
 
 
 @auth_router.post("/login/{provider}")
-async def initiate_oauth(provider: str):
+async def initiate_oauth(provider: str) -> Response:
     """Initiate OAuth flow for specified provider."""
     try:
         oauth_data = await oauth_service.initiate_oauth_flow(provider)
@@ -64,7 +64,7 @@ async def oauth_callback(
     state: Optional[str] = None,
     error: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
-):
+) -> Response:
     """Handle OAuth callback from providers."""
     if error:
         logger.warning(f"OAuth callback error: {error}")
@@ -126,13 +126,13 @@ async def oauth_callback_post(
     state: Optional[str] = Form(None),
     error: Optional[str] = Form(None),
     db: AsyncSession = Depends(get_db),
-):
+) -> Response:
     """Handle OAuth callback via POST (for Apple Sign In)."""
     return await oauth_callback(request, code, state, error, db)
 
 
 @auth_router.post("/logout")
-async def logout(request: Request):
+async def logout(request: Request) -> Response:
     """Logout user and clear session."""
     session_id = request.cookies.get("session_id")
 
@@ -151,8 +151,8 @@ async def logout(request: Request):
         # For JSON requests (fetch), return JSON response with cookie deletion
         from fastapi.responses import JSONResponse
 
-        response = JSONResponse({"success": True, "message": "Logged out successfully"})
-        response.delete_cookie(
+        json_response = JSONResponse({"success": True, "message": "Logged out successfully"})
+        json_response.delete_cookie(
             key="session_id",
             path="/",
             domain=None,
@@ -161,11 +161,11 @@ async def logout(request: Request):
             samesite="lax",
         )
         logger.info("User logged out (JSON)")
-        return response
+        return json_response
     else:
         # For form submissions, redirect to home
-        response = RedirectResponse(url="/", status_code=302)
-        response.delete_cookie(
+        redirect_response = RedirectResponse(url="/", status_code=302)
+        redirect_response.delete_cookie(
             key="session_id",
             path="/",
             domain=None,
@@ -174,11 +174,11 @@ async def logout(request: Request):
             samesite="lax",
         )
         logger.info("User logged out (redirect)")
-        return response
+        return redirect_response
 
 
 @auth_router.get("/logout")
-async def logout_get(request: Request):
+async def logout_get(request: Request) -> Response:
     """Logout user via GET request (for manual clearing)."""
     session_id = request.cookies.get("session_id")
 
@@ -203,7 +203,7 @@ async def logout_get(request: Request):
 
 
 @auth_router.get("/profile", response_class=HTMLResponse)
-async def profile_page(request: Request, db: AsyncSession = Depends(get_db)):
+async def profile_page(request: Request, db: AsyncSession = Depends(get_db)) -> Response:
     """User profile page (requires authentication)."""
     session_id = request.cookies.get("session_id")
 
@@ -220,7 +220,7 @@ async def profile_page(request: Request, db: AsyncSession = Depends(get_db)):
 
 
 @auth_router.get("/settings", response_class=HTMLResponse)
-async def account_settings_page(request: Request, db: AsyncSession = Depends(get_db)):
+async def account_settings_page(request: Request, db: AsyncSession = Depends(get_db)) -> Response:
     """Account settings page (requires authentication)."""
     session_id = request.cookies.get("session_id")
 
@@ -239,7 +239,7 @@ async def account_settings_page(request: Request, db: AsyncSession = Depends(get
 @auth_router.post("/profile")
 async def update_profile(
     request: Request, display_name: str = Form(...), db: AsyncSession = Depends(get_db)
-):
+) -> Response:
     """Update user profile information."""
     session_id = request.cookies.get("session_id")
 
@@ -269,7 +269,7 @@ async def update_profile(
 @auth_router.get("/privacy-consent", response_class=HTMLResponse)
 async def privacy_consent_page(
     request: Request, user_id: Optional[str] = None, session_token: Optional[str] = None
-):
+) -> Response:
     """Privacy consent page for new users."""
     if not user_id or not session_token:
         return RedirectResponse(url="/auth/login", status_code=302)
@@ -290,7 +290,7 @@ async def handle_privacy_consent(
     marketing_opt_in: bool = Form(False),
     analytics_opt_in: bool = Form(True),
     db: AsyncSession = Depends(get_db),
-):
+) -> Response:
     """Handle privacy consent form submission."""
     try:
         from uuid import UUID
@@ -313,7 +313,7 @@ async def handle_privacy_consent(
             .values(
                 marketing_opt_in=marketing_opt_in,
                 preferences={
-                    **user.preferences,
+                    **(user.preferences or {}),
                     "analytics_opt_in": analytics_opt_in,
                     "privacy_consent_completed": True,
                     "privacy_consent_date": datetime.utcnow().isoformat(),
@@ -350,7 +350,7 @@ async def handle_privacy_consent(
 @auth_router.get("/privacy-preferences", response_class=HTMLResponse)
 async def privacy_preferences_page(
     request: Request, db: AsyncSession = Depends(get_db)
-):
+) -> Response:
     """Privacy preferences management page."""
     session_id = request.cookies.get("session_id")
 
@@ -373,7 +373,7 @@ async def update_privacy_preferences(
     analytics_opt_in: bool = Form(True),
     festival_notifications: bool = Form(True),
     db: AsyncSession = Depends(get_db),
-):
+) -> Response:
     """Update user privacy preferences."""
     session_id = request.cookies.get("session_id")
 
@@ -408,7 +408,7 @@ async def update_privacy_preferences(
 
 
 # Dependency to get current authenticated user
-async def get_current_user(request: Request, db: AsyncSession = Depends(get_db)):
+async def get_current_user(request: Request, db: AsyncSession = Depends(get_db)) -> Optional[UserSchema]:
     """Dependency to get current authenticated user."""
     session_id = request.cookies.get("session_id")
 
@@ -419,7 +419,7 @@ async def get_current_user(request: Request, db: AsyncSession = Depends(get_db))
 
 
 # Dependency that requires authentication
-async def require_auth(request: Request, db: AsyncSession = Depends(get_db)):
+async def require_auth(request: Request, db: AsyncSession = Depends(get_db)) -> UserSchema:
     """Dependency that requires user to be authenticated."""
     user = await get_current_user(request, db)
 
@@ -432,7 +432,7 @@ async def require_auth(request: Request, db: AsyncSession = Depends(get_db)):
 @auth_router.get("/export-data")
 async def export_user_data_page(
     request: Request, user: UserSchema = Depends(require_auth)
-):
+) -> Response:
     """Display data export page."""
     return templates.TemplateResponse(
         "auth/export_data.html",
@@ -446,7 +446,7 @@ async def export_user_data_request(
     format: str = Form("json"),
     db: AsyncSession = Depends(get_db),
     user: UserSchema = Depends(require_auth),
-):
+) -> Response:
     """Handle data export request."""
     import io
     import json
@@ -479,8 +479,9 @@ async def export_user_data_request(
             # Create ZIP file with multiple CSV files
             zip_buffer = io.BytesIO()
             with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
-                for filename, csv_content in export_data.items():
-                    zip_file.writestr(filename, csv_content)
+                if isinstance(export_data, dict):
+                    for filename, csv_content in export_data.items():
+                        zip_file.writestr(filename, csv_content)
 
             zip_buffer.seek(0)
             return Response(
@@ -496,6 +497,15 @@ async def export_user_data_request(
                 media_type="application/xml",
                 headers={
                     "Content-Disposition": f"attachment; filename=user_data_export_{user.id}.xml"
+                },
+            )
+        else:
+            # Default to JSON for unknown formats
+            return Response(
+                content=json.dumps(export_data, indent=2),
+                media_type="application/json",
+                headers={
+                    "Content-Disposition": f"attachment; filename=user_data_export_{user.id}.json"
                 },
             )
 
@@ -515,7 +525,7 @@ async def export_user_data_request(
 @auth_router.get("/delete-account")
 async def delete_account_page(
     request: Request, user: UserSchema = Depends(require_auth)
-):
+) -> Response:
     """Display account deletion confirmation page."""
     return templates.TemplateResponse(
         "auth/delete_account.html",
@@ -529,7 +539,7 @@ async def delete_account_request(
     confirm_deletion: str = Form(...),
     db: AsyncSession = Depends(get_db),
     user: UserSchema = Depends(require_auth),
-):
+) -> Response:
     """Handle account deletion request."""
     from festival_playlist_generator.services.data_export_service import (
         data_export_service,

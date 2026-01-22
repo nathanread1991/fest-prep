@@ -4,12 +4,12 @@ import hashlib
 import logging
 import secrets
 from datetime import datetime, timedelta
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, Optional
 from uuid import UUID, uuid4
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from festival_playlist_generator.core.redis import cache
 from festival_playlist_generator.models.user import User
@@ -24,7 +24,7 @@ class AuthService:
 
     SESSION_EXPIRE_HOURS = 24 * 7  # 7 days
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.cache = cache
 
     def _hash_password(self, password: str) -> str:
@@ -44,7 +44,7 @@ class AuthService:
             return False
 
     async def register_user(
-        self, db: Session, user_data: UserCreate, password: str
+        self, db: AsyncSession, user_data: UserCreate, password: str
     ) -> UserSchema:
         """Register a new user."""
         # Check if user already exists
@@ -80,7 +80,7 @@ class AuthService:
         return UserSchema.model_validate(db_user)
 
     async def authenticate_user(
-        self, db: Session, email: str, password: str
+        self, db: AsyncSession, email: str, password: str
     ) -> Optional[UserSchema]:
         """Authenticate user with email and password."""
         # Get user from database
@@ -131,7 +131,7 @@ class AuthService:
             await self.delete_session(session_id)
             return None
 
-        return session_data
+        return dict(session_data) if session_data else None
 
     async def delete_session(self, session_id: str) -> bool:
         """Delete session."""
@@ -140,7 +140,7 @@ class AuthService:
         return result
 
     async def get_current_user(
-        self, db: Session, session_id: str
+        self, db: AsyncSession, session_id: str
     ) -> Optional[UserSchema]:
         """Get current user from session."""
         session_data = await self.get_session(session_id)

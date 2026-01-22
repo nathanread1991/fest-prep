@@ -1,6 +1,6 @@
 """Recommendation API endpoints."""
 
-from typing import List
+from typing import Any, Callable, List
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
@@ -21,7 +21,7 @@ router = APIRouter()
 @router.get("/users/{user_id}/profile")
 async def get_user_profile(
     user_id: str, request: Request, db: Session = Depends(get_db)
-):
+) -> JSONResponse:
     """Get user's music preference profile."""
     try:
         engine = RecommendationEngine(db)
@@ -55,7 +55,7 @@ async def get_user_profile(
 @router.get("/users/{user_id}/festivals")
 async def get_festival_recommendations(
     user_id: str, request: Request, limit: int = 10, db: Session = Depends(get_db)
-):
+) -> JSONResponse:
     """Get personalized festival recommendations for a user."""
     try:
         engine = RecommendationEngine(db)
@@ -102,7 +102,7 @@ async def get_artist_recommendations(
     request: Request,
     limit: int = 10,
     db: Session = Depends(get_db),
-):
+) -> JSONResponse:
     """Get personalized artist recommendations from a festival lineup."""
     try:
         engine = RecommendationEngine(db)
@@ -143,8 +143,8 @@ async def get_artist_recommendations(
 
 @router.post("/users/{user_id}/similarity")
 async def calculate_similarity_scores(
-    user_id: str, items: List[dict], request: Request, db: Session = Depends(get_db)
-):
+    user_id: str, items: List[dict[str, Any]], request: Request, db: Session = Depends(get_db)
+) -> JSONResponse:
     """Calculate similarity scores between user profile and provided items."""
     try:
         engine = RecommendationEngine(db)
@@ -152,7 +152,7 @@ async def calculate_similarity_scores(
 
         # Convert dict items to objects with required attributes
         class Item:
-            def __init__(self, item_dict):
+            def __init__(self, item_dict: dict[str, Any]) -> None:
                 self.id = item_dict.get("id")
                 self.genres = item_dict.get("genres", [])
 

@@ -1,7 +1,7 @@
 """Name Normalization Service - Consistent artist name formatting and comparison."""
 
 import re
-from typing import Set
+from typing import Any, Callable, Set
 
 
 class NameNormalizationService:

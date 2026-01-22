@@ -4,7 +4,7 @@ import json
 import logging
 import secrets
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 from urllib.parse import parse_qs, urlencode
 from uuid import UUID, uuid4
 
@@ -34,7 +34,7 @@ class OAuthProvider:
         token_url: str,
         user_info_url: str,
         scopes: List[str],
-    ):
+    ) -> None:
         self.name = name
         self.client_id = client_id
         self.client_secret = client_secret
@@ -49,7 +49,7 @@ class OAuthService:
 
     SESSION_EXPIRE_HOURS = 24
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.cache = cache
         self.providers = self._initialize_providers()
 
@@ -286,7 +286,8 @@ class OAuthService:
                     detail="Failed to exchange authorization code for token",
                 )
 
-            return response.json()
+            token_response: Dict[str, Any] = response.json()
+            return token_response
 
     async def _get_user_info(
         self, provider: OAuthProvider, access_token: str
@@ -347,7 +348,8 @@ class OAuthService:
                     "provider_id": user_data.get("id"),
                 }
 
-            return user_data
+            result: Dict[str, Any] = user_data
+            return result
 
     async def _create_or_get_user(
         self, db: AsyncSession, provider_name: str, user_info: Dict[str, Any]
@@ -443,7 +445,8 @@ class OAuthService:
             await self.delete_session(session_id)
             return None
 
-        return session_data
+        result: Dict[str, Any] = session_data
+        return result
 
     async def delete_session(self, session_id: str) -> bool:
         """Delete session."""

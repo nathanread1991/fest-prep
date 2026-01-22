@@ -1,10 +1,11 @@
 """Base repository with generic CRUD operations."""
 
 from abc import ABC
-from typing import Generic, List, Optional, Type, TypeVar
+from typing import Any, Callable, Generic, List, Optional, Type, TypeVar, cast
 from uuid import UUID
 
 from sqlalchemy import delete, func, select
+from sqlalchemy.engine import Result
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeBase
 
@@ -25,11 +26,11 @@ class BaseRepository(ABC, Generic[T]):
 
     Example:
         class FestivalRepository(BaseRepository[Festival]):
-            def __init__(self, db: AsyncSession):
+            def __init__(self, db: AsyncSession) -> None:
                 super().__init__(db, Festival)
     """
 
-    def __init__(self, db: AsyncSession, model_class: Type[T]):
+    def __init__(self, db: AsyncSession, model_class: Type[T]) -> None:
         """
         Initialize the repository.
 
@@ -51,7 +52,7 @@ class BaseRepository(ABC, Generic[T]):
             Entity instance or None if not found
         """
         result = await self.db.execute(
-            select(self.model_class).where(self.model_class.id == id)
+            select(self.model_class).where(getattr(self.model_class, 'id') == id)
         )
         return result.scalar_one_or_none()
 
@@ -74,7 +75,7 @@ class BaseRepository(ABC, Generic[T]):
         Returns:
             List of entity instances
         """
-        order_column = getattr(self.model_class, order_by, self.model_class.created_at)
+        order_column: Any = getattr(self.model_class, order_by, getattr(self.model_class, 'created_at'))
 
         query = select(self.model_class)
 
@@ -131,9 +132,11 @@ class BaseRepository(ABC, Generic[T]):
             True if entity was deleted, False if not found
         """
         result = await self.db.execute(
-            delete(self.model_class).where(self.model_class.id == id)
+            delete(self.model_class).where(getattr(self.model_class, 'id') == id)
         )
-        return result.rowcount > 0
+        # Cast to access rowcount attribute
+        rowcount = cast(Any, result).rowcount
+        return rowcount is not None and rowcount > 0
 
     async def bulk_delete(self, ids: List[UUID]) -> int:
         """
@@ -146,9 +149,11 @@ class BaseRepository(ABC, Generic[T]):
             Number of entities deleted
         """
         result = await self.db.execute(
-            delete(self.model_class).where(self.model_class.id.in_(ids))
+            delete(self.model_class).where(getattr(self.model_class, 'id').in_(ids))
         )
-        return result.rowcount
+        # Cast to access rowcount attribute
+        rowcount = cast(Any, result).rowcount
+        return rowcount if rowcount is not None else 0
 
     async def exists(self, id: UUID) -> bool:
         """
@@ -161,9 +166,10 @@ class BaseRepository(ABC, Generic[T]):
             True if entity exists, False otherwise
         """
         result = await self.db.execute(
-            select(func.count(self.model_class.id)).where(self.model_class.id == id)
+            select(func.count(getattr(self.model_class, 'id'))).where(getattr(self.model_class, 'id') == id)
         )
-        return result.scalar() > 0
+        count = result.scalar()
+        return count is not None and count > 0
 
     async def count(self) -> int:
         """
@@ -172,8 +178,9 @@ class BaseRepository(ABC, Generic[T]):
         Returns:
             Total number of entities
         """
-        result = await self.db.execute(select(func.count(self.model_class.id)))
-        return result.scalar()
+        result = await self.db.execute(select(func.count(getattr(self.model_class, 'id'))))
+        count = result.scalar()
+        return count if count is not None else 0
 
     async def get_all_ids(self) -> List[UUID]:
         """
@@ -182,5 +189,5 @@ class BaseRepository(ABC, Generic[T]):
         Returns:
             List of all entity UUIDs
         """
-        result = await self.db.execute(select(self.model_class.id))
+        result = await self.db.execute(select(getattr(self.model_class, 'id')))
         return [row[0] for row in result]

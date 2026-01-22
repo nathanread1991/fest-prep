@@ -6,7 +6,7 @@ import logging
 import time
 from datetime import datetime, timedelta
 from functools import wraps
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from festival_playlist_generator.core.config import settings
 from festival_playlist_generator.core.redis import get_redis
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class CacheManager:
     """Centralized cache management with multiple strategies."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.default_ttl = 3600  # 1 hour
         self.cache_prefix = "fpg:"
 
@@ -82,7 +82,7 @@ class CacheManager:
             cache_key = self._make_key(key, namespace)
 
             result = await redis.delete(cache_key)
-            return result > 0
+            return bool(result > 0)
 
         except Exception as e:
             logger.error(f"Cache delete error for key {key}: {e}")
@@ -95,7 +95,7 @@ class CacheManager:
             cache_key = self._make_key(key, namespace)
 
             result = await redis.exists(cache_key)
-            return result > 0
+            return bool(result > 0)
 
         except Exception as e:
             logger.error(f"Cache exists error for key {key}: {e}")
@@ -109,7 +109,8 @@ class CacheManager:
 
             keys = await redis.keys(cache_pattern)
             if keys:
-                return await redis.delete(*keys)
+                result = await redis.delete(*keys)
+                return int(result)
 
             return 0
 
@@ -120,7 +121,7 @@ class CacheManager:
     async def get_or_set(
         self,
         key: str,
-        factory_func,
+        factory_func: Union[Callable[[], Any], Any],
         ttl: Optional[int] = None,
         namespace: str = "default",
     ) -> Any:
@@ -148,7 +149,7 @@ class CacheManager:
 cache_manager = CacheManager()
 
 
-def cache_key_from_args(*args, **kwargs) -> str:
+def cache_key_from_args(*args: Any, **kwargs: Any) -> str:
     """Generate a cache key from function arguments."""
     key_parts = []
 
@@ -172,13 +173,15 @@ def cache_key_from_args(*args, **kwargs) -> str:
 
 
 def cached(
-    ttl: int = 3600, namespace: str = "default", key_func: Optional[callable] = None
-):
+    ttl: int = 3600,
+    namespace: str = "default",
+    key_func: Optional[Callable[..., str]] = None,
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Decorator for caching function results."""
 
-    def decorator(func):
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         @wraps(func)
-        async def wrapper(*args, **kwargs):
+        async def wrapper(*args: Any, **kwargs: Any) -> Any:
             # Generate cache key
             if key_func:
                 cache_key = key_func(*args, **kwargs)
@@ -272,7 +275,7 @@ class HTTPCacheManager:
 class APIResponseCache:
     """Specialized caching for API responses."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.cache_manager = cache_manager
 
     async def cache_api_response(

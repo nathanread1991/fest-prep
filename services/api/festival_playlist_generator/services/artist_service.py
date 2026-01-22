@@ -1,7 +1,7 @@
 """Artist service for business logic with caching."""
 
 import logging
-from typing import List, Optional, Tuple
+from typing import Any, Callable, List, Optional, Tuple
 from uuid import UUID
 
 from festival_playlist_generator.models.artist import Artist
@@ -25,7 +25,7 @@ class ArtistService:
 
     def __init__(
         self, artist_repository: ArtistRepository, cache_service: CacheService
-    ):
+    ) -> None:
         """
         Initialize artist service.
 
@@ -59,7 +59,7 @@ class ArtistService:
             # Note: Cached data is dict, would need to reconstruct Artist model
             # For now, skip cache for complex objects with relationships
             if not load_relationships:
-                return cached
+                return cached  # type: ignore[no-any-return]
 
         # Fetch from database
         artist = await self.artist_repo.get_by_id(artist_id, load_relationships)
@@ -87,7 +87,7 @@ class ArtistService:
         cached = await self.cache.get(cache_key)
         if cached is not None:
             logger.debug(f"Cache hit for artist name {name}")
-            return cached
+            return cached  # type: ignore[no-any-return]
 
         # Fetch from database
         artist = await self.artist_repo.get_by_name(name)
@@ -113,7 +113,7 @@ class ArtistService:
         cached = await self.cache.get(cache_key)
         if cached is not None:
             logger.debug(f"Cache hit for Spotify ID {spotify_id}")
-            return cached
+            return cached  # type: ignore[no-any-return]
 
         # Fetch from database
         artist = await self.artist_repo.get_by_spotify_id(spotify_id)
@@ -282,7 +282,7 @@ class ArtistService:
         cache_key = "artists:count:total"
         cached = await self.cache.get(cache_key)
         if cached is not None:
-            return cached
+            return cached  # type: ignore[no-any-return]
 
         # Fetch from database
         count = await self.artist_repo.count_total()
@@ -303,7 +303,7 @@ class ArtistService:
         cache_key = "artists:count:orphaned"
         cached = await self.cache.get(cache_key)
         if cached is not None:
-            return cached
+            return cached  # type: ignore[no-any-return]
 
         # Fetch from database
         count = await self.artist_repo.count_orphaned()
@@ -313,7 +313,7 @@ class ArtistService:
 
         return count
 
-    async def _invalidate_artist_caches(self, artist_id: UUID):
+    async def _invalidate_artist_caches(self, artist_id: UUID) -> None:
         """
         Invalidate all caches related to a specific artist.
 
@@ -326,7 +326,7 @@ class ArtistService:
 
         logger.debug(f"Invalidated caches for artist {artist_id}")
 
-    async def _invalidate_search_caches(self):
+    async def _invalidate_search_caches(self) -> None:
         """Invalidate all artist search and count caches."""
         # Delete all search result caches
         await self.cache.delete_pattern("artists:search:*")

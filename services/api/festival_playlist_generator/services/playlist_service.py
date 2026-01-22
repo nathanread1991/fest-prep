@@ -1,7 +1,7 @@
 """Playlist service for business logic with Spotify integration and circuit breaker."""
 
 import logging
-from typing import List, Optional
+from typing import Any, Callable, List, Optional, TYPE_CHECKING
 from uuid import UUID
 
 from festival_playlist_generator.models.festival import Festival
@@ -13,6 +13,9 @@ from festival_playlist_generator.repositories.playlist_repository import (
     PlaylistRepository,
 )
 from festival_playlist_generator.services.cache_service import CacheService
+
+if TYPE_CHECKING:
+    from festival_playlist_generator.services.spotify_service import SpotifyService
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +39,7 @@ class PlaylistService:
         festival_repository: FestivalRepository,
         cache_service: CacheService,
         spotify_service: Optional["SpotifyService"] = None,
-    ):
+    ) -> None:
         """
         Initialize playlist service.
 
@@ -71,7 +74,7 @@ class PlaylistService:
         cached = await self.cache.get(cache_key)
         if cached is not None and not load_relationships:
             logger.debug(f"Cache hit for playlist {playlist_id}")
-            return cached
+            return cached  # type: ignore[no-any-return]
 
         # Fetch from database
         playlist = await self.playlist_repo.get_by_id(playlist_id, load_relationships)
@@ -98,7 +101,7 @@ class PlaylistService:
         cached = await self.cache.get(cache_key)
         if cached is not None:
             logger.debug(f"Cache hit for Spotify playlist {spotify_id}")
-            return cached
+            return cached  # type: ignore[no-any-return]
 
         # Fetch from database
         playlist = await self.playlist_repo.get_by_spotify_id(spotify_id)
@@ -128,7 +131,7 @@ class PlaylistService:
         cached = await self.cache.get(cache_key)
         if cached is not None:
             logger.debug(f"Cache hit for user {user_id} playlists")
-            return cached
+            return cached  # type: ignore[no-any-return]
 
         # Fetch from database
         playlists = await self.playlist_repo.get_by_user(user_id, skip, limit)
@@ -157,7 +160,7 @@ class PlaylistService:
         cached = await self.cache.get(cache_key)
         if cached is not None:
             logger.debug(f"Cache hit for festival {festival_id} playlists")
-            return cached
+            return cached  # type: ignore[no-any-return]
 
         # Fetch from database
         playlists = await self.playlist_repo.get_by_festival(festival_id, skip, limit)
@@ -296,11 +299,11 @@ class PlaylistService:
             )
 
             # Add tracks to Spotify playlist
-            if playlist.tracks:
+            if playlist.songs:
                 track_uris = [
-                    f"spotify:track:{track.spotify_id}"
-                    for track in playlist.tracks
-                    if track.spotify_id
+                    f"spotify:track:{song.external_id}"
+                    for song in playlist.songs
+                    if song.external_id
                 ]
                 if track_uris:
                     await self.spotify_service.add_tracks_to_playlist(
@@ -309,8 +312,8 @@ class PlaylistService:
                         access_token=user_access_token,
                     )
 
-            # Update playlist with Spotify ID
-            playlist.spotify_id = spotify_playlist_id
+            # Update playlist with Spotify ID (stored in external_id)
+            playlist.external_id = spotify_playlist_id
             await self.playlist_repo.update(playlist)
 
             # Invalidate caches
@@ -325,7 +328,7 @@ class PlaylistService:
             logger.error(f"Failed to sync playlist {playlist_id} to Spotify: {e}")
             return None
 
-    async def _invalidate_playlist_caches(self, playlist_id: UUID):
+    async def _invalidate_playlist_caches(self, playlist_id: UUID) -> None:
         """
         Invalidate all caches related to a specific playlist.
 

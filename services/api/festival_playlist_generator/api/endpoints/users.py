@@ -1,6 +1,6 @@
 """User management API endpoints."""
 
-from typing import Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Query, Request, status
@@ -63,7 +63,7 @@ async def register_user(
     password: str,
     db: AsyncSession = Depends(get_db),
     user_service: UserService = Depends(get_user_service),
-):
+) -> UserSchema:
     """Register a new user."""
     return await auth_service.register_user(db, user_data, password)
 
@@ -74,7 +74,7 @@ async def login_user(
     password: str,
     db: AsyncSession = Depends(get_db),
     user_service: UserService = Depends(get_user_service),
-):
+) -> Dict[str, Any]:
     """Login user and create session."""
     user = await auth_service.authenticate_user(db, email, password)
     if not user:
@@ -88,7 +88,7 @@ async def login_user(
 
 
 @router.post("/logout")
-async def logout_user(session_id: Optional[str] = Cookie(None)):
+async def logout_user(session_id: Optional[str] = Cookie(None)) -> Dict[str, str]:
     """Logout user and delete session."""
     if session_id:
         await auth_service.delete_session(session_id)
@@ -97,7 +97,9 @@ async def logout_user(session_id: Optional[str] = Cookie(None)):
 
 
 @router.get("/me", response_model=UserSchema)
-async def get_current_user_info(current_user: UserSchema = Depends(get_current_user)):
+async def get_current_user_info(
+    current_user: UserSchema = Depends(get_current_user),
+) -> UserSchema:
     """Get current user information."""
     return current_user
 
@@ -108,7 +110,7 @@ async def update_current_user(
     current_user: UserSchema = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
     user_service: UserService = Depends(get_user_service),
-):
+) -> UserSchema:
     """Update current user information."""
     # Get user from service
     db_user = await user_service.get_user_by_id(current_user.id)
@@ -138,7 +140,7 @@ async def mark_song_preference(
     is_known: bool,
     current_user: UserSchema = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-):
+) -> UserSongPreferenceSchema:
     """Mark a song as known or unknown."""
     return await user_preference_service.mark_song_preference(
         db, current_user.id, song_id, is_known
@@ -150,7 +152,7 @@ async def get_song_preferences(
     known_only: Optional[bool] = None,
     current_user: UserSchema = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-):
+) -> List[UserSongPreferenceSchema]:
     """Get user's song preferences."""
     return await user_preference_service.get_user_song_preferences(
         db, current_user.id, known_only
@@ -161,7 +163,7 @@ async def get_song_preferences(
 async def get_known_songs(
     current_user: UserSchema = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-):
+) -> List[UUID]:
     """Get list of songs marked as known."""
     return await user_preference_service.get_known_songs(db, current_user.id)
 
@@ -170,7 +172,7 @@ async def get_known_songs(
 async def get_unknown_songs(
     current_user: UserSchema = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-):
+) -> List[UUID]:
     """Get list of songs marked as unknown."""
     return await user_preference_service.get_unknown_songs(db, current_user.id)
 
@@ -180,7 +182,7 @@ async def bulk_mark_songs(
     song_preferences: Dict[UUID, bool],
     current_user: UserSchema = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-):
+) -> List[UserSongPreferenceSchema]:
     """Bulk update song preferences."""
     return await user_preference_service.bulk_mark_songs(
         db, current_user.id, song_preferences
@@ -192,7 +194,7 @@ async def delete_song_preference(
     song_id: UUID,
     current_user: UserSchema = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-):
+) -> Dict[str, str]:
     """Delete a song preference."""
     success = await user_preference_service.delete_song_preference(
         db, current_user.id, song_id
@@ -214,7 +216,7 @@ async def filter_playlist(
     show_unknown: bool = Query(True, description="Show songs marked as unknown"),
     current_user: UserSchema = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-):
+) -> PlaylistSchema:
     """Filter playlist based on user song preferences."""
     # This would typically fetch the playlist from database
     # For now, we'll return an error since playlist fetching isn't implemented yet
@@ -231,7 +233,7 @@ async def filter_songs(
     show_unknown: bool = Query(True, description="Show songs marked as unknown"),
     current_user: UserSchema = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-):
+) -> List[SongSchema]:
     """Filter a list of songs based on user preferences."""
     return await song_filtering_service.filter_songs_by_preferences(
         db, songs, current_user.id, show_known, show_unknown
@@ -243,7 +245,7 @@ async def get_known_songs_from_list(
     songs: List[SongSchema],
     current_user: UserSchema = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-):
+) -> List[SongSchema]:
     """Get only known songs from a list."""
     return await song_filtering_service.get_known_songs_from_list(
         db, songs, current_user.id
@@ -255,7 +257,7 @@ async def get_unknown_songs_from_list(
     songs: List[SongSchema],
     current_user: UserSchema = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-):
+) -> List[SongSchema]:
     """Get only unknown songs from a list."""
     return await song_filtering_service.get_unknown_songs_from_list(
         db, songs, current_user.id
@@ -267,7 +269,7 @@ async def get_song_preference_summary(
     songs: List[SongSchema],
     current_user: UserSchema = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-):
+) -> Dict[str, Any]:
     """Get summary of song preferences for a list of songs."""
     return await song_filtering_service.get_song_preference_summary(
         db, songs, current_user.id
@@ -275,7 +277,7 @@ async def get_song_preference_summary(
 
 
 @router.get("/me/filter-toggle")
-async def get_filter_toggle_options():
+async def get_filter_toggle_options() -> Dict[str, List[Dict[str, Any]]]:
     """Get available filter toggle options."""
     return {
         "options": [
@@ -300,7 +302,7 @@ async def get_filter_toggle_options():
 
 
 @router.post("/me/filter-toggle")
-async def toggle_filter_settings(show_known: bool, show_unknown: bool):
+async def toggle_filter_settings(show_known: bool, show_unknown: bool) -> Dict[str, Any]:
     """Toggle filter settings and get description."""
     return song_filtering_service.create_filter_toggle_response(
         show_known, show_unknown
@@ -308,59 +310,35 @@ async def toggle_filter_settings(show_known: bool, show_unknown: bool):
 
 
 # API Key management endpoints
-@router.post("/me/api-keys", response_model=dict)
-async def create_api_key(
+@router.post("/me/api-keys", response_model=Dict[str, Any])
+async def create_api_key_endpoint(
     name: str = "Default", current_user: UserSchema = Depends(get_current_user)
-):
+) -> Dict[str, Any]:
     """Create a new API key for the current user."""
-    from festival_playlist_generator.api.auth import create_api_key
-
-    api_key = create_api_key(str(current_user.id), name)
-
-    return {
-        "api_key": api_key,
-        "name": name,
-        "message": "API key created successfully. Store this key securely - it won't be shown again.",
-    }
+    # TODO: Implement API key creation functionality
+    raise HTTPException(
+        status_code=status.HTTP_501_NOT_IMPLEMENTED,
+        detail="API key management not yet implemented"
+    )
 
 
-@router.get("/me/api-keys", response_model=List[dict])
-async def list_api_keys(current_user: UserSchema = Depends(get_current_user)):
+@router.get("/me/api-keys", response_model=List[Dict[str, Any]])
+async def list_api_keys(current_user: UserSchema = Depends(get_current_user)) -> List[Dict[str, Any]]:
     """List API keys for the current user."""
-    from festival_playlist_generator.api.auth import api_keys
-
-    user_keys = []
-    for hashed_key, key_info in api_keys.items():
-        if key_info.user_id == str(current_user.id) and key_info.is_active:
-            user_keys.append(
-                {
-                    "name": key_info.name,
-                    "created_at": key_info.created_at,
-                    "last_used": key_info.last_used,
-                    "key_preview": f"fpg_...{hashed_key[-8:]}",  # Show last 8 chars of hash
-                }
-            )
-
-    return user_keys
+    # TODO: Implement API key listing functionality
+    raise HTTPException(
+        status_code=status.HTTP_501_NOT_IMPLEMENTED,
+        detail="API key management not yet implemented"
+    )
 
 
 @router.delete("/me/api-keys/{key_name}")
 async def revoke_api_key(
     key_name: str, current_user: UserSchema = Depends(get_current_user)
-):
+) -> Dict[str, str]:
     """Revoke an API key."""
-    from festival_playlist_generator.api.auth import api_keys
-
-    # Find and deactivate the key
-    for hashed_key, key_info in api_keys.items():
-        if (
-            key_info.user_id == str(current_user.id)
-            and key_info.name == key_name
-            and key_info.is_active
-        ):
-            key_info.is_active = False
-            return {"message": f"API key '{key_name}' has been revoked"}
-
+    # TODO: Implement API key revocation functionality
     raise HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND, detail="API key not found"
+        status_code=status.HTTP_501_NOT_IMPLEMENTED,
+        detail="API key management not yet implemented"
     )

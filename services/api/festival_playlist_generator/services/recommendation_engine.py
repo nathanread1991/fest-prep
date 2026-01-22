@@ -4,7 +4,7 @@ import math
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from sqlalchemy import and_, func
 from sqlalchemy.orm import Session
@@ -57,7 +57,7 @@ class ArtistRecommendation:
 class RecommendationEngine:
     """Service for generating personalized recommendations."""
 
-    def __init__(self, db: Session):
+    def __init__(self, db: Session) -> None:
         self.db = db
 
     async def analyze_user_preferences(self, user_id: str) -> UserProfile:
@@ -106,7 +106,7 @@ class RecommendationEngine:
                         self.db.query(Artist).filter(Artist.name == song.artist).first()
                     )
                     if artist:
-                        artist_counter[artist.id] += 1
+                        artist_counter[str(artist.id)] += 1
                         # Add genres from artist
                         for genre in artist.genres or []:
                             genre_counter[genre] += 1
@@ -121,7 +121,7 @@ class RecommendationEngine:
                     self.db.query(Artist).filter(Artist.name == song.artist).first()
                 )
                 if artist:
-                    artist_counter[artist.id] += 0.5  # Lower weight for playlist songs
+                    artist_counter[str(artist.id)] += 0.5  # Lower weight for playlist songs
                     for genre in artist.genres or []:
                         genre_counter[genre] += 0.5
 
@@ -172,13 +172,16 @@ class RecommendationEngine:
 
         # Get upcoming festivals (within next year)
         cutoff_date = datetime.utcnow() + timedelta(days=365)
-        festivals = (
-            self.db.query(Festival)
-            .filter(
-                Festival.dates.any(lambda d: d > datetime.utcnow() and d < cutoff_date)
+        # Note: SQLAlchemy's any() doesn't support lambda expressions in strict typing
+        # Using a simpler filter approach
+        festivals = self.db.query(Festival).all()
+        # Filter in Python for now (could be optimized with proper SQLAlchemy query)
+        festivals = [
+            f for f in festivals
+            if f.dates and any(
+                datetime.utcnow() < d < cutoff_date for d in f.dates
             )
-            .all()
-        )
+        ]
 
         recommendations = []
 
@@ -260,7 +263,7 @@ class RecommendationEngine:
         return recommendations[:limit]
 
     async def calculate_similarity_scores(
-        self, profile: UserProfile, items: List
+        self, profile: UserProfile, items: List[Any]
     ) -> Dict[str, float]:
         """
         Calculate similarity scores between user profile and a list of items.

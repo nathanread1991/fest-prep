@@ -2,11 +2,11 @@
 
 import logging
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, Optional
 
 from fastapi import HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
@@ -68,13 +68,13 @@ class ErrorResponse:
 class CircuitBreakerOpenError(Exception):
     """Exception raised when circuit breaker is open."""
 
-    def __init__(self, service_name: str, message: str = None):
+    def __init__(self, service_name: str, message: Optional[str] = None) -> None:
         self.service_name = service_name
         self.message = message or f"Circuit breaker is OPEN for {service_name}"
         super().__init__(self.message)
 
 
-async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
+async def http_exception_handler(request: Request, exc: HTTPException) -> Response:
     """Handle HTTP exceptions with proper API response format."""
     # Log the exception with request context
     logger.warning(
@@ -113,7 +113,7 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
 
 async def validation_exception_handler(
     request: Request, exc: RequestValidationError
-) -> JSONResponse:
+) -> Response:
     """Handle request validation errors."""
     # Log validation error with request context
     logger.warning(
@@ -145,7 +145,7 @@ async def validation_exception_handler(
 
 async def integrity_error_handler(
     request: Request, exc: IntegrityError
-) -> JSONResponse:
+) -> Response:
     """Handle database integrity errors."""
     version = get_request_version(request)
     formatter = APIVersionManager.get_formatter(version)
@@ -183,7 +183,7 @@ async def integrity_error_handler(
 
 async def sqlalchemy_error_handler(
     request: Request, exc: SQLAlchemyError
-) -> JSONResponse:
+) -> Response:
     """Handle general SQLAlchemy errors."""
     version = get_request_version(request)
     formatter = APIVersionManager.get_formatter(version)
@@ -210,7 +210,7 @@ async def sqlalchemy_error_handler(
 
 async def circuit_breaker_handler(
     request: Request, exc: CircuitBreakerOpenError
-) -> JSONResponse:
+) -> Response:
     """Handle circuit breaker open errors."""
     version = get_request_version(request)
     formatter = APIVersionManager.get_formatter(version)
@@ -234,7 +234,7 @@ async def circuit_breaker_handler(
     )
 
 
-async def general_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+async def general_exception_handler(request: Request, exc: Exception) -> Response:
     """Handle unexpected exceptions."""
     version = get_request_version(request)
     formatter = APIVersionManager.get_formatter(version)
@@ -259,7 +259,7 @@ async def general_exception_handler(request: Request, exc: Exception) -> JSONRes
 
 async def pydantic_validation_exception_handler(
     request: Request, exc: ValidationError
-) -> JSONResponse:
+) -> Response:
     """Handle Pydantic validation errors."""
     version = get_request_version(request)
     formatter = APIVersionManager.get_formatter(version)

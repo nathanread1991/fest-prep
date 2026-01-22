@@ -4,7 +4,7 @@ import base64
 import json
 import logging
 import os
-from typing import Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 class PushNotificationService:
     """Service for managing push notifications."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.vapid_private_key = settings.VAPID_PRIVATE_KEY
         self.vapid_public_key = settings.VAPID_PUBLIC_KEY
         self.vapid_claims = {"sub": f"mailto:{settings.VAPID_EMAIL}"}
@@ -52,7 +52,7 @@ class PushNotificationService:
             "public_key": base64.urlsafe_b64encode(public_key_bytes).decode("utf-8"),
         }
 
-    async def subscribe_user(self, user_id: str, subscription_data: Dict) -> bool:
+    async def subscribe_user(self, user_id: str, subscription_data: Dict[str, Any]) -> bool:
         """Subscribe a user to push notifications."""
         try:
             redis = await get_redis()
@@ -94,7 +94,7 @@ class PushNotificationService:
             logger.error(f"Failed to unsubscribe user {user_id}: {e}")
             return False
 
-    async def get_user_subscription(self, user_id: str) -> Optional[Dict]:
+    async def get_user_subscription(self, user_id: str) -> Optional[Dict[str, Any]]:
         """Get user's push notification subscription."""
         try:
             redis = await get_redis()
@@ -102,7 +102,7 @@ class PushNotificationService:
 
             subscription_data = await redis.get(subscription_key)
             if subscription_data:
-                return json.loads(subscription_data)
+                return dict(json.loads(subscription_data))
 
             return None
 
@@ -115,8 +115,8 @@ class PushNotificationService:
         user_id: str,
         title: str,
         body: str,
-        data: Optional[Dict] = None,
-        actions: Optional[List[Dict]] = None,
+        data: Optional[Dict[str, Any]] = None,
+        actions: Optional[List[Dict[str, Any]]] = None,
         icon: str = "/static/images/icon-192.png",
         badge: str = "/static/images/badge.png",
         tag: Optional[str] = None,
@@ -172,8 +172,8 @@ class PushNotificationService:
         user_ids: List[str],
         title: str,
         body: str,
-        data: Optional[Dict] = None,
-        actions: Optional[List[Dict]] = None,
+        data: Optional[Dict[str, Any]] = None,
+        actions: Optional[List[Dict[str, Any]]] = None,
         icon: str = "/static/images/icon-192.png",
         badge: str = "/static/images/badge.png",
         tag: Optional[str] = None,

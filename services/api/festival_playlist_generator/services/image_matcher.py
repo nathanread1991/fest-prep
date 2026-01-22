@@ -8,7 +8,7 @@ import json
 import logging
 import re
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import openai
 from bs4 import BeautifulSoup
@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 class ImageMatcher:
     """Matches images to artists using AI and heuristics."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the ImageMatcher."""
         # Initialize OpenAI client if API key is available
         if settings.OPENAI_API_KEY:
@@ -108,7 +108,7 @@ class ImageMatcher:
         logger.info(f"Extracted {len(images)} images from lineup section")
         return images
 
-    def _find_lineup_section(self, soup: BeautifulSoup):
+    def _find_lineup_section(self, soup: BeautifulSoup) -> Optional[Any]:
         """
         Find the lineup section in the HTML.
 
@@ -165,7 +165,7 @@ class ImageMatcher:
         except ValueError:
             return None
 
-    def _get_image_context(self, img_tag) -> str:
+    def _get_image_context(self, img_tag: Any) -> str:
         """
         Get the surrounding HTML context for an image.
 

@@ -1,7 +1,7 @@
 """Setlist repository for database operations."""
 
 from datetime import datetime
-from typing import List, Optional
+from typing import Any, Callable, List, Optional
 from uuid import UUID
 
 from sqlalchemy import func, select
@@ -15,7 +15,7 @@ from festival_playlist_generator.repositories.base_repository import BaseReposit
 class SetlistRepository(BaseRepository[Setlist]):
     """Repository for Setlist database operations following enterprise patterns."""
 
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: AsyncSession) -> None:
         """
         Initialize the setlist repository.
 
@@ -233,7 +233,8 @@ class SetlistRepository(BaseRepository[Setlist]):
         result = await self.db.execute(
             select(func.count(Setlist.id)).where(Setlist.artist_id == artist_id)
         )
-        return result.scalar()
+        count = result.scalar()
+        return count if count is not None else 0
 
     async def count_by_venue(self, venue: str) -> int:
         """
@@ -250,7 +251,8 @@ class SetlistRepository(BaseRepository[Setlist]):
                 func.lower(Setlist.venue).like(f"%{venue.lower()}%")
             )
         )
-        return result.scalar()
+        count = result.scalar()
+        return count if count is not None else 0
 
     async def get_most_played_songs(
         self, artist_id: UUID, limit: int = 20

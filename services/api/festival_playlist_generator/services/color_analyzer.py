@@ -8,7 +8,7 @@ import colorsys
 import re
 from collections import Counter
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 
 @dataclass
@@ -52,7 +52,7 @@ class ColorAnalyzer:
         "violet": "#ee82ee",
     }
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the ColorAnalyzer."""
         pass
 
@@ -146,8 +146,8 @@ class ColorAnalyzer:
         if color.startswith("#"):
             # Expand 3-digit hex to 6-digit
             if len(color) == 4:  # #RGB
-                r, g, b = color[1], color[2], color[3]
-                return f"#{r}{r}{g}{g}{b}{b}"
+                r_hex, g_hex, b_hex = color[1], color[2], color[3]
+                return f"#{r_hex}{r_hex}{g_hex}{g_hex}{b_hex}{b_hex}"
             elif len(color) == 7:  # #RRGGBB
                 return color.upper()
             else:
@@ -300,18 +300,21 @@ class ColorAnalyzer:
         b = int(color[5:7], 16) / 255.0
 
         # Apply gamma correction
-        def gamma_correct(c):
+        def gamma_correct(c: float) -> float:
             if c <= 0.03928:
-                return c / 12.92
+                result: float = c / 12.92
+                return result
             else:
-                return ((c + 0.055) / 1.055) ** 2.4
+                result_exp: float = ((c + 0.055) / 1.055) ** 2.4
+                return result_exp
 
-        r = gamma_correct(r)
-        g = gamma_correct(g)
-        b = gamma_correct(b)
+        r_corrected: float = gamma_correct(r)
+        g_corrected: float = gamma_correct(g)
+        b_corrected: float = gamma_correct(b)
 
         # Calculate luminance
-        return 0.2126 * r + 0.7152 * g + 0.0722 * b
+        luminance: float = 0.2126 * r_corrected + 0.7152 * g_corrected + 0.0722 * b_corrected
+        return luminance
 
     def _adjust_for_contrast(self, color: str) -> str:
         """

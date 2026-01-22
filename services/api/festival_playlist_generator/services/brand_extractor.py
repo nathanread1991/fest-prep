@@ -8,7 +8,7 @@ import json
 import logging
 import re
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import openai
 from bs4 import BeautifulSoup
@@ -48,7 +48,7 @@ class FestivalBranding:
 class BrandExtractor:
     """Extracts visual branding from festival websites."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the BrandExtractor."""
         self.color_analyzer = ColorAnalyzer()
 
@@ -83,7 +83,12 @@ class BrandExtractor:
 
         for img in img_tags:
             # Get image URL
-            url = img.get("src") or img.get("data-src") or img.get("data-lazy-src")
+            url_raw = img.get("src") or img.get("data-src") or img.get("data-lazy-src")
+            if not url_raw:
+                continue
+            
+            # Convert to string (handle AttributeValueList)
+            url = str(url_raw) if url_raw else ""
             if not url:
                 continue
 
@@ -97,11 +102,14 @@ class BrandExtractor:
                     url = base_url.rstrip("/") + "/" + url
 
             # Get alt text
-            alt_text = img.get("alt", "")
+            alt_text_raw = img.get("alt", "")
+            alt_text = str(alt_text_raw) if alt_text_raw else ""
 
             # Get size attributes
-            width = self._parse_dimension(img.get("width"))
-            height = self._parse_dimension(img.get("height"))
+            width_raw = img.get("width")
+            height_raw = img.get("height")
+            width = self._parse_dimension(str(width_raw) if width_raw else None)
+            height = self._parse_dimension(str(height_raw) if height_raw else None)
 
             # Get surrounding context (parent elements)
             context = self._get_image_context(img)
@@ -114,7 +122,7 @@ class BrandExtractor:
 
             image_info = ImageInfo(
                 url=url,
-                alt_text=alt_text,
+                alt_text=alt_text if alt_text else None,
                 context=context,
                 size=(width, height),
                 is_logo_style=is_logo_style,
@@ -184,7 +192,7 @@ class BrandExtractor:
         except ValueError:
             return None
 
-    def _get_image_context(self, img_tag) -> str:
+    def _get_image_context(self, img_tag: Any) -> str:
         """
         Get the surrounding HTML context for an image.
 
@@ -218,7 +226,7 @@ class BrandExtractor:
 
         return " > ".join(reversed(context_parts))
 
-    def _calculate_position_score(self, img_tag, context: str) -> float:
+    def _calculate_position_score(self, img_tag: Any, context: str) -> float:
         """
         Calculate a position score for an image (0.0 to 1.0).
 

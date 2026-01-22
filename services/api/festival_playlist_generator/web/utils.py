@@ -3,13 +3,13 @@
 import json
 import os
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Any, Callable, Dict, Optional
 
 
 class AssetManager:
     """Manages asset URLs with cache busting and minification."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._manifest: Optional[Dict[str, str]] = None
         self._manifest_path = Path(__file__).parent / "static" / "manifest-assets.json"
         self._is_production = os.getenv("ENVIRONMENT", "development") == "production"

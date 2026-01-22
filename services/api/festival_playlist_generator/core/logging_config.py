@@ -8,7 +8,7 @@ import traceback
 from contextvars import ContextVar
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, Optional
 
 from festival_playlist_generator.core.config import settings
 
@@ -32,7 +32,7 @@ class JSONFormatter(logging.Formatter):
     - exception: Exception details with stack trace (if present)
     """
 
-    def __init__(self, service_name: str = "festival-playlist-generator"):
+    def __init__(self, service_name: str = "festival-playlist-generator") -> None:
         """Initialize JSON formatter.
 
         Args:
@@ -68,7 +68,7 @@ class JSONFormatter(logging.Formatter):
             log_entry["request_id"] = request_id
 
         # Add exception information if present
-        if record.exc_info:
+        if record.exc_info and record.exc_info[0] is not None:
             log_entry["exception"] = {
                 "type": record.exc_info[0].__name__,
                 "message": str(record.exc_info[1]),
@@ -245,19 +245,21 @@ def clear_request_id() -> None:
 class RequestLoggingContext:
     """Context manager for request-specific logging."""
 
-    def __init__(self, request_id: str, endpoint: str, user_id: str = None):
+    def __init__(
+        self, request_id: str, endpoint: str, user_id: Optional[str] = None
+    ) -> None:
         self.request_id = request_id
         self.endpoint = endpoint
         self.user_id = user_id
         self.logger = get_logger("api.requests")
 
-    def __enter__(self):
+    def __enter__(self) -> "RequestLoggingContext":
         self.logger.info(
             f"Request started - ID: {self.request_id}, Endpoint: {self.endpoint}, User: {self.user_id}"
         )
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         if exc_type:
             self.logger.error(
                 f"Request failed - ID: {self.request_id}, Error: {exc_type.__name__}: {exc_val}"
@@ -267,11 +269,11 @@ class RequestLoggingContext:
 
 
 # Service operation logging decorator
-def log_service_operation(operation_name: str):
+def log_service_operation(operation_name: str) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Decorator to log service operations."""
 
-    def decorator(func):
-        def wrapper(*args, **kwargs):
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             logger = get_logger("services")
             logger.info(f"Starting {operation_name}")
             try:

@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional
+from typing import Any, Callable, List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -61,7 +61,7 @@ class Playlist(PlaylistBase):
     created_at: datetime
     updated_at: datetime
 
-    def model_dump(self, **kwargs):
+    def model_dump(self, **kwargs: Any) -> dict[str, Any]:
         """Override model_dump to convert UUID and datetime to strings."""
         data = super().model_dump(**kwargs)
         # Convert UUIDs to strings

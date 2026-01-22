@@ -5,8 +5,22 @@
 
 set -e  # Exit on any error
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+COMPOSE_DIR="$PROJECT_ROOT/services/api"
+
 echo "🛑 Stopping Festival Playlist Generator..."
 echo "=================================="
+
+# Check if docker-compose.yml exists
+if [ ! -f "$COMPOSE_DIR/docker-compose.yml" ]; then
+    echo "❌ Error: docker-compose.yml not found in $COMPOSE_DIR"
+    echo "💡 Services may not be running with Docker Compose"
+    exit 1
+fi
+
+# Change to the compose directory
+cd "$COMPOSE_DIR"
 
 # Parse command line arguments
 CLEANUP=false

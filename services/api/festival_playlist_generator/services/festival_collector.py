@@ -6,7 +6,7 @@ import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Callable, Dict, List, Optional, Set
 
 import httpx
 from bs4 import BeautifulSoup
@@ -31,16 +31,16 @@ class RawFestivalData:
     dates: List[datetime]
     location: str
     venue: Optional[str] = None
-    artists: List[str] = None
-    genres: List[str] = None
+    artists: Optional[List[str]] = None
+    genres: Optional[List[str]] = None
     ticket_url: Optional[str] = None
-    raw_data: Dict[str, Any] = None
+    raw_data: Optional[Dict[str, Any]] = None
 
 
 class FestivalDataSource(ABC):
     """Abstract base class for festival data sources."""
 
-    def __init__(self, source_name: str):
+    def __init__(self, source_name: str) -> None:
         self.source_name = source_name
         self.logger = logging.getLogger(f"{__name__}.{source_name}")
 
@@ -87,19 +87,19 @@ class FestivalDataSource(ABC):
 class ClashfinderAPIClient:
     """Client for interacting with the Clashfinder API with proper authentication."""
 
-    def __init__(self, username: str, private_key: str):
+    def __init__(self, username: str, private_key: str) -> None:
         self.username = username
         self.private_key = private_key
         self.base_url = "https://clashfinder.com"
         self.logger = logging.getLogger(f"{__name__}.ClashfinderAPIClient")
-        self.session = None
+        self.session: Optional[httpx.AsyncClient] = None
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "ClashfinderAPIClient":
         """Async context manager entry."""
         self.session = httpx.AsyncClient(timeout=30.0)
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         """Async context manager exit."""
         if self.session:
             await self.session.aclose()
@@ -127,7 +127,7 @@ class ClashfinderAPIClient:
 
     def _build_auth_params(
         self,
-        additional_params: Dict[str, str] = None,
+        additional_params: Optional[Dict[str, str]] = None,
         auth_param: str = "",
         auth_valid_until: str = "",
     ) -> Dict[str, str]:
@@ -166,11 +166,14 @@ class ClashfinderAPIClient:
             self.logger.debug(f"Fetching Clashfinder data for ID: {clashfinder_id}")
             self.logger.debug(f"API URL: {api_url}")
 
+            if self.session is None:
+                raise RuntimeError("Session not initialized. Use async context manager.")
+
             response = await self.session.get(api_url, params=params)
 
             if response.status_code == 200:
                 if format_type.lower() == "json":
-                    return response.json()
+                    return response.json()  # type: ignore[no-any-return]
                 else:
                     return {"raw_data": response.text}
             elif response.status_code == 401:
@@ -289,11 +292,11 @@ class ClashfinderSource(FestivalDataSource):
 
     def __init__(
         self, username: str, private_key: str, source_name: str = "clashfinder"
-    ):
+    ) -> None:
         super().__init__(source_name)
         self.username = username
         self.private_key = private_key
-        self.client = None
+        self.client: Optional[ClashfinderAPIClient] = None
 
         # Known clashfinder IDs for major festivals (these would need to be updated regularly)
         # Starting with the test endpoint and some common festival patterns
@@ -561,7 +564,7 @@ class ClashfinderSource(FestivalDataSource):
 class WebScrapingSource(FestivalDataSource):
     """Web scraping festival data source."""
 
-    def __init__(self, base_url: str, source_name: str = "web_scraping"):
+    def __init__(self, base_url: str, source_name: str = "web_scraping") -> None:
         super().__init__(source_name)
         self.base_url = base_url
 
@@ -635,16 +638,21 @@ class WebScrapingSource(FestivalDataSource):
                                 "span", class_="date"
                             )
                             if date_elem:
-                                date_str = date_elem.get(
+                                date_str_raw = date_elem.get(
                                     "datetime"
                                 ) or date_elem.get_text(strip=True)
+                                # Ensure we have a string
+                                date_str = str(date_str_raw) if date_str_raw else ""
                                 try:
                                     date = datetime.fromisoformat(
                                         date_str.replace("Z", "+00:00")
                                     )
                                 except:
                                     # Try parsing common date formats
-                                    date = self._parse_date_string(date_str)
+                                    parsed_date = self._parse_date_string(date_str)
+                                    if parsed_date is None:
+                                        continue
+                                    date = parsed_date
                             else:
                                 continue
 
@@ -658,7 +666,7 @@ class WebScrapingSource(FestivalDataSource):
                                 if artist_name:
                                     artists.append(artist_name)
 
-                            if name and location and date:
+                            if name and location and date is not None:
                                 festivals.append(
                                     RawFestivalData(
                                         source=self.source_name,
@@ -724,9 +732,10 @@ class WebScrapingSource(FestivalDataSource):
                                 "span", class_="date"
                             )
                             if date_elem:
-                                date_str = date_elem.get(
+                                date_str_raw = date_elem.get(
                                     "datetime"
                                 ) or date_elem.get_text(strip=True)
+                                date_str = str(date_str_raw) if date_str_raw else ""
                                 date = self._parse_date_string(date_str)
                             else:
                                 continue
@@ -790,9 +799,10 @@ class WebScrapingSource(FestivalDataSource):
                                 "span", class_="date"
                             )
                             if date_elem:
-                                date_str = date_elem.get(
+                                date_str_raw = date_elem.get(
                                     "datetime"
                                 ) or date_elem.get_text(strip=True)
+                                date_str = str(date_str_raw) if date_str_raw else ""
                                 date = self._parse_date_string(date_str)
                             else:
                                 continue
@@ -839,7 +849,7 @@ class WebScrapingSource(FestivalDataSource):
                     soup = BeautifulSoup(response.text, "html.parser")
 
                     # Look for common festival-related elements
-                    potential_events = []
+                    potential_events: List[Any] = []
 
                     # Try different selectors
                     selectors = [
@@ -980,7 +990,7 @@ class APISource(FestivalDataSource):
 
     def __init__(
         self, api_url: str, api_key: Optional[str] = None, source_name: str = "api"
-    ):
+    ) -> None:
         super().__init__(source_name)
         self.api_url = api_url
         self.api_key = api_key
@@ -1020,7 +1030,7 @@ class APISource(FestivalDataSource):
         try:
             async with httpx.AsyncClient() as client:
                 # Search for events with festival in the name
-                params = {"query": "type:festival", "limit": 50, "fmt": "json"}
+                params: Dict[str, str | int] = {"query": "type:festival", "limit": 50, "fmt": "json"}
 
                 response = await client.get(
                     f"{self.api_url}/ws/2/event",
@@ -1083,7 +1093,7 @@ class APISource(FestivalDataSource):
 
     async def _fetch_from_lastfm(self) -> List[RawFestivalData]:
         """Fetch festival data from Last.fm API."""
-        festivals = []
+        festivals: List[RawFestivalData] = []
         try:
             if not self.api_key:
                 self.logger.warning("Last.fm API key not provided")
@@ -1091,7 +1101,7 @@ class APISource(FestivalDataSource):
 
             async with httpx.AsyncClient() as client:
                 # Search for festival events
-                params = {
+                params: Dict[str, str | int] = {
                     "method": "geo.getevents",
                     "api_key": self.api_key,
                     "format": "json",
@@ -1168,7 +1178,7 @@ class APISource(FestivalDataSource):
 
     async def _fetch_from_spotify(self) -> List[RawFestivalData]:
         """Fetch festival data from Spotify API (limited festival info available)."""
-        festivals = []
+        festivals: List[RawFestivalData] = []
         try:
             if not self.api_key:
                 self.logger.warning("Spotify API credentials not provided")
@@ -1189,7 +1199,7 @@ class APISource(FestivalDataSource):
                     access_token = token_data["access_token"]
 
                     # Search for festival playlists
-                    search_params = {
+                    search_params: Dict[str, str | int] = {
                         "q": "festival 2024 2025",
                         "type": "playlist",
                         "limit": 50,
@@ -1351,7 +1361,7 @@ class APISource(FestivalDataSource):
 class FestivalParser:
     """Parses and validates raw festival data."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.logger = logging.getLogger(f"{__name__}.FestivalParser")
 
     def parse_festival_data(
@@ -1381,6 +1391,12 @@ class FestivalParser:
                 artists=self._clean_artists(raw_data.artists or []),
                 genres=self._clean_genres(raw_data.genres or []),
                 ticket_url=self._clean_url(raw_data.ticket_url),
+                logo_url=None,
+                primary_color=None,
+                secondary_color=None,
+                accent_colors=None,
+                branding_extracted_at=None,
+                artist_images=None,
             )
 
             return festival_data
@@ -1391,16 +1407,15 @@ class FestivalParser:
 
     def _validate_required_fields(self, raw_data: RawFestivalData) -> bool:
         """Validate that required fields are present and non-empty."""
-        return (
-            raw_data.name
-            and raw_data.name.strip()
-            and raw_data.dates
-            and len(raw_data.dates) > 0
-            and raw_data.location
-            and raw_data.location.strip()
-        )
+        if not raw_data.name or not raw_data.name.strip():
+            return False
+        if not raw_data.dates or len(raw_data.dates) == 0:
+            return False
+        if not raw_data.location or not raw_data.location.strip():
+            return False
+        return True
 
-    def _parse_dates(self, dates: List[datetime]) -> List[datetime]:
+    def _parse_dates(self, dates: List[Any]) -> List[datetime]:
         """Parse and validate festival dates."""
         if not dates:
             return []
@@ -1495,7 +1510,7 @@ class FestivalParser:
 class FestivalDeduplicator:
     """Handles festival deduplication logic."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.logger = logging.getLogger(f"{__name__}.FestivalDeduplicator")
 
     def deduplicate_festivals(
@@ -1744,6 +1759,12 @@ class FestivalDeduplicator:
             artists=unique_artists,
             genres=unique_genres,
             ticket_url=best_ticket_url,
+            logo_url=None,
+            primary_color=None,
+            secondary_color=None,
+            accent_colors=None,
+            branding_extracted_at=None,
+            artist_images=None,
         )
 
     def _deduplicate_list(self, items: List[str]) -> List[str]:
@@ -1760,14 +1781,15 @@ class FestivalDeduplicator:
 class FestivalCollectorService:
     """Main service for collecting and processing festival data."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.logger = logging.getLogger(f"{__name__}.FestivalCollectorService")
         self.parser = FestivalParser()
         self.deduplicator = FestivalDeduplicator()
         self.data_sources: List[FestivalDataSource] = []
+        self.db: Optional[Any] = None  # Set by dependency injection
         self._initialize_data_sources()
 
-    def _initialize_data_sources(self):
+    def _initialize_data_sources(self) -> None:
         """Initialize data sources with Clashfinder as primary and web scraping as fallback."""
         # Add Clashfinder API as primary source
         if settings.CLASHFINDER_USERNAME and settings.CLASHFINDER_PRIVATE_KEY:
@@ -1801,7 +1823,7 @@ class FestivalCollectorService:
 
         self.logger.info(f"Initialized {len(self.data_sources)} data sources total")
 
-    def add_data_source(self, source: FestivalDataSource):
+    def add_data_source(self, source: FestivalDataSource) -> None:
         """Add a festival data source."""
         self.data_sources.append(source)
         self.logger.info(f"Added data source: {source.source_name}")
@@ -1922,7 +1944,7 @@ class FestivalCollectorService:
         return stored_festivals
 
     async def _find_existing_festival(
-        self, db, festival_data: FestivalCreate
+        self, db: Any, festival_data: FestivalCreate
     ) -> Optional[FestivalModel]:
         """Find existing festival in database."""
         from sqlalchemy import and_, select
@@ -1937,10 +1959,10 @@ class FestivalCollectorService:
             )
         )
 
-        return result.scalar_one_or_none()
+        return result.scalar_one_or_none()  # type: ignore[no-any-return]
 
     async def _create_festival(
-        self, db, festival_data: FestivalCreate
+        self, db: Any, festival_data: FestivalCreate
     ) -> Optional[Festival]:
         """Create a new festival in the database."""
         from sqlalchemy import select
@@ -2017,7 +2039,7 @@ class FestivalCollectorService:
             return None
 
     async def _update_festival(
-        self, db, existing: FestivalModel, festival_data: FestivalCreate
+        self, db: Any, existing: FestivalModel, festival_data: FestivalCreate
     ) -> Optional[Festival]:
         """Update an existing festival with new data."""
         from sqlalchemy import select

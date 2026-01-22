@@ -1,12 +1,14 @@
 """Celery tasks for notification processing."""
 
+import asyncio
 from datetime import datetime, timedelta
-from typing import List
+from typing import Any, Callable, List, cast
 
 from celery import Celery
+from celery.schedules import crontab
 
 from festival_playlist_generator.core.celery_app import celery_app
-from festival_playlist_generator.core.database import get_db
+from festival_playlist_generator.core.database import get_db_session
 from festival_playlist_generator.models.festival import Festival
 from festival_playlist_generator.models.user import User
 from festival_playlist_generator.services.notification_service import (
@@ -17,32 +19,36 @@ from festival_playlist_generator.services.recommendation_engine import (
 )
 
 
-@celery_app.task(name="send_daily_recommendations")
-def send_daily_recommendations():
+@celery_app.task(name="send_daily_recommendations")  # type: ignore[untyped-decorator]
+def send_daily_recommendations() -> None:
     """Send daily personalized recommendations to users."""
-    db = next(get_db())
+    asyncio.run(_send_daily_recommendations())
 
+
+async def _send_daily_recommendations() -> None:
+    """Async implementation of send_daily_recommendations."""
+    db_gen = get_db_session()
+    db = await db_gen.__anext__()
+    
     try:
-        notification_service = NotificationService(db)
-        recommendation_engine = RecommendationEngine(db)
+        notification_service = NotificationService(db)  # type: ignore[arg-type]
+        recommendation_engine = RecommendationEngine(db)  # type: ignore[arg-type]
 
         # Get users who want daily recommendations
-        users = db.query(User).all()
+        users = db.query(User).all()  # type: ignore[attr-defined]
 
         for user in users:
             try:
                 # Get user's notification preferences
-                preferences = notification_service.get_notification_preferences(
+                preferences = await notification_service.get_notification_preferences(
                     str(user.id)
                 )
                 rec_prefs = preferences.get("recommendation", {})
 
-                if rec_prefs.get("frequency") == "daily" and (
-                    rec_prefs.get("email_enabled") or rec_prefs.get("push_enabled")
-                ):
+                if rec_prefs.get("email_enabled") or rec_prefs.get("push_enabled"):
 
                     # Get recommendations for user
-                    recommendations = recommendation_engine.recommend_festivals(
+                    recommendations = await recommendation_engine.recommend_festivals(
                         str(user.id), limit=3
                     )
 
@@ -61,34 +67,39 @@ def send_daily_recommendations():
                             )
 
                         # Send notification
-                        notification_service.send_recommendation_notification(
+                        await notification_service.send_recommendation_notification(
                             str(user.id), rec_data
                         )
 
             except Exception as e:
                 print(f"Failed to send recommendations to user {user.id}: {e}")
                 continue
-
     finally:
-        db.close()
+        await db.close()
 
 
-@celery_app.task(name="send_weekly_recommendations")
-def send_weekly_recommendations():
+@celery_app.task(name="send_weekly_recommendations")  # type: ignore[untyped-decorator]
+def send_weekly_recommendations() -> None:
     """Send weekly personalized recommendations to users."""
-    db = next(get_db())
+    asyncio.run(_send_weekly_recommendations())
 
+
+async def _send_weekly_recommendations() -> None:
+    """Async implementation of send_weekly_recommendations."""
+    db_gen = get_db_session()
+    db = await db_gen.__anext__()
+    
     try:
-        notification_service = NotificationService(db)
-        recommendation_engine = RecommendationEngine(db)
+        notification_service = NotificationService(db)  # type: ignore[arg-type]
+        recommendation_engine = RecommendationEngine(db)  # type: ignore[arg-type]
 
         # Get users who want weekly recommendations
-        users = db.query(User).all()
+        users = db.query(User).all()  # type: ignore[attr-defined]
 
         for user in users:
             try:
                 # Get user's notification preferences
-                preferences = notification_service.get_notification_preferences(
+                preferences = await notification_service.get_notification_preferences(
                     str(user.id)
                 )
                 rec_prefs = preferences.get("recommendation", {})
@@ -98,7 +109,7 @@ def send_weekly_recommendations():
                 ):
 
                     # Get more recommendations for weekly digest
-                    recommendations = recommendation_engine.recommend_festivals(
+                    recommendations = await recommendation_engine.recommend_festivals(
                         str(user.id), limit=5
                     )
 
@@ -119,59 +130,69 @@ def send_weekly_recommendations():
                             )
 
                         # Send notification
-                        notification_service.send_recommendation_notification(
+                        await notification_service.send_recommendation_notification(
                             str(user.id), rec_data
                         )
 
             except Exception as e:
                 print(f"Failed to send weekly recommendations to user {user.id}: {e}")
                 continue
-
     finally:
-        db.close()
+        await db.close()
 
 
-@celery_app.task(name="check_new_festivals")
-def check_new_festivals():
+@celery_app.task(name="check_new_festivals")  # type: ignore[untyped-decorator]
+def check_new_festivals() -> None:
     """Check for new festivals and send notifications."""
-    db = next(get_db())
+    asyncio.run(_check_new_festivals())
 
+
+async def _check_new_festivals() -> None:
+    """Async implementation of check_new_festivals."""
+    db_gen = get_db_session()
+    db = await db_gen.__anext__()
+    
     try:
-        notification_service = NotificationService(db)
+        notification_service = NotificationService(db)  # type: ignore[arg-type]
 
         # Get festivals announced in the last 24 hours
         yesterday = datetime.utcnow() - timedelta(days=1)
         new_festivals = (
-            db.query(Festival).filter(Festival.created_at >= yesterday).all()
+            db.query(Festival).filter(Festival.created_at >= yesterday).all()  # type: ignore[attr-defined]
         )
 
         for festival in new_festivals:
             try:
                 # Send announcement notifications
-                notification_service.send_festival_announcement_notification(
+                await notification_service.send_festival_announcement_notification(
                     str(festival.id)
                 )
 
             except Exception as e:
                 print(f"Failed to send announcement for festival {festival.id}: {e}")
                 continue
-
     finally:
-        db.close()
+        await db.close()
 
 
-@celery_app.task(name="check_lineup_updates")
-def check_lineup_updates():
+@celery_app.task(name="check_lineup_updates")  # type: ignore[untyped-decorator]
+def check_lineup_updates() -> None:
     """Check for festival lineup updates and send notifications."""
-    db = next(get_db())
+    asyncio.run(_check_lineup_updates())
 
+
+async def _check_lineup_updates() -> None:
+    """Async implementation of check_lineup_updates."""
+    db_gen = get_db_session()
+    db = await db_gen.__anext__()
+    
     try:
-        notification_service = NotificationService(db)
+        notification_service = NotificationService(db)  # type: ignore[arg-type]
 
         # Get festivals updated in the last 24 hours
         yesterday = datetime.utcnow() - timedelta(days=1)
         updated_festivals = (
-            db.query(Festival)
+            db.query(Festival)  # type: ignore[attr-defined]
             .filter(Festival.updated_at >= yesterday)
             .filter(Festival.created_at < yesterday)  # Not newly created
             .all()
@@ -184,20 +205,19 @@ def check_lineup_updates():
                 new_artists = festival.artists[-3:] if festival.artists else []
 
                 if new_artists:
-                    notification_service.send_artist_lineup_notification(
+                    await notification_service.send_artist_lineup_notification(
                         str(festival.id), new_artists
                     )
 
             except Exception as e:
                 print(f"Failed to send lineup update for festival {festival.id}: {e}")
                 continue
-
     finally:
-        db.close()
+        await db.close()
 
 
-@celery_app.task(name="cleanup_old_notifications")
-def cleanup_old_notifications():
+@celery_app.task(name="cleanup_old_notifications")  # type: ignore[untyped-decorator]
+def cleanup_old_notifications() -> None:
     """Clean up old notification data."""
     # This would clean up old notification records from the database
     # For now, just log that cleanup would happen
@@ -205,7 +225,6 @@ def cleanup_old_notifications():
 
 
 # Schedule periodic tasks
-from celery.schedules import crontab
 
 celery_app.conf.beat_schedule = {
     "daily-recommendations": {

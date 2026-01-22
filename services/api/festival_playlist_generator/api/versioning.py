@@ -1,6 +1,6 @@
 """API versioning middleware and utilities."""
 
-from typing import Callable
+from typing import Any, Awaitable, Callable, Dict, Optional
 
 from fastapi import Request, Response
 from fastapi.responses import JSONResponse
@@ -12,7 +12,7 @@ from festival_playlist_generator.api.response_formatter import APIVersionManager
 class APIVersioningMiddleware(BaseHTTPMiddleware):
     """Middleware to handle API versioning."""
 
-    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+    async def dispatch(self, request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
         """Process request and add version information."""
         # Extract version from header or path
         version_header = request.headers.get("API-Version") or request.headers.get(
@@ -43,7 +43,7 @@ class APIVersioningMiddleware(BaseHTTPMiddleware):
         request.state.api_version = version
 
         # Process request
-        response = await call_next(request)
+        response: Response = await call_next(request)
 
         # Add version headers to response
         response.headers["API-Version"] = version
@@ -61,8 +61,8 @@ def get_request_version(request: Request) -> str:
 
 
 def version_compatible_response(
-    request: Request, data: any, message: str = None
-) -> dict:
+    request: Request, data: Any, message: Optional[str] = None
+) -> Dict[str, Any]:
     """Create version-compatible response based on request version."""
     version = get_request_version(request)
     formatter = APIVersionManager.get_formatter(version)

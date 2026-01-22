@@ -1,7 +1,9 @@
 """Main FastAPI application entry point."""
 
 import logging
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from typing import Any, Callable, Dict, cast
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
@@ -50,7 +52,7 @@ logger = get_logger("main")
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan events."""
     # Startup
     logger.info("Starting Festival Playlist Generator...")
@@ -63,10 +65,10 @@ async def lifespan(app: FastAPI):
     ):
         logger.info("Warming image cache on startup...")
         try:
-            from festival_playlist_generator.core.database import get_db_session
+            from festival_playlist_generator.core.database import AsyncSessionLocal
             from festival_playlist_generator.services.cache_warmer import cache_warmer
 
-            async with get_db_session() as db:
+            async with AsyncSessionLocal() as db:
                 stats = await cache_warmer.warm_cache(db)
                 logger.info(
                     f"Cache warming complete: {stats['successful']} successful, "
@@ -109,9 +111,16 @@ def create_app() -> FastAPI:
     )
 
     # Mount static files
+    import os
+    from pathlib import Path
+    
+    # Get the directory where this file is located
+    base_dir = Path(__file__).parent
+    static_dir = base_dir / "web" / "static"
+    
     app.mount(
         "/static",
-        StaticFiles(directory="festival_playlist_generator/web/static"),
+        StaticFiles(directory=str(static_dir)),
         name="static",
     )
 
@@ -134,16 +143,16 @@ def create_app() -> FastAPI:
     app.include_router(api_router, prefix="/api/v1.1")
 
     # Add exception handlers
-    app.add_exception_handler(HTTPException, http_exception_handler)
-    app.add_exception_handler(RequestValidationError, validation_exception_handler)
-    app.add_exception_handler(IntegrityError, integrity_error_handler)
-    app.add_exception_handler(SQLAlchemyError, sqlalchemy_error_handler)
-    app.add_exception_handler(CircuitBreakerOpenError, circuit_breaker_handler)
-    app.add_exception_handler(ValidationError, pydantic_validation_exception_handler)
+    app.add_exception_handler(HTTPException, http_exception_handler)  # type: ignore[arg-type]
+    app.add_exception_handler(RequestValidationError, validation_exception_handler)  # type: ignore[arg-type]
+    app.add_exception_handler(IntegrityError, integrity_error_handler)  # type: ignore[arg-type]
+    app.add_exception_handler(SQLAlchemyError, sqlalchemy_error_handler)  # type: ignore[arg-type]
+    app.add_exception_handler(CircuitBreakerOpenError, circuit_breaker_handler)  # type: ignore[arg-type]
+    app.add_exception_handler(ValidationError, pydantic_validation_exception_handler)  # type: ignore[arg-type]
     app.add_exception_handler(Exception, general_exception_handler)
 
     @app.get("/api")
-    async def api_root(request: Request):
+    async def api_root(request: Request) -> Dict[str, Any]:
         from festival_playlist_generator.api.versioning import (
             get_request_version,
             version_compatible_response,
@@ -158,7 +167,7 @@ def create_app() -> FastAPI:
 
     @app.get("/health")
     @app.options("/health")
-    async def health_check(request: Request):
+    async def health_check(request: Request) -> Dict[str, Any]:
         from festival_playlist_generator.api.versioning import (
             get_request_version,
             version_compatible_response,
@@ -193,7 +202,7 @@ if __name__ == "__main__":
             logger.info("SSL certificates detected - enabling HTTPS")
 
     # Configure uvicorn
-    uvicorn_config = {
+    uvicorn_config: Dict[str, Any] = {
         "app": "festival_playlist_generator.main:app",
         "host": "0.0.0.0",
         "port": 8000,

@@ -1,12 +1,12 @@
 """User song preference tracking service."""
 
 import logging
-from typing import Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 from uuid import UUID
 
 from fastapi import HTTPException, status
 from sqlalchemy import and_, select
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from festival_playlist_generator.core.redis import cache
 from festival_playlist_generator.models.song import Song
@@ -25,11 +25,11 @@ logger = logging.getLogger(__name__)
 class UserPreferenceService:
     """Service for managing user song preferences."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.cache = cache
 
     async def mark_song_preference(
-        self, db: Session, user_id: UUID, song_id: UUID, is_known: bool
+        self, db: AsyncSession, user_id: UUID, song_id: UUID, is_known: bool
     ) -> UserSongPreferenceSchema:
         """Mark a song as known or unknown for a user."""
         # Check if user exists
@@ -47,20 +47,21 @@ class UserPreferenceService:
             )
 
         # Check if preference already exists
-        existing_preference = db.execute(
+        result = await db.execute(
             select(UserSongPreference).where(
                 and_(
                     UserSongPreference.user_id == user_id,
                     UserSongPreference.song_id == song_id,
                 )
             )
-        ).scalar_one_or_none()
+        )
+        existing_preference = result.scalar_one_or_none()
 
         if existing_preference:
             # Update existing preference
             existing_preference.is_known = is_known
-            db.commit()
-            db.refresh(existing_preference)
+            await db.commit()
+            await db.refresh(existing_preference)
             preference = existing_preference
         else:
             # Create new preference
@@ -69,8 +70,8 @@ class UserPreferenceService:
             )
             db_preference = UserSongPreference(**preference_data.model_dump())
             db.add(db_preference)
-            db.commit()
-            db.refresh(db_preference)
+            await db.commit()
+            await db.refresh(db_preference)
             preference = db_preference
 
         # Update cache
@@ -83,7 +84,7 @@ class UserPreferenceService:
         return UserSongPreferenceSchema.model_validate(preference)
 
     async def get_user_song_preferences(
-        self, db: Session, user_id: UUID, known_only: Optional[bool] = None
+        self, db: AsyncSession, user_id: UUID, known_only: Optional[bool] = None
     ) -> List[UserSongPreferenceSchema]:
         """Get all song preferences for a user."""
         # Try cache first
@@ -99,7 +100,8 @@ class UserPreferenceService:
             query = select(UserSongPreference).where(
                 UserSongPreference.user_id == user_id
             )
-            db_preferences = db.execute(query).scalars().all()
+            result = await db.execute(query)
+            db_preferences = result.scalars().all()
             preferences = [
                 UserSongPreferenceSchema.model_validate(pref) for pref in db_preferences
             ]
@@ -117,12 +119,12 @@ class UserPreferenceService:
 
         return preferences
 
-    async def get_known_songs(self, db: Session, user_id: UUID) -> List[UUID]:
+    async def get_known_songs(self, db: AsyncSession, user_id: UUID) -> List[UUID]:
         """Get list of song IDs that user has marked as known."""
         preferences = await self.get_user_song_preferences(db, user_id, known_only=True)
         return [pref.song_id for pref in preferences]
 
-    async def get_unknown_songs(self, db: Session, user_id: UUID) -> List[UUID]:
+    async def get_unknown_songs(self, db: AsyncSession, user_id: UUID) -> List[UUID]:
         """Get list of song IDs that user has marked as unknown."""
         preferences = await self.get_user_song_preferences(
             db, user_id, known_only=False
@@ -130,22 +132,23 @@ class UserPreferenceService:
         return [pref.song_id for pref in preferences]
 
     async def is_song_known(
-        self, db: Session, user_id: UUID, song_id: UUID
+        self, db: AsyncSession, user_id: UUID, song_id: UUID
     ) -> Optional[bool]:
         """Check if a specific song is marked as known by user."""
-        preference = db.execute(
+        result = await db.execute(
             select(UserSongPreference).where(
                 and_(
                     UserSongPreference.user_id == user_id,
                     UserSongPreference.song_id == song_id,
                 )
             )
-        ).scalar_one_or_none()
+        )
+        preference = result.scalar_one_or_none()
 
         return preference.is_known if preference else None
 
     async def bulk_mark_songs(
-        self, db: Session, user_id: UUID, song_preferences: Dict[UUID, bool]
+        self, db: AsyncSession, user_id: UUID, song_preferences: Dict[UUID, bool]
     ) -> List[UserSongPreferenceSchema]:
         """Bulk update song preferences for a user."""
         results = []
@@ -165,23 +168,24 @@ class UserPreferenceService:
         return results
 
     async def delete_song_preference(
-        self, db: Session, user_id: UUID, song_id: UUID
+        self, db: AsyncSession, user_id: UUID, song_id: UUID
     ) -> bool:
         """Delete a song preference."""
-        preference = db.execute(
+        result = await db.execute(
             select(UserSongPreference).where(
                 and_(
                     UserSongPreference.user_id == user_id,
                     UserSongPreference.song_id == song_id,
                 )
             )
-        ).scalar_one_or_none()
+        )
+        preference = result.scalar_one_or_none()
 
         if not preference:
             return False
 
-        db.delete(preference)
-        db.commit()
+        await db.delete(preference)
+        await db.commit()
 
         # Invalidate cache
         cache_key = f"user_preferences:{user_id}"

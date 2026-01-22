@@ -2,7 +2,7 @@
 
 import hashlib
 import json
-from typing import Callable
+from typing import Any, Callable
 
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -17,15 +17,15 @@ from festival_playlist_generator.core.caching import (
 class APICacheMiddleware(BaseHTTPMiddleware):
     """Middleware to add appropriate cache headers to API responses."""
 
-    def __init__(self, app: ASGIApp):
+    def __init__(self, app: ASGIApp) -> None:
         super().__init__(app)
         self.http_cache = HTTPCacheManager()
         self.browser_cache = BrowserCacheOptimizer()
 
-    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+    async def dispatch(self, request: Request, call_next: Callable[..., Any]) -> Response:
         """Add cache headers to responses."""
         try:
-            response = await call_next(request)
+            response: Response = await call_next(request)
 
             # Skip if response already has cache headers
             if "cache-control" in response.headers:
@@ -74,7 +74,9 @@ class APICacheMiddleware(BaseHTTPMiddleware):
 
                     # Add ETag for HTML responses
                     if hasattr(response, "body") and response.body:
-                        etag = self.http_cache.generate_etag(response.body)
+                        body_data = response.body
+                        body_bytes = bytes(body_data) if isinstance(body_data, memoryview) else body_data
+                        etag = self.http_cache.generate_etag(body_bytes)
                         response.headers["etag"] = f'"{etag}"'
                 except Exception:
                     # Fallback to basic cache headers
@@ -84,9 +86,10 @@ class APICacheMiddleware(BaseHTTPMiddleware):
 
         except Exception as e:
             # If middleware fails, just return the original response
-            return await call_next(request)
+            fallback_response: Response = await call_next(request)
+            return fallback_response
 
-    def _get_api_cache_headers(self, path: str, response: Response) -> dict:
+    def _get_api_cache_headers(self, path: str, response: Response) -> dict[str, str]:
         """Get cache headers for API endpoints."""
         # Health check endpoints - short cache
         if "/health" in path:
@@ -133,14 +136,14 @@ class APICacheMiddleware(BaseHTTPMiddleware):
 class ConditionalCacheMiddleware(BaseHTTPMiddleware):
     """Middleware to handle conditional requests (ETag, If-None-Match)."""
 
-    def __init__(self, app: ASGIApp):
+    def __init__(self, app: ASGIApp) -> None:
         super().__init__(app)
         self.http_cache = HTTPCacheManager()
 
-    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+    async def dispatch(self, request: Request, call_next: Callable[..., Any]) -> Response:
         """Handle conditional requests."""
         try:
-            response = await call_next(request)
+            response: Response = await call_next(request)
 
             # Only handle GET requests
             if request.method != "GET":
@@ -152,7 +155,9 @@ class ConditionalCacheMiddleware(BaseHTTPMiddleware):
                 # Generate ETag if response has body
                 try:
                     if hasattr(response, "body") and response.body:
-                        etag = self.http_cache.generate_etag(response.body)
+                        body_data = response.body
+                        body_bytes = bytes(body_data) if isinstance(body_data, memoryview) else body_data
+                        etag = self.http_cache.generate_etag(body_bytes)
                         response.headers["etag"] = f'"{etag}"'
                 except Exception:
                     # Skip ETag generation if it fails
@@ -187,4 +192,5 @@ class ConditionalCacheMiddleware(BaseHTTPMiddleware):
 
         except Exception:
             # If middleware fails, just return the original response
-            return await call_next(request)
+            fallback_response: Response = await call_next(request)
+            return fallback_response

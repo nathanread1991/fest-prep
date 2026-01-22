@@ -1,6 +1,6 @@
 """Playlist repository for database operations."""
 
-from typing import List, Optional
+from typing import Any, Callable, List, Optional
 from uuid import UUID
 
 from sqlalchemy import func, select
@@ -14,7 +14,7 @@ from festival_playlist_generator.repositories.base_repository import BaseReposit
 class PlaylistRepository(BaseRepository[Playlist]):
     """Repository for Playlist database operations following enterprise patterns."""
 
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: AsyncSession) -> None:
         """
         Initialize the playlist repository.
 
@@ -192,7 +192,8 @@ class PlaylistRepository(BaseRepository[Playlist]):
         result = await self.db.execute(
             select(func.count(Playlist.id)).where(Playlist.user_id == user_id)
         )
-        return result.scalar()
+        count = result.scalar()
+        return count if count is not None else 0
 
     async def count_by_festival(self, festival_id: UUID) -> int:
         """
@@ -207,7 +208,8 @@ class PlaylistRepository(BaseRepository[Playlist]):
         result = await self.db.execute(
             select(func.count(Playlist.id)).where(Playlist.festival_id == festival_id)
         )
-        return result.scalar()
+        count = result.scalar()
+        return count if count is not None else 0
 
     async def count_by_platform(self, platform: StreamingPlatform) -> int:
         """
@@ -222,7 +224,8 @@ class PlaylistRepository(BaseRepository[Playlist]):
         result = await self.db.execute(
             select(func.count(Playlist.id)).where(Playlist.platform == platform)
         )
-        return result.scalar()
+        count = result.scalar()
+        return count if count is not None else 0
 
     async def exists_by_external_id(
         self, platform: StreamingPlatform, external_id: str
@@ -242,4 +245,5 @@ class PlaylistRepository(BaseRepository[Playlist]):
                 Playlist.platform == platform, Playlist.external_id == external_id
             )
         )
-        return result.scalar() > 0
+        count = result.scalar()
+        return count is not None and count > 0

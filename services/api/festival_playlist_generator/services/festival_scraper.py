@@ -4,7 +4,7 @@ import json
 import logging
 import re
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 import httpx
 from bs4 import BeautifulSoup
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 class FestivalScraper:
     """Uses AI to intelligently scrape festival data from any website."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.headers = {
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
@@ -33,7 +33,7 @@ class FestivalScraper:
                 BrandExtractor,
             )
 
-            self.brand_extractor = BrandExtractor()
+            self.brand_extractor: Optional[BrandExtractor] = BrandExtractor()
             logger.info("BrandExtractor initialized successfully")
         except Exception as e:
             logger.warning(f"Failed to initialize BrandExtractor: {e}")
@@ -43,7 +43,7 @@ class FestivalScraper:
         try:
             from festival_playlist_generator.services.image_matcher import ImageMatcher
 
-            self.image_matcher = ImageMatcher()
+            self.image_matcher: Optional[ImageMatcher] = ImageMatcher()
             logger.info("ImageMatcher initialized successfully")
         except Exception as e:
             logger.warning(f"Failed to initialize ImageMatcher: {e}")
@@ -339,7 +339,7 @@ class FestivalScraper:
         ]
 
         for tag, attrs in patterns:
-            elements = soup.find_all(tag, attrs)
+            elements = soup.find_all(tag, attrs)  # type: ignore[arg-type]
             for elem in elements:
                 # Get text content
                 text = elem.get_text(strip=True)
@@ -450,7 +450,8 @@ If you cannot find certain information, use empty strings or empty arrays. Do no
                     content = content[:-3]
                 content = content.strip()
 
-                festival_data = json.loads(content)
+                festival_data_raw = json.loads(content)
+                festival_data: Dict[str, Any] = dict(festival_data_raw)
                 festival_data["source_url"] = url
 
                 logger.info(
@@ -544,7 +545,8 @@ If you cannot find certain information, use empty strings or empty arrays. Do no
                     content = content[:-3]
                 content = content.strip()
 
-                festival_data = json.loads(content)
+                festival_data_raw = json.loads(content)
+                festival_data: Dict[str, Any] = dict(festival_data_raw)
                 festival_data["source_url"] = url
 
                 logger.info(
@@ -592,7 +594,8 @@ If you cannot find certain information, use empty strings or empty arrays. Do no
                     links = soup.find_all("a", href=True)
 
                     for link in links:
-                        href = link.get("href", "")
+                        href_value = link.get("href", "")
+                        href = str(href_value) if href_value else ""
 
                         # Google wraps URLs in /url?q= format
                         if "/url?q=" in href:
@@ -629,7 +632,8 @@ If you cannot find certain information, use empty strings or empty arrays. Do no
 
                     # If no perfect match, return first non-Google result
                     for link in links:
-                        href = link.get("href", "")
+                        href_value = link.get("href", "")
+                        href = str(href_value) if href_value else ""
                         if "/url?q=" in href:
                             actual_url = href.split("/url?q=")[1].split("&")[0]
                             from urllib.parse import unquote
@@ -674,7 +678,8 @@ If you cannot find certain information, use empty strings or empty arrays. Do no
                     results = soup.find_all("a", class_="result__a")
 
                     for result in results[:5]:
-                        link = result.get("href", "")
+                        link_value = result.get("href", "")
+                        link = str(link_value) if link_value else ""
                         if link:
                             # DuckDuckGo wraps URLs - extract the actual URL
                             if "uddg=" in link:

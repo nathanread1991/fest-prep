@@ -1,7 +1,7 @@
 """Setlist Enrichment Service for automatic setlist data population."""
 
 import logging
-from typing import Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class SetlistEnrichmentService:
     """Service for enriching artists with setlist data from Setlist.fm API."""
 
-    def __init__(self, api_key: Optional[str] = None):
+    def __init__(self, api_key: Optional[str] = None) -> None:
         """
         Initialize the setlist enrichment service.
 
@@ -126,9 +126,9 @@ class SetlistEnrichmentService:
                     SetlistModel.artist_id == artist_id
                 )
             )
-            setlist_count = result.scalar()
+            setlist_count: Optional[int] = result.scalar()  # type: ignore[assignment]
 
-            if setlist_count > 0:
+            if setlist_count and setlist_count > 0:
                 self.logger.info(
                     f"Artist {artist.name} already has {setlist_count} setlists, skipping"
                 )

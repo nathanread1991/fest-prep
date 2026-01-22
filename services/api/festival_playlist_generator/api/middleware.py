@@ -3,6 +3,7 @@
 import logging
 import time
 import uuid
+from typing import Awaitable, Callable
 
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -32,7 +33,7 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
     - Adds X-Request-ID header to all responses
     """
 
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(self, request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
         # Extract or generate request ID
         request_id = request.headers.get("X-Request-ID")
         if not request_id:
@@ -57,7 +58,7 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
 class RateLimitMiddleware(BaseHTTPMiddleware):
     """Middleware to apply rate limiting to API endpoints."""
 
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(self, request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
         # Skip rate limiting for health check and docs
         if request.url.path in ["/health", "/docs", "/redoc", "/openapi.json"]:
             return await call_next(request)
@@ -89,9 +90,10 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         except Exception as e:
             if hasattr(e, "status_code") and e.status_code == 429:
                 # Rate limit exceeded
+                detail = getattr(e, "detail", "Rate limit exceeded")
                 return JSONResponse(
                     status_code=429,
-                    content=e.detail,
+                    content=detail,
                     headers=e.headers if hasattr(e, "headers") else {},
                 )
             else:
@@ -103,7 +105,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 class APILoggingMiddleware(BaseHTTPMiddleware):
     """Middleware to log API requests and responses."""
 
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(self, request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
         start_time = time.time()
 
         # Log request (request ID will be automatically included from context)

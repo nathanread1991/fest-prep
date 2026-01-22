@@ -2,7 +2,7 @@
 
 import logging
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, cast
 
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,7 +10,7 @@ from sqlalchemy.orm import selectinload
 
 from festival_playlist_generator.models.artist import Artist as ArtistModel
 from festival_playlist_generator.services.name_normalization_service import (
-    normalize_artist_name,
+    NameNormalizationService,
 )
 
 logger = logging.getLogger(__name__)
@@ -26,7 +26,7 @@ class SmartArtistSearch:
     5. Spotify search fallback (if available)
     """
 
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: AsyncSession) -> None:
         self.db = db
 
     async def search(
@@ -95,13 +95,13 @@ class SmartArtistSearch:
 
         # Sort by score (highest first) and limit
         sorted_results = sorted(
-            results.values(), key=lambda x: x["score"], reverse=True
+            results.values(), key=lambda x: cast(float, x["score"]), reverse=True
         )[:limit]
 
         # Format results
         formatted_results = []
         for result in sorted_results:
-            artist = result["artist"]
+            artist = cast(ArtistModel, result["artist"])
             formatted_results.append(
                 {
                     "id": str(artist.id),
@@ -132,11 +132,12 @@ class SmartArtistSearch:
             )
             .filter(func.lower(ArtistModel.name) == query.lower())
         )
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def _normalized_match(self, query: str) -> List[ArtistModel]:
         """Match using normalized names (removes 'The', '&', punctuation, etc.)."""
-        normalized_query = normalize_artist_name(query)
+        normalizer = NameNormalizationService()
+        normalized_query = normalizer.normalize(query)
 
         # Get all artists and filter in Python (since we can't easily normalize in SQL)
         result = await self.db.execute(
@@ -148,7 +149,7 @@ class SmartArtistSearch:
 
         matches = []
         for artist in all_artists:
-            if normalize_artist_name(artist.name) == normalized_query:
+            if normalizer.normalize(artist.name) == normalized_query:
                 matches.append(artist)
 
         return matches
@@ -165,7 +166,7 @@ class SmartArtistSearch:
             )
             .filter(ArtistModel.name.ilike(search_pattern))
         )
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def _token_match(self, query: str) -> List[tuple[ArtistModel, int]]:
         """

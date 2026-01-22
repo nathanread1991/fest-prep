@@ -1,9 +1,9 @@
 """Authentication middleware for protected routes."""
 
 import logging
-from typing import Optional
+from typing import Any, Awaitable, Callable, Optional
 
-from fastapi import HTTPException, Request, status
+from fastapi import HTTPException, Request, Response, status
 from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class AuthenticationMiddleware:
     """Middleware to handle authentication for protected routes."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.protected_routes = {
             "/playlists",
             "/auth/profile",
@@ -29,7 +29,7 @@ class AuthenticationMiddleware:
 
         self.api_protected_routes = {"/api/playlists", "/api/user", "/api/auth/me"}
 
-    async def __call__(self, request: Request, call_next):
+    async def __call__(self, request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
         """Process request through authentication middleware."""
         path = request.url.path
 
@@ -81,7 +81,7 @@ class AuthenticationMiddleware:
             logger.error(f"Error getting current user: {e}")
             return None
 
-    def _handle_unauthenticated_request(self, request: Request, path: str):
+    def _handle_unauthenticated_request(self, request: Request, path: str) -> Response:
         """Handle requests to protected routes without authentication."""
         # For API routes, return JSON error
         if path.startswith("/api/"):
@@ -104,7 +104,7 @@ auth_middleware = AuthenticationMiddleware()
 # Dependency for route handlers that require authentication
 async def require_authentication(request: Request) -> UserSchema:
     """Dependency that requires user to be authenticated."""
-    user = getattr(request.state, "current_user", None)
+    user: Optional[UserSchema] = getattr(request.state, "current_user", None)
 
     if not user:
         # This should not happen if middleware is working correctly

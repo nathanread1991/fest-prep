@@ -41,6 +41,7 @@ show_help() {
     echo "  reset-db       Reset database (destructive!)"
     echo "  format         Format code"
     echo "  lint           Run linting"
+    echo "  typecheck      Run mypy type checking"
     echo ""
     echo -e "${CYAN}Options for stop:${NC}"
     echo "  --cleanup      Remove containers and networks"
@@ -65,12 +66,19 @@ shift || true
 case "$COMMAND" in
     start)
         show_banner
-        # Check if Docker is available
-        if command -v docker > /dev/null 2>&1 && docker info > /dev/null 2>&1; then
-            echo -e "${GREEN}Using Docker Compose...${NC}"
-            exec "$SCRIPT_DIR/scripts/start.sh"
+        # Check if Docker Compose configuration exists
+        if [ -f "$SCRIPT_DIR/services/api/docker-compose.yml" ]; then
+            # Check if Docker is available
+            if command -v docker > /dev/null 2>&1 && docker info > /dev/null 2>&1; then
+                echo -e "${GREEN}Using Docker Compose...${NC}"
+                exec "$SCRIPT_DIR/scripts/start.sh"
+            else
+                echo -e "${RED}❌ docker-compose.yml found but Docker is not running${NC}"
+                echo -e "${YELLOW}Starting services locally instead...${NC}"
+                exec "$SCRIPT_DIR/scripts/start-local.sh"
+            fi
         else
-            echo -e "${YELLOW}Docker not available, starting services locally...${NC}"
+            echo -e "${YELLOW}No docker-compose.yml found, starting services locally...${NC}"
             exec "$SCRIPT_DIR/scripts/start-local.sh"
         fi
         ;;
@@ -93,7 +101,7 @@ case "$COMMAND" in
         show_banner
         exec "$SCRIPT_DIR/scripts/logs.sh" "$@"
         ;;
-    test|migrate|shell|reset-db|format|lint)
+    test|migrate|shell|reset-db|format|lint|typecheck)
         show_banner
         exec "$SCRIPT_DIR/scripts/dev.sh" "$COMMAND" "$@"
         ;;

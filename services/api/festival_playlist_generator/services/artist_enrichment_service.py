@@ -1,7 +1,7 @@
 """Artist Enrichment Service - Automatically populate artist data from Spotify."""
 
 import logging
-from typing import List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class ArtistEnrichmentService:
     """Service for enriching artist records with Spotify data."""
 
-    async def enrich_artists(self, artist_ids: List[str], db: AsyncSession) -> dict:
+    async def enrich_artists(self, artist_ids: List[str], db: AsyncSession) -> Dict[str, Any]:
         """
         Enrich multiple artists with Spotify data.
 

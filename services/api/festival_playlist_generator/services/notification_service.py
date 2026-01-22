@@ -7,7 +7,8 @@ from datetime import datetime, timedelta
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
+from uuid import UUID
 
 from sqlalchemy import and_, func
 from sqlalchemy.orm import Session
@@ -57,7 +58,7 @@ class Notification:
     notification_type: NotificationType
     title: str
     message: str
-    data: Dict
+    data: Dict[str, Any]
     created_at: datetime
     sent_at: Optional[datetime] = None
     email_sent: bool = False
@@ -67,7 +68,7 @@ class Notification:
 class NotificationService:
     """Service for managing notifications."""
 
-    def __init__(self, db: Session):
+    def __init__(self, db: Session) -> None:
         self.db = db
         self.smtp_server = getattr(settings, "SMTP_SERVER", "localhost")
         self.smtp_port = getattr(settings, "SMTP_PORT", 587)
@@ -200,7 +201,9 @@ class NotificationService:
         if not user:
             return False
 
-        if not await self._should_notify_user(user_id, NotificationType.PLAYLIST_READY):
+        from uuid import UUID
+        user_uuid = UUID(user_id) if isinstance(user_id, str) else user_id
+        if not await self._should_notify_user(user_uuid, NotificationType.PLAYLIST_READY):
             return False
 
         # Get playlist details (assuming playlist model exists)
@@ -221,7 +224,7 @@ class NotificationService:
         return await self._send_notification(notification, user)
 
     async def send_recommendation_notification(
-        self, user_id: str, recommendations: List[Dict]
+        self, user_id: str, recommendations: List[Dict[str, Any]]
     ) -> bool:
         """
         Send personalized recommendations to user.
@@ -237,7 +240,7 @@ class NotificationService:
         if not user:
             return False
 
-        if not await self._should_notify_user(user_id, NotificationType.RECOMMENDATION):
+        if not await self._should_notify_user(user.id, NotificationType.RECOMMENDATION):
             return False
 
         notification = Notification(
@@ -253,7 +256,7 @@ class NotificationService:
         return await self._send_notification(notification, user)
 
     async def set_notification_preferences(
-        self, user_id: str, preferences: Dict[str, Dict]
+        self, user_id: str, preferences: Dict[str, Dict[str, Any]]
     ) -> bool:
         """
         Set user notification preferences.
@@ -278,13 +281,13 @@ class NotificationService:
 
         return True
 
-    async def get_notification_preferences(self, user_id: str) -> Dict:
+    async def get_notification_preferences(self, user_id: str) -> Dict[str, Any]:
         """Get user's notification preferences."""
         user = self.db.query(User).filter(User.id == user_id).first()
         if not user or not user.preferences:
             return self._get_default_preferences()
 
-        return user.preferences.get("notifications", self._get_default_preferences())
+        return dict(user.preferences.get("notifications", self._get_default_preferences()))
 
     async def _send_notification(self, notification: Notification, user: User) -> bool:
         """Send notification via email and/or push."""
@@ -317,7 +320,7 @@ class NotificationService:
         notification.sent_at = datetime.utcnow()
         return success
 
-    async def _send_email_notification(self, notification: Notification, user: User):
+    async def _send_email_notification(self, notification: Notification, user: User) -> None:
         """Send email notification."""
         msg = MIMEMultipart()
         msg["From"] = self.from_email
@@ -355,7 +358,7 @@ class NotificationService:
                 server.login(self.smtp_username, self.smtp_password)
                 server.send_message(msg)
 
-    async def _send_push_notification(self, notification: Notification, user: User):
+    async def _send_push_notification(self, notification: Notification, user: User) -> None:
         """Send web push notification."""
         # This would integrate with a push notification service like Firebase
         # For now, just log the notification
@@ -395,10 +398,10 @@ class NotificationService:
         return ""
 
     async def _should_notify_user(
-        self, user_id: str, notification_type: NotificationType
+        self, user_id: UUID, notification_type: NotificationType
     ) -> bool:
         """Check if user should receive this type of notification."""
-        preferences = await self.get_notification_preferences(user_id)
+        preferences = await self.get_notification_preferences(str(user_id))
         type_prefs = preferences.get(notification_type.value, {})
 
         # Check if notifications are enabled for this type
@@ -430,7 +433,7 @@ class NotificationService:
         # For now, return all users
         return self.db.query(User).limit(100).all()
 
-    def _get_default_preferences(self) -> Dict:
+    def _get_default_preferences(self) -> Dict[str, Any]:
         """Get default notification preferences."""
         return {
             NotificationType.FESTIVAL_ANNOUNCEMENT.value: {

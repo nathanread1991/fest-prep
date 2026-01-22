@@ -1,7 +1,7 @@
 """Festival Pydantic schemas."""
 
 from datetime import datetime
-from typing import List, Optional
+from typing import Any, Callable, Dict, List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -41,7 +41,7 @@ class FestivalCreate(FestivalBase):
     artists: List[str] = Field(
         default_factory=list, description="Artist names in lineup"
     )
-    artist_images: Optional[dict] = Field(
+    artist_images: Optional[Dict[str, Any]] = Field(
         None, description="Artist image data from scraping"
     )
 

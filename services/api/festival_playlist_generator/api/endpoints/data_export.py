@@ -3,7 +3,7 @@
 import io
 import json
 import zipfile
-from typing import Optional
+from typing import Any, Callable, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
@@ -43,7 +43,7 @@ async def export_user_data(
     format: str = Query("json", pattern="^(json|csv|xml)$"),
     db: AsyncSession = Depends(get_db),
     current_user: UserSchema = Depends(get_current_user),
-):
+) -> Response:
     """
     Export all user data in the specified format.
 
@@ -72,8 +72,9 @@ async def export_user_data(
             # Create ZIP file with multiple CSV files
             zip_buffer = io.BytesIO()
             with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
-                for filename, csv_content in export_data.items():
-                    zip_file.writestr(filename, csv_content)
+                if isinstance(export_data, dict):
+                    for filename, csv_content in export_data.items():
+                        zip_file.writestr(filename, csv_content)
 
             zip_buffer.seek(0)
             return Response(
@@ -91,6 +92,12 @@ async def export_user_data(
                     "Content-Disposition": f"attachment; filename=user_data_export_{current_user.id}.xml"
                 },
             )
+        else:
+            # This should never happen due to Query pattern validation
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid format specified"
+            )
 
     except HTTPException:
         raise
@@ -106,7 +113,7 @@ async def delete_user_account(
     request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: UserSchema = Depends(get_current_user),
-):
+) -> JSONResponse:
     """
     Permanently delete user account and all associated data.
 
@@ -154,7 +161,7 @@ async def cleanup_old_audit_logs(
     request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: UserSchema = Depends(get_current_user),
-):
+) -> JSONResponse:
     """
     Clean up old audit logs (admin only).
 
@@ -186,7 +193,7 @@ async def cleanup_old_audit_logs(
 
 
 @router.get("/retention-policy")
-async def get_data_retention_policy():
+async def get_data_retention_policy() -> JSONResponse:
     """
     Get information about data retention policies.
 

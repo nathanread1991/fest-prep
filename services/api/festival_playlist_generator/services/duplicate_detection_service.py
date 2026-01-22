@@ -1,7 +1,7 @@
 """Duplicate Detection Service - Find potential duplicate artists."""
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -56,7 +56,7 @@ class DuplicateGroup:
 class DuplicateDetectionService:
     """Service for detecting potential duplicate artists."""
 
-    def __init__(self, db: Session):
+    def __init__(self, db: Session) -> None:
         """
         Initialize the duplicate detection service.
 
