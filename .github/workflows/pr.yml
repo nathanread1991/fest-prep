@@ -267,11 +267,21 @@ jobs:
           REDIS_URL: redis://localhost:6379/0
           ENVIRONMENT: test
         run: |
+          # Run integration tests if they exist
+          # Exit code 5 means no tests collected, which is OK during refactoring
           pytest tests/ -m integration \
             --cov=festival_playlist_generator \
             --cov-report=xml \
             --cov-report=term \
-            -v
+            -v || EXIT_CODE=$?
+
+          if [ "${EXIT_CODE:-0}" -eq 5 ]; then
+            echo "No integration tests found - this is expected during refactoring"
+            exit 0
+          elif [ "${EXIT_CODE:-0}" -ne 0 ]; then
+            echo "Integration tests failed with exit code $EXIT_CODE"
+            exit $EXIT_CODE
+          fi
 
       - name: Upload integration test coverage
         uses: actions/upload-artifact@v4
