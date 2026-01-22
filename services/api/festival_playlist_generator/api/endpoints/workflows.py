@@ -1,6 +1,6 @@
 """Workflow API endpoints that orchestrate multiple services."""
 
-from typing import Any, Callable, Optional
+from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Request
@@ -8,10 +8,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from festival_playlist_generator.api.response_formatter import APIVersionManager
-from festival_playlist_generator.api.versioning import (
-    get_request_version,
-    version_compatible_response,
-)
+from festival_playlist_generator.api.versioning import get_request_version
 from festival_playlist_generator.core.database import get_db
 from festival_playlist_generator.core.logging_config import get_logger
 from festival_playlist_generator.core.service_orchestrator import ServiceOrchestrator

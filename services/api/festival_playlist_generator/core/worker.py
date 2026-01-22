@@ -3,7 +3,7 @@
 import logging
 import signal
 import sys
-from typing import Any, Callable, Optional
+from typing import Any, Optional
 
 from celery import Celery
 

@@ -52,8 +52,13 @@ jobs:
 
       - name: Run flake8 (linting)
         run: |
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+          flake8 festival_playlist_generator/ tests/ \
+            --config=setup.cfg \
+            --max-line-length=88 \
+            --extend-ignore=E203,W503 \
+            --count \
+            --show-source \
+            --statistics
         continue-on-error: false
 
   # Job 2: Type Checking
@@ -81,9 +86,12 @@ jobs:
           pip install -r requirements.txt
           pip install mypy types-redis types-requests
 
-      - name: Run mypy
+      - name: Run mypy (strict mode)
         run: |
-          mypy festival_playlist_generator --ignore-missing-imports --no-strict-optional
+          mypy festival_playlist_generator/ \
+            --config-file=setup.cfg \
+            --show-error-codes \
+            --pretty
         continue-on-error: false
 
   # Job 3: Security Scanning

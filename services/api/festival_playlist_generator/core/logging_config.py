@@ -114,7 +114,10 @@ def setup_logging() -> None:
                 "datefmt": "%Y-%m-%d %H:%M:%S",
             },
             "detailed": {
-                "format": "%(asctime)s - %(name)s - %(levelname)s - %(module)s:%(funcName)s:%(lineno)d - %(message)s",
+                "format": (
+                    "%(asctime)s - %(name)s - %(levelname)s - "
+                    "%(module)s:%(funcName)s:%(lineno)d - %(message)s"
+                ),
                 "datefmt": "%Y-%m-%d %H:%M:%S",
             },
             "json": {
@@ -255,14 +258,16 @@ class RequestLoggingContext:
 
     def __enter__(self) -> "RequestLoggingContext":
         self.logger.info(
-            f"Request started - ID: {self.request_id}, Endpoint: {self.endpoint}, User: {self.user_id}"
+            f"Request started - ID: {self.request_id}, "
+            f"Endpoint: {self.endpoint}, User: {self.user_id}"
         )
         return self
 
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         if exc_type:
             self.logger.error(
-                f"Request failed - ID: {self.request_id}, Error: {exc_type.__name__}: {exc_val}"
+                f"Request failed - ID: {self.request_id}, "
+                f"Error: {exc_type.__name__}: {exc_val}"
             )
         else:
             self.logger.info(f"Request completed - ID: {self.request_id}")

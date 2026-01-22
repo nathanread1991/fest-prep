@@ -4,8 +4,8 @@ import hashlib
 import logging
 import secrets
 from datetime import datetime, timedelta
-from typing import Any, Callable, Dict, Optional
-from uuid import UUID, uuid4
+from typing import Any, Dict, Optional
+from uuid import UUID
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
@@ -70,7 +70,7 @@ class AuthService:
         await db.commit()
         await db.refresh(db_user)
 
-        # Store password hash in cache (in production, use proper user table with password field)
+        # Store password hash in cache (in production, use proper user table)
         # Use a very long TTL instead of 0 (Redis doesn't accept 0)
         await self.cache.set(
             f"user_password:{db_user.id}", hashed_password, expire=31536000

@@ -1,23 +1,18 @@
 """Artist Analyzer Service for retrieving and analyzing artist setlist data."""
 
 import asyncio
-import hashlib
 import logging
 import re
 import unicodedata
 from dataclasses import dataclass
-from datetime import datetime, timedelta
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, cast
+from datetime import datetime
+from typing import Any, Dict, List, Optional, Tuple, cast
 
 import httpx
-from sqlalchemy.orm import Session
 
-from festival_playlist_generator.core.database import get_db
 from festival_playlist_generator.models.artist import Artist as ArtistModel
 from festival_playlist_generator.models.setlist import Setlist as SetlistModel
-from festival_playlist_generator.models.song import Song as SongModel
-from festival_playlist_generator.schemas.setlist import Setlist, SetlistCreate
-from festival_playlist_generator.schemas.song import Song, SongCreate
+from festival_playlist_generator.schemas.setlist import Setlist
 
 logger = logging.getLogger(__name__)
 
@@ -118,7 +113,8 @@ class SetlistFmClient:
                         else:
                             # Fallback to first exact match
                             self.logger.info(
-                                f"Using first exact match for '{artist_name}': {exact_matches[0].get('name')}"
+                                f"Using first exact match for '{artist_name}': "
+                                f"{exact_matches[0].get('name')}"
                             )
                             return cast(Dict[str, Any], exact_matches[0])
                     else:
@@ -131,7 +127,8 @@ class SetlistFmClient:
                         else:
                             # Final fallback to first result
                             self.logger.info(
-                                f"No exact match for '{artist_name}', using first result: {artists[0].get('name')}"
+                                f"No exact match for '{artist_name}', "
+                                f"using first result: {artists[0].get('name')}"
                             )
                             return cast(Dict[str, Any], artists[0])
                 else:
@@ -144,7 +141,8 @@ class SetlistFmClient:
 
             else:
                 self.logger.error(
-                    f"API error searching for artist {artist_name}: {response.status_code}"
+                    f"API error searching for artist {artist_name}: "
+                    f"{response.status_code}"
                 )
                 return None
 
@@ -171,7 +169,8 @@ class SetlistFmClient:
         best_artist, best_score = scored_artists[0]
 
         self.logger.info(
-            f"Selected artist '{best_artist.get('name')}' with score {best_score:.2f} for search '{search_name}'"
+            f"Selected artist '{best_artist.get('name')}' with score {best_score:.2f} "
+            f"for search '{search_name}'"
         )
 
         # Log all candidates for debugging
@@ -279,7 +278,8 @@ class SetlistFmClient:
                         score += 1.0  # Still relevant (2016-2020)
                     # No bonus for older activity
 
-                    # Factor 4: Consistency bonus (bands with many valid setlists are likely more notable)
+                    # Factor 4: Consistency bonus (bands with many valid setlists are
+                    # likely more notable)
                     if valid_setlists >= 8:
                         score += 5.0  # Very active
                     elif valid_setlists >= 5:
@@ -299,8 +299,10 @@ class SetlistFmClient:
                         score += 1.0  # Short but valid setlists
 
                 else:
-                    # Heavily penalize artists with no valid setlists (past gigs with songs)
-                    score *= 0.05  # Very low score for artists with no real performance history
+                    # Heavily penalize artists with no valid setlists
+                    # (past gigs with songs)
+                    # Very low score for artists with no real performance history
+                    score *= 0.05
 
             else:
                 # Penalize artists we can't get setlist data for
@@ -309,7 +311,6 @@ class SetlistFmClient:
         except Exception as e:
             self.logger.debug(f"Error scoring artist {artist_name} ({mbid}): {e}")
             # Don't penalize for API errors, but don't give bonus either
-            pass
 
         return score
 
@@ -342,7 +343,8 @@ class SetlistFmClient:
                         parsed_setlists.append(parsed)
 
                 self.logger.info(
-                    f"Retrieved {len(parsed_setlists)} setlists for artist {artist_mbid}"
+                    f"Retrieved {len(parsed_setlists)} setlists "
+                    f"for artist {artist_mbid}"
                 )
                 return parsed_setlists
 
@@ -352,7 +354,8 @@ class SetlistFmClient:
 
             else:
                 self.logger.error(
-                    f"API error getting setlists for {artist_mbid}: {response.status_code}"
+                    f"API error getting setlists for {artist_mbid}: "
+                    f"{response.status_code}"
                 )
                 return []
 
@@ -468,7 +471,8 @@ class SongNormalizer:
         # Convert to lowercase
         normalized = normalized.lower()
 
-        # Remove common suffixes that don't affect song identity BEFORE removing punctuation
+        # Remove common suffixes that don't affect song identity
+        # BEFORE removing punctuation
         # This ensures "(Live)" is properly detected and removed
         suffixes_to_remove = [
             r"\s*\(live\)\s*$",
@@ -496,7 +500,8 @@ class SongNormalizer:
         # Remove extra whitespace
         normalized = re.sub(r"\s+", " ", normalized).strip()
 
-        # Final check - return empty string if normalization resulted in empty or whitespace-only string
+        # Final check - return empty string if normalization resulted in empty or
+        # whitespace-only string
         if not normalized or not normalized.strip():
             return ""
 
@@ -707,7 +712,8 @@ class SongFrequencyAnalyzer:
                     venues_list.append(setlist.venue)
 
         self.logger.info(
-            f"Analyzed frequency for {len(song_frequency)} unique songs across {len(setlists)} setlists"
+            f"Analyzed frequency for {len(song_frequency)} unique songs "
+            f"across {len(setlists)} setlists"
         )
         return song_frequency
 

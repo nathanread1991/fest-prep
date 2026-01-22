@@ -2,9 +2,9 @@
 
 import logging
 import re
-from typing import Any, Callable, Dict, List, Optional, cast
+from typing import Any, Dict, List, cast
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -175,7 +175,8 @@ class SmartArtistSearch:
 
         Example:
         Query: "Rubbersnake Charmers"
-        Matches: "Mario Lalli & The Rubber Snake Charmers" (contains "Rubber", "Snake", "Charmers")
+        Matches: "Mario Lalli & The Rubber Snake Charmers"
+                 (contains "Rubber", "Snake", "Charmers")
         """
         # Tokenize query (split on whitespace and remove common words)
         query_tokens = self._tokenize(query)

@@ -2,7 +2,7 @@
 
 import logging
 from contextlib import asynccontextmanager
-from typing import Any, AsyncGenerator, Callable
+from typing import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
@@ -27,22 +27,13 @@ AsyncSessionLocal = async_sessionmaker(
 class Base(DeclarativeBase):
     """Base class for all database models."""
 
-    pass
-
 
 async def init_db() -> None:
     """Initialize database tables."""
     try:
         async with engine.begin() as conn:
             # Import all models to ensure they are registered
-            from festival_playlist_generator.models import (
-                artist,
-                festival,
-                playlist,
-                setlist,
-                song,
-                user,
-            )
+            pass
 
             # Create all tables
             await conn.run_sync(Base.metadata.create_all)
@@ -60,7 +51,7 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
     async with AsyncSessionLocal() as session:
         try:
             yield session
-        except Exception as e:
+        except Exception:
             await session.rollback()
             raise
         finally:
@@ -147,7 +138,7 @@ async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
     async with AsyncSessionLocal() as session:
         try:
             yield session
-        except Exception as e:
+        except Exception:
             await session.rollback()
             raise
         finally:

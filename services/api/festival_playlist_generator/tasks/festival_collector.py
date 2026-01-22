@@ -1,19 +1,16 @@
 """Festival collection background tasks."""
 
-import logging
 from datetime import datetime, timedelta
-from typing import Any, Callable, Dict, List, Union
+from typing import Any, Dict, List, Union
 
-from celery import current_task
+from celery import Task
 
 from festival_playlist_generator.core.celery_app import celery_app
 from festival_playlist_generator.core.database import AsyncSessionLocal
 from festival_playlist_generator.core.logging_config import get_logger
 from festival_playlist_generator.core.service_orchestrator import ServiceOrchestrator
-from festival_playlist_generator.schemas.festival import Festival
 from festival_playlist_generator.services.festival_collector import (
     APISource,
-    FestivalCollectorService,
     RawFestivalData,
     WebScrapingSource,
 )
@@ -75,8 +72,10 @@ class MockFestivalSource(WebScrapingSource):
         return True  # Mock data is always valid
 
 
-@celery_app.task(bind=True, max_retries=3, default_retry_delay=300)  # type: ignore[untyped-decorator]
-def collect_daily_festivals(self: Any) -> Dict[str, Any]:
+@celery_app.task(  # type: ignore[untyped-decorator]
+    bind=True, max_retries=3, default_retry_delay=300
+)
+def collect_daily_festivals(self: Task) -> Dict[str, Any]:
     """
     Collect festival data daily using the service orchestrator.
 
@@ -170,24 +169,30 @@ def collect_daily_festivals(self: Any) -> Dict[str, Any]:
         try:
             retry_delay = min(300 * (2**self.request.retries), 3600)  # Max 1 hour
             logger.info(
-                f"Retrying festival collection in {retry_delay} seconds (attempt {self.request.retries + 1}/{self.max_retries})"
+                f"Retrying festival collection in {retry_delay} seconds "
+                f"(attempt {self.request.retries + 1}/{self.max_retries})"
             )
             self.retry(countdown=retry_delay, exc=e)
             # retry() raises an exception, so this line is never reached
             return {"status": "retrying"}  # For type checker
         except self.MaxRetriesExceededError:
-            logger.error(f"Max retries exceeded for festival collection task")
+            logger.error("Max retries exceeded for festival collection task")
             return {
                 "status": "failed",
-                "message": f"Festival collection failed after {self.max_retries} retries: {error_msg}",
+                "message": (
+                    f"Festival collection failed after {self.max_retries} "
+                    f"retries: {error_msg}"
+                ),
                 "error": error_msg,
                 "failed_at": datetime.utcnow().isoformat(),
             }
 
 
-@celery_app.task(bind=True, max_retries=2, default_retry_delay=600)  # type: ignore[untyped-decorator]
+@celery_app.task(  # type: ignore[untyped-decorator]
+    bind=True, max_retries=2, default_retry_delay=600
+)
 def collect_festivals_from_source(
-    self: Any, source_config: Dict[str, Any]
+    self: Task, source_config: Dict[str, Any]
 ) -> Dict[str, Any]:
     """
     Collect festivals from a specific source.
@@ -205,7 +210,8 @@ def collect_festivals_from_source(
     """
     try:
         logger.info(
-            f"Collecting festivals from source: {source_config.get('source_name', 'unknown')}"
+            f"Collecting festivals from source: "
+            f"{source_config.get('source_name', 'unknown')}"
         )
 
         # Create appropriate data source based on config
@@ -241,7 +247,10 @@ def collect_festivals_from_source(
         }
 
     except Exception as e:
-        error_msg = f"Error collecting from source {source_config.get('source_name', 'unknown')}: {str(e)}"
+        error_msg = (
+            f"Error collecting from source "
+            f"{source_config.get('source_name', 'unknown')}: {str(e)}"
+        )
         logger.error(error_msg, exc_info=True)
 
         # Retry with backoff
@@ -260,7 +269,7 @@ def collect_festivals_from_source(
 
 
 @celery_app.task(bind=True)  # type: ignore[untyped-decorator]
-def cleanup_old_festivals(self: Any, days_old: int = 30) -> Dict[str, Any]:
+def cleanup_old_festivals(self: Task, days_old: int = 30) -> Dict[str, Any]:
     """
     Clean up old festival data that's no longer relevant.
 
@@ -282,7 +291,9 @@ def cleanup_old_festivals(self: Any, days_old: int = 30) -> Dict[str, Any]:
 
         return {
             "status": "success",
-            "message": f"Cleaned up {cleaned_count} festivals older than {days_old} days",
+            "message": (
+                f"Cleaned up {cleaned_count} festivals " f"older than {days_old} days"
+            ),
             "cutoff_date": cutoff_date.isoformat(),
             "completed_at": datetime.utcnow().isoformat(),
         }

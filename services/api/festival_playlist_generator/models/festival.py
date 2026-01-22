@@ -73,7 +73,8 @@ class Festival(Base):
     @property
     def description(self) -> str:
         """Get a description of the festival."""
-        return f"A {len(self.genres) if self.genres else 'multi-genre'} music festival in {self.location}"
+        genre_desc = f"{len(self.genres)}" if self.genres else "multi-genre"
+        return f"A {genre_desc} music festival in {self.location}"
 
     def __repr__(self) -> str:
         return f"<Festival(name='{self.name}', location='{self.location}')>"

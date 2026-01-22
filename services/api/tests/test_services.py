@@ -13,8 +13,8 @@ Requirements: US-4.7
 
 import json
 from datetime import datetime, timedelta
-from unittest.mock import AsyncMock, MagicMock, call, patch
-from uuid import UUID, uuid4
+from unittest.mock import AsyncMock, MagicMock, patch
+from uuid import uuid4
 
 import pytest
 import pytest_asyncio

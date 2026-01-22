@@ -17,10 +17,7 @@ from festival_playlist_generator.api.endpoints import (
     users,
     workflows,
 )
-from festival_playlist_generator.api.versioning import (
-    get_request_version,
-    version_compatible_response,
-)
+from festival_playlist_generator.api.versioning import version_compatible_response
 
 api_router = APIRouter()
 

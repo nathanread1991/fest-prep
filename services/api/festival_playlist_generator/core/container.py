@@ -4,9 +4,7 @@ from dependency_injector import containers, providers
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from festival_playlist_generator.core.config import settings
 from festival_playlist_generator.core.database import AsyncSessionLocal, get_db
-from festival_playlist_generator.core.redis import cache, get_redis
 
 # Import repositories
 from festival_playlist_generator.repositories.artist_repository import ArtistRepository

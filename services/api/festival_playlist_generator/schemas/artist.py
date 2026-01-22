@@ -1,7 +1,7 @@
 """Artist Pydantic schemas."""
 
 from datetime import datetime
-from typing import Any, Callable, List, Optional
+from typing import Any, List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -22,8 +22,6 @@ class ArtistBase(BaseModel):
 
 class ArtistCreate(ArtistBase):
     """Schema for creating a new artist."""
-
-    pass
 
 
 class ArtistUpdate(BaseModel):

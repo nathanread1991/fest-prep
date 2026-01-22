@@ -2,9 +2,9 @@
 
 import uuid
 from datetime import datetime
-from typing import Any, Callable
+from typing import Any
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text
 from sqlalchemy.dialects.postgresql import ARRAY, JSON, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -74,4 +74,7 @@ class UserSongPreference(Base):
     song = relationship("Song", back_populates="user_preferences")
 
     def __repr__(self) -> str:
-        return f"<UserSongPreference(user_id='{self.user_id}', song_id='{self.song_id}', is_known={self.is_known})>"
+        return (
+            f"<UserSongPreference(user_id='{self.user_id}', "
+            f"song_id='{self.song_id}', is_known={self.is_known})>"
+        )

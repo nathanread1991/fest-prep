@@ -1,13 +1,13 @@
 """Main FastAPI application entry point."""
 
-import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import Any, Callable, Dict, cast
+from typing import Any, Awaitable, Callable, Dict, Union, cast
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
@@ -86,7 +86,10 @@ def create_app() -> FastAPI:
     """Create and configure the FastAPI application."""
     app = FastAPI(
         title="Festival Playlist Generator",
-        description="A system for creating playlists based on festival lineups and artist setlists",
+        description=(
+            "A system for creating playlists based on festival lineups "
+            "and artist setlists"
+        ),
         version="0.1.0",
         lifespan=lifespan,
     )
@@ -111,7 +114,6 @@ def create_app() -> FastAPI:
     )
 
     # Mount static files
-    import os
     from pathlib import Path
 
     # Get the directory where this file is located
@@ -143,13 +145,32 @@ def create_app() -> FastAPI:
     app.include_router(api_router, prefix="/api/v1.1")
 
     # Add exception handlers
-    app.add_exception_handler(HTTPException, http_exception_handler)  # type: ignore[arg-type]
-    app.add_exception_handler(RequestValidationError, validation_exception_handler)  # type: ignore[arg-type]
-    app.add_exception_handler(IntegrityError, integrity_error_handler)  # type: ignore[arg-type]
-    app.add_exception_handler(SQLAlchemyError, sqlalchemy_error_handler)  # type: ignore[arg-type]
-    app.add_exception_handler(CircuitBreakerOpenError, circuit_breaker_handler)  # type: ignore[arg-type]
-    app.add_exception_handler(ValidationError, pydantic_validation_exception_handler)  # type: ignore[arg-type]
-    app.add_exception_handler(Exception, general_exception_handler)
+    # Cast handlers to the correct type for FastAPI
+    ExceptionHandler = Callable[
+        [Request, Exception], Union[Response, Awaitable[Response]]
+    ]
+
+    app.add_exception_handler(
+        HTTPException, cast(ExceptionHandler, http_exception_handler)
+    )
+    app.add_exception_handler(
+        RequestValidationError, cast(ExceptionHandler, validation_exception_handler)
+    )
+    app.add_exception_handler(
+        IntegrityError, cast(ExceptionHandler, integrity_error_handler)
+    )
+    app.add_exception_handler(
+        SQLAlchemyError, cast(ExceptionHandler, sqlalchemy_error_handler)
+    )
+    app.add_exception_handler(
+        CircuitBreakerOpenError, cast(ExceptionHandler, circuit_breaker_handler)
+    )
+    app.add_exception_handler(
+        ValidationError, cast(ExceptionHandler, pydantic_validation_exception_handler)
+    )
+    app.add_exception_handler(
+        Exception, cast(ExceptionHandler, general_exception_handler)
+    )
 
     @app.get("/api")
     async def api_root(request: Request) -> Dict[str, Any]:
@@ -158,7 +179,7 @@ def create_app() -> FastAPI:
             version_compatible_response,
         )
 
-        version = get_request_version(request)
+        get_request_version(request)
         return version_compatible_response(
             request,
             {"message": "Festival Playlist Generator API", "version": "0.1.0"},
@@ -169,7 +190,6 @@ def create_app() -> FastAPI:
     @app.options("/health")
     async def health_check(request: Request) -> Dict[str, Any]:
         from festival_playlist_generator.api.versioning import (
-            get_request_version,
             version_compatible_response,
         )
 
@@ -183,7 +203,6 @@ def create_app() -> FastAPI:
 app = create_app()
 
 if __name__ == "__main__":
-    import os
     from pathlib import Path
 
     import uvicorn
@@ -218,14 +237,14 @@ if __name__ == "__main__":
             uvicorn_config["ssl_certfile"] = str(cert_file)
             uvicorn_config["ssl_keyfile"] = str(key_file)
             logger.info(f"🔒 HTTPS enabled with certificate: {ssl_cert_path}")
-            logger.info(f"🌐 Server will be available at: https://localhost:8000")
+            logger.info("🌐 Server will be available at: https://localhost:8000")
         else:
-            logger.warning(f"⚠️  SSL enabled but certificates not found:")
+            logger.warning("⚠️  SSL enabled but certificates not found:")
             logger.warning(f"   Certificate: {ssl_cert_path}")
             logger.warning(f"   Key: {ssl_key_path}")
-            logger.warning(f"   Run: ./scripts/setup-ssl.sh")
-            logger.info(f"🌐 Falling back to HTTP: http://localhost:8000")
+            logger.warning("   Run: ./scripts/setup-ssl.sh")
+            logger.info("🌐 Falling back to HTTP: http://localhost:8000")
     else:
-        logger.info(f"🌐 Server will be available at: http://localhost:8000")
+        logger.info("🌐 Server will be available at: http://localhost:8000")
 
     uvicorn.run(**uvicorn_config)

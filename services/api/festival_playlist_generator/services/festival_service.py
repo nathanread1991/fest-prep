@@ -2,7 +2,7 @@
 
 import logging
 from datetime import datetime
-from typing import Any, Callable, List, Optional, Tuple
+from typing import List, Optional, Tuple
 from uuid import UUID
 
 from festival_playlist_generator.models.artist import Artist
@@ -160,14 +160,9 @@ class FestivalService:
         Returns:
             Tuple of (festivals list, total count)
         """
-        # Generate cache key from search parameters
-        cache_key = (
-            f"festivals:search:{search}:{start_date}:{end_date}:"
-            f"{page}:{per_page}:{order_by}:{order_desc}"
-        )
+        # Note: Caching disabled for complex objects to avoid serialization issues
 
         # Check cache first
-        # Note: Caching disabled for complex objects to avoid serialization issues
         # cached = await self.cache.get(cache_key)
         # if cached is not None:
         #     logger.debug("Cache hit for festival search")

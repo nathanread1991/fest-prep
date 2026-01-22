@@ -935,7 +935,8 @@ class TestPlaylistRepositoryExtended:
             async_session.add(festival)
         await async_session.flush()
 
-        # FestivalRepository doesn't override count(), so this tests BaseRepository.count()
+        # FestivalRepository doesn't override count(), so this tests
+        # BaseRepository.count()
         count = await festival_repository.count()
         assert count >= 3
 
@@ -952,7 +953,8 @@ class TestPlaylistRepositoryExtended:
             await async_session.flush()
             created_ids.append(festival.id)
 
-        # FestivalRepository doesn't override get_all_ids(), so this tests BaseRepository.get_all_ids()
+        # FestivalRepository doesn't override get_all_ids(), so this tests
+        # BaseRepository.get_all_ids()
         all_ids = await festival_repository.get_all_ids()
         assert len(all_ids) >= 3
         for created_id in created_ids:

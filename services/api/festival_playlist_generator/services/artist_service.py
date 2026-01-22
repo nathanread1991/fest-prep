@@ -1,7 +1,7 @@
 """Artist service for business logic with caching."""
 
 import logging
-from typing import Any, Callable, List, Optional, Tuple
+from typing import List, Optional, Tuple
 from uuid import UUID
 
 from festival_playlist_generator.models.artist import Artist
@@ -149,15 +149,9 @@ class ArtistService:
         Returns:
             Tuple of (artists list, total count)
         """
-        # Generate cache key from search parameters
-        cache_key = (
-            f"artists:search:{search}:{filter_orphaned}:{filter_with_festivals}:"
-            f"{page}:{per_page}:{order_by}:{order_desc}"
-        )
+        # Note: Caching disabled for complex objects to avoid serialization issues
 
         # Check cache first
-        # Note: Caching disabled for complex objects to avoid serialization issues
-        # cached = await self.cache.get(cache_key)
         # if cached is not None:
         #     logger.debug(f"Cache hit for artist search")
         #     return cached.get("artists", []), cached.get("total", 0)

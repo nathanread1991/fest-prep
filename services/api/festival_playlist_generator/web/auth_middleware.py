@@ -1,11 +1,10 @@
 """Authentication middleware for protected routes."""
 
 import logging
-from typing import Any, Awaitable, Callable, Optional
+from typing import Awaitable, Callable, Optional
 
 from fastapi import HTTPException, Request, Response, status
 from fastapi.responses import JSONResponse, RedirectResponse
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from festival_playlist_generator.core.database import get_db
 from festival_playlist_generator.schemas.user import User as UserSchema

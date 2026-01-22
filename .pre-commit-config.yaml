@@ -27,8 +27,22 @@ repos:
     rev: 7.0.0
     hooks:
       - id: flake8
-        args: ['--config', 'services/api/setup.cfg']
+        args: ['--config', 'services/api/setup.cfg', '--max-line-length=88', '--extend-ignore=E203,W503']
         files: ^services/api/
+
+  # Python type checking
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.8.0
+    hooks:
+      - id: mypy
+        args: ['--config-file', 'services/api/setup.cfg', '--ignore-missing-imports']
+        files: ^services/api/festival_playlist_generator/
+        additional_dependencies: [
+          'types-redis',
+          'types-requests',
+          'sqlalchemy[mypy]',
+          'pydantic',
+        ]
 
   # General file checks
   - repo: https://github.com/pre-commit/pre-commit-hooks

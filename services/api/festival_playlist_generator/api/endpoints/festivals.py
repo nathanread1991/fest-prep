@@ -2,7 +2,7 @@
 
 import logging
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -10,11 +10,6 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from festival_playlist_generator.api.response_formatter import APIVersionManager
-from festival_playlist_generator.api.versioning import (
-    get_request_version,
-    version_compatible_response,
-)
 from festival_playlist_generator.core.container import get_festival_service
 from festival_playlist_generator.core.database import get_db
 from festival_playlist_generator.models.artist import Artist as ArtistModel
@@ -39,7 +34,8 @@ async def enrich_festival_data(clashfinder_id: str) -> JSONResponse:
     Fetch and enrich festival data from Clashfinder.
 
     Args:
-        clashfinder_id: The Clashfinder event ID (e.g., 'coachella2024', 'glastonbury2025')
+        clashfinder_id: The Clashfinder event ID
+            (e.g., 'coachella2024', 'glastonbury2025')
 
     Returns:
         Enriched festival data including name, location, dates, artists, etc.
@@ -54,7 +50,10 @@ async def enrich_festival_data(clashfinder_id: str) -> JSONResponse:
                 content={
                     "success": False,
                     "error": "Festival not found",
-                    "message": f"Could not find festival data for Clashfinder ID: {clashfinder_id}",
+                    "message": (
+                        f"Could not find festival data for Clashfinder ID: "
+                        f"{clashfinder_id}"
+                    ),
                     "timestamp": datetime.now().isoformat(),
                     "version": "1.0",
                 },
@@ -105,7 +104,8 @@ async def scrape_festival_by_name(
 ) -> JSONResponse:
     """
     Search for a festival by name and use AI to extract its data from the web.
-    This intelligently finds the festival's official website and uses AI to extract lineup information.
+    This intelligently finds the festival's official website and uses AI to
+    extract lineup information.
 
     Args:
         name: Festival name (e.g., "Download Festival", "Coachella")
@@ -136,7 +136,11 @@ async def scrape_festival_by_name(
                 content={
                     "success": False,
                     "error": "Festival not found",
-                    "message": f"Could not find or extract festival data for: {name}. Make sure you have OPENAI_API_KEY or ANTHROPIC_API_KEY configured in your .env file.",
+                    "message": (
+                        f"Could not find or extract festival data for: {name}. "
+                        f"Make sure you have OPENAI_API_KEY or ANTHROPIC_API_KEY "
+                        f"configured in your .env file."
+                    ),
                     "timestamp": datetime.now().isoformat(),
                     "version": "1.0",
                 },
@@ -147,7 +151,10 @@ async def scrape_festival_by_name(
             content={
                 "success": True,
                 "data": festival_data,
-                "message": f"Successfully extracted festival data with {len(festival_data.get('artists', []))} artists using AI",
+                "message": (
+                    f"Successfully extracted festival data with "
+                    f"{len(festival_data.get('artists', []))} artists using AI"
+                ),
                 "timestamp": datetime.now().isoformat(),
                 "version": "1.0",
             }
@@ -180,10 +187,6 @@ async def scrape_and_import_festivals(
     """
     try:
         from sqlalchemy.orm import selectinload
-
-        from festival_playlist_generator.services.festival_scraper import (
-            festival_scraper,
-        )
 
         logger.info("Starting festival scraping and import...")
         # TODO: Implement scrape_all_sources method in FestivalScraper
@@ -265,7 +268,8 @@ async def scrape_and_import_festivals(
 
             except Exception as e:
                 logger.error(
-                    f"Error importing festival {festival_data.get('name', 'unknown')}: {e}"
+                    f"Error importing festival "
+                    f"{festival_data.get('name', 'unknown')}: {e}"
                 )
                 errors.append(f"{festival_data.get('name', 'unknown')}: {str(e)}")
                 continue
@@ -282,7 +286,10 @@ async def scrape_and_import_festivals(
                     "skipped": skipped_count,
                     "errors": errors[:10],  # Limit error list
                 },
-                "message": f"Imported {imported_count} new festivals, updated {updated_count}, skipped {skipped_count}",
+                "message": (
+                    f"Imported {imported_count} new festivals, "
+                    f"updated {updated_count}, skipped {skipped_count}"
+                ),
                 "timestamp": datetime.now().isoformat(),
                 "version": "1.0",
             }
@@ -359,12 +366,13 @@ async def create_festival(
         # Enrich new artists with Spotify data
         if new_artist_ids:
             try:
-                from festival_playlist_generator.services.artist_enrichment_service import (
+                from festival_playlist_generator.services.artist_enrichment_service import (  # noqa: E501
                     artist_enrichment_service,
                 )
 
                 logger.info(
-                    f"Enriching {len(new_artist_ids)} new artists with Spotify data..."
+                    f"Enriching {len(new_artist_ids)} new artists "
+                    f"with Spotify data..."
                 )
                 enrichment_result = await artist_enrichment_service.enrich_artists(
                     new_artist_ids, db
@@ -377,7 +385,7 @@ async def create_festival(
         # Enrich new artists with setlist data
         if new_artist_ids:
             try:
-                from festival_playlist_generator.services.setlist_enrichment_service import (
+                from festival_playlist_generator.services.setlist_enrichment_service import (  # noqa: E501
                     setlist_enrichment_service,
                 )
 
@@ -483,14 +491,15 @@ async def list_festivals(
         # Filter by genre if provided (service doesn't support genre filter yet)
         if genre:
             festivals = [f for f in festivals if genre in (f.genres or [])]
-            total = len(festivals)
+            len(festivals)
 
         # Convert to response format
         from sqlalchemy import inspect
 
         festival_data = []
         for festival in festivals:
-            # Only access artists if the relationship is already loaded (avoid lazy load)
+            # Only access artists if the relationship is already loaded (avoid lazy
+            # load)
             artists_list: List[Any] = []
             insp = inspect(festival)
             if "artists" in insp.unloaded:
@@ -500,7 +509,7 @@ async def list_festivals(
                 # Relationship is loaded, safe to access
                 try:
                     artists_list = [artist.name for artist in festival.artists]
-                except:
+                except (AttributeError, TypeError):
                     artists_list = []
 
             festival_data.append(
@@ -655,7 +664,7 @@ async def update_festival(
     if "artists" not in insp.unloaded:
         try:
             artists_list = [artist.name for artist in updated_festival.artists]
-        except:
+        except (AttributeError, TypeError):
             artists_list = []
 
     return Festival(
@@ -720,7 +729,7 @@ async def search_festivals(
         if "artists" not in insp.unloaded:
             try:
                 artists_list = [artist.name for artist in festival.artists]
-            except:
+            except (AttributeError, TypeError):
                 artists_list = []
 
         result.append(

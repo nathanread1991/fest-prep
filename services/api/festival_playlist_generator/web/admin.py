@@ -1,10 +1,8 @@
 """Admin interface routes and authentication."""
 
-import hashlib
 import logging
-import os
 import secrets
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response, status
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
@@ -306,11 +304,11 @@ async def admin_create_festival(
                 parsed_dates.append(
                     datetime.fromisoformat(date_str.replace("Z", "+00:00"))
                 )
-            except:
+            except ValueError:
                 # Try common date formats
                 try:
                     parsed_dates.append(datetime.strptime(date_str, "%Y-%m-%d"))
-                except:
+                except ValueError:
                     continue
 
         if not parsed_dates:
@@ -373,12 +371,13 @@ async def admin_create_festival(
         # Enrich new artists with Spotify data in the background
         if new_artist_ids:
             try:
-                from festival_playlist_generator.services.artist_enrichment_service import (
+                from festival_playlist_generator.services.artist_enrichment_service import (  # noqa: E501
                     artist_enrichment_service,
                 )
 
                 logger.info(
-                    f"Enriching {len(new_artist_ids)} new artists with Spotify data..."
+                    f"Enriching {len(new_artist_ids)} new artists with "
+                    f"Spotify data..."
                 )
                 enrichment_result = await artist_enrichment_service.enrich_artists(
                     new_artist_ids, db
@@ -391,12 +390,13 @@ async def admin_create_festival(
         # Enrich new artists with setlist data in the background
         if new_artist_ids:
             try:
-                from festival_playlist_generator.services.setlist_enrichment_service import (
+                from festival_playlist_generator.services.setlist_enrichment_service import (  # noqa: E501
                     setlist_enrichment_service,
                 )
 
                 logger.info(
-                    f"Enriching {len(new_artist_ids)} new artists with setlist data..."
+                    f"Enriching {len(new_artist_ids)} new artists with "
+                    f"setlist data..."
                 )
                 setlist_enrichment_result = (
                     await setlist_enrichment_service.enrich_artists(new_artist_ids, db)
@@ -412,7 +412,10 @@ async def admin_create_festival(
         # Handle validation errors with user-friendly messages
         error_msg = str(ve)
         if "No valid dates provided" in error_msg:
-            error_msg = "Please provide at least one valid date in YYYY-MM-DD format (e.g., 2024-07-15)."
+            error_msg = (
+                "Please provide at least one valid date in YYYY-MM-DD format "
+                "(e.g., 2024-07-15)."
+            )
 
         return templates.TemplateResponse(
             "admin/festival_form.html",
@@ -446,9 +449,15 @@ async def admin_create_festival(
         error_str = str(e).lower()
         if "unique constraint" in error_str or "uniqueviolationerror" in error_str:
             if "name" in error_str:
-                error_msg = "A festival with this name already exists. Please use a different name or update the existing festival."
+                error_msg = (
+                    "A festival with this name already exists. Please use a "
+                    "different name or update the existing festival."
+                )
             else:
-                error_msg = "This festival information conflicts with an existing festival. Please check for duplicates."
+                error_msg = (
+                    "This festival information conflicts with an existing "
+                    "festival. Please check for duplicates."
+                )
 
         logger.error(f"Error creating festival '{name}': {e}")
 
@@ -664,7 +673,10 @@ async def admin_create_artist(
         if existing_artist:
             error_msg = f"An artist named '{name}' already exists in the database."
             if existing_artist.spotify_id:
-                error_msg += " You may want to update the existing artist instead of creating a duplicate."
+                error_msg += (
+                    " You may want to update the existing artist instead of "
+                    "creating a duplicate."
+                )
 
             return templates.TemplateResponse(
                 "admin/artist_form.html",
@@ -697,9 +709,15 @@ async def admin_create_artist(
             existing_spotify_artist = existing_spotify_result.scalar_one_or_none()
 
             if existing_spotify_artist:
-                error_msg = f"An artist with this Spotify ID already exists: '{existing_spotify_artist.name}'. "
+                error_msg = (
+                    f"An artist with this Spotify ID already exists: "
+                    f"'{existing_spotify_artist.name}'. "
+                )
                 error_msg += "Each artist can only have one unique Spotify ID. "
-                error_msg += "You may want to update the existing artist or use a different artist."
+                error_msg += (
+                    "You may want to update the existing artist or use a "
+                    "different artist."
+                )
 
                 return templates.TemplateResponse(
                     "admin/artist_form.html",
@@ -732,7 +750,10 @@ async def admin_create_artist(
             existing_mb_artist = existing_mb_result.scalar_one_or_none()
 
             if existing_mb_artist:
-                error_msg = f"An artist with this MusicBrainz ID already exists: '{existing_mb_artist.name}'. "
+                error_msg = (
+                    f"An artist with this MusicBrainz ID already exists: "
+                    f"'{existing_mb_artist.name}'. "
+                )
                 error_msg += "Each artist can only have one unique MusicBrainz ID."
 
                 return templates.TemplateResponse(
@@ -775,7 +796,8 @@ async def admin_create_artist(
         await db.commit()
 
         # Trigger stats update for dashboard (if open in another tab)
-        # This will be handled by the redirect, but we can add a note for future enhancement
+        # This will be handled by the redirect, but we can add a note for future
+        # enhancement
 
         return RedirectResponse(url="/admin/artists", status_code=303)
 
@@ -787,13 +809,27 @@ async def admin_create_artist(
         error_str = str(e).lower()
         if "unique constraint" in error_str or "uniqueviolationerror" in error_str:
             if "spotify_id" in error_str:
-                error_msg = "This Spotify ID is already associated with another artist. Please check if the artist already exists or use a different Spotify account."
+                error_msg = (
+                    "This Spotify ID is already associated with another "
+                    "artist. Please check if the artist already exists or use "
+                    "a different Spotify account."
+                )
             elif "musicbrainz_id" in error_str:
-                error_msg = "This MusicBrainz ID is already associated with another artist. Please check if the artist already exists or use a different MusicBrainz ID."
+                error_msg = (
+                    "This MusicBrainz ID is already associated with another "
+                    "artist. Please check if the artist already exists or use "
+                    "a different MusicBrainz ID."
+                )
             elif "name" in error_str:
-                error_msg = "An artist with this name already exists. Please use a different name or update the existing artist."
+                error_msg = (
+                    "An artist with this name already exists. Please use a "
+                    "different name or update the existing artist."
+                )
             else:
-                error_msg = "This artist information conflicts with an existing artist. Please check for duplicates."
+                error_msg = (
+                    "This artist information conflicts with an existing "
+                    "artist. Please check for duplicates."
+                )
 
         logger.error(f"Error creating artist '{name}': {e}")
 
@@ -850,7 +886,7 @@ async def admin_delete_festival(
         )
         await db.execute(delete_relationships)
         logger.info(
-            f"Deleted festival_artists relationships for festival {festival_id}"
+            f"Deleted festival_artists relationships for festival " f"{festival_id}"
         )
 
         # Then delete the festival
@@ -859,7 +895,8 @@ async def admin_delete_festival(
         await db.commit()
 
         logger.info(
-            f"Successfully deleted festival {festival_id}, rows affected: {result.rowcount}"  # type: ignore[attr-defined]
+            f"Successfully deleted festival {festival_id}, rows affected: "
+            f"{result.rowcount}"  # type: ignore[attr-defined]
         )
         return RedirectResponse(url="/admin/festivals?deleted=success", status_code=303)
     except Exception as e:
@@ -921,10 +958,10 @@ async def admin_update_festival(
                 parsed_dates.append(
                     datetime.fromisoformat(date_str.replace("Z", "+00:00"))
                 )
-            except:
+            except ValueError:
                 try:
                     parsed_dates.append(datetime.strptime(date_str, "%Y-%m-%d"))
-                except:
+                except ValueError:
                     continue
 
         if not parsed_dates:
@@ -981,7 +1018,7 @@ async def admin_update_festival(
         # Enrich new artists if any were created
         if new_artist_ids:
             try:
-                from festival_playlist_generator.services.artist_enrichment_service import (
+                from festival_playlist_generator.services.artist_enrichment_service import (  # noqa: E501
                     artist_enrichment_service,
                 )
 
@@ -1007,7 +1044,7 @@ async def admin_update_festival(
                 .filter(FestivalModel.id == UUID(festival_id))
             )
             festival = result.scalar_one_or_none()
-        except:
+        except Exception:
             festival = None
 
         return templates.TemplateResponse(
@@ -1046,7 +1083,7 @@ async def admin_update_festival(
                 .filter(FestivalModel.id == UUID(festival_id))
             )
             festival = result.scalar_one_or_none()
-        except:
+        except Exception:
             festival = None
 
         return templates.TemplateResponse(
@@ -1117,14 +1154,15 @@ async def admin_bulk_delete_festivals(
         result = await db.execute(delete_stmt)
         await db.commit()
 
-        logger.info(f"Successfully bulk deleted {result.rowcount} festivals")  # type: ignore[attr-defined]
+        deleted_count = getattr(result, "rowcount", 0) or 0
+        logger.info(f"Successfully bulk deleted {deleted_count} festivals")
 
         return JSONResponse(
             status_code=200,
             content={
                 "success": True,
-                "message": f"Successfully deleted {result.rowcount} festival(s)",  # type: ignore[attr-defined]
-                "deleted_count": result.rowcount,  # type: ignore[attr-defined]
+                "message": f"Successfully deleted {deleted_count} festival(s)",
+                "deleted_count": deleted_count,
             },
         )
 
@@ -1260,7 +1298,10 @@ async def admin_search_artists(
                         content={
                             "success": True,
                             "artists": [],
-                            "message": f"No artists found on Spotify matching '{search_term}'",
+                            "message": (
+                                f"No artists found on Spotify matching "
+                                f"'{search_term}'"
+                            ),
                         },
                     )
 
@@ -1372,7 +1413,10 @@ async def admin_setlistfm_search(
                 for artist in artists:
                     # Get setlist count for this artist
                     setlist_response = await client.get(
-                        f"https://api.setlist.fm/rest/1.0/artist/{artist['mbid']}/setlists",
+                        (
+                            f"https://api.setlist.fm/rest/1.0/artist/"
+                            f"{artist['mbid']}/setlists"
+                        ),
                         params={"p": 1},
                         headers={
                             "x-api-key": settings.SETLIST_FM_API_KEY,
@@ -1460,21 +1504,29 @@ async def admin_apply_spotify_data(
                     content={
                         "success": False,
                         "conflict": True,
-                        "message": f"This Spotify ID is already linked to: '{existing_artist.name}'",
+                        "message": (
+                            f"This Spotify ID is already linked to: "
+                            f"'{existing_artist.name}'"
+                        ),
                         "duplicate_artist": {
                             "id": str(existing_artist.id),
                             "name": existing_artist.name,
                         },
                         "options": {
                             "can_override": True,
-                            "override_message": f"Would you like to unlink this Spotify profile from '{existing_artist.name}' and link it to this artist instead?",
+                            "override_message": (
+                                f"Would you like to unlink this Spotify profile "
+                                f"from '{existing_artist.name}' and link it to "
+                                f"this artist instead?"
+                            ),
                         },
                     },
                 )
             else:
                 # Clear the Spotify ID from the other artist
                 logger.info(
-                    f"Unlinking Spotify ID {spotify_id} from artist '{existing_artist.name}' (ID: {existing_artist.id})"
+                    f"Unlinking Spotify ID {spotify_id} from artist "
+                    f"'{existing_artist.name}' (ID: {existing_artist.id})"
                 )
                 existing_artist.spotify_id = None
                 existing_artist.spotify_image_url = None
@@ -1509,11 +1561,13 @@ async def admin_apply_spotify_data(
             status_code=200,
             content={
                 "success": True,
-                "message": "Spotify data applied successfully"
-                + (
-                    " (unlinked from other artist)"
-                    if force_override and existing_artist
-                    else ""
+                "message": (
+                    "Spotify data applied successfully"
+                    + (
+                        " (unlinked from other artist)"
+                        if force_override and existing_artist
+                        else ""
+                    )
                 ),
                 "artist": {
                     "id": str(artist.id),
@@ -1589,7 +1643,10 @@ async def admin_apply_setlistfm_data(
             status_code=200,
             content={
                 "success": True,
-                "message": f"Setlist.fm data applied successfully. Fetched {setlist_result.get('enriched', 0)} setlists.",
+                "message": (
+                    f"Setlist.fm data applied successfully. Fetched "
+                    f"{setlist_result.get('enriched', 0)} setlists."
+                ),
                 "setlists_added": setlist_result.get("enriched", 0),
                 "artist": {
                     "id": str(artist.id),
@@ -1793,7 +1850,7 @@ async def admin_update_artist(
                 .filter(ArtistModel.id == UUID(artist_id))
             )
             artist = result.scalar_one_or_none()
-        except:
+        except Exception:
             artist = None
 
         return templates.TemplateResponse(
@@ -1833,7 +1890,7 @@ async def admin_update_artist(
                 .filter(ArtistModel.id == UUID(artist_id))
             )
             artist = result.scalar_one_or_none()
-        except:
+        except Exception:
             artist = None
 
         return templates.TemplateResponse(
@@ -1896,18 +1953,24 @@ async def admin_delete_artist(
             if len(artist.festivals) > 3:
                 festival_names += f" and {len(artist.festivals) - 3} more"
             logger.warning(
-                f"Cannot delete artist {artist.name} - still associated with festivals: {festival_names}"
+                f"Cannot delete artist {artist.name} - still associated with "
+                f"festivals: {festival_names}"
             )
             return RedirectResponse(
-                url=f"/admin/artists?error=has_festivals&artist={artist.name}&festivals={len(artist.festivals)}",
+                url=(
+                    f"/admin/artists?error=has_festivals&artist={artist.name}"
+                    f"&festivals={len(artist.festivals)}"
+                ),
                 status_code=303,
             )
 
         logger.info(
-            f"Deleting artist {artist.name} (ID: {artist_id}) - Orphaned: {not artist.spotify_id and len(artist.setlists) == 0}"
+            f"Deleting artist {artist.name} (ID: {artist_id}) - Orphaned: "
+            f"{not artist.spotify_id and len(artist.setlists) == 0}"
         )
 
-        # First, delete relationships in festival_artists table (should be empty at this point)
+        # First, delete relationships in festival_artists table (should be empty
+        # at this point)
         from festival_playlist_generator.models.festival import festival_artists
 
         delete_relationships = delete(festival_artists).where(
@@ -1989,7 +2052,7 @@ async def admin_warm_cache(
 
         return {
             "success": True,
-            "message": f"Cache warming complete: {stats['successful']} images cached",
+            "message": (f"Cache warming complete: {stats['successful']} images cached"),
             "data": stats,
         }
     except Exception as e:
@@ -2043,7 +2106,11 @@ async def admin_bulk_delete_artists(
                 artist_names += f" and {len(artists_with_festivals) - 3} more"
             return {
                 "success": False,
-                "message": f"Cannot delete {len(artists_with_festivals)} artist(s) still associated with festivals: {artist_names}. Remove them from festivals first.",
+                "message": (
+                    f"Cannot delete {len(artists_with_festivals)} artist(s) "
+                    f"still associated with festivals: {artist_names}. "
+                    f"Remove them from festivals first."
+                ),
             }
 
         # Get artist names for logging
@@ -2051,7 +2118,8 @@ async def admin_bulk_delete_artists(
 
         # Delete in the correct order to avoid foreign key constraint violations
 
-        # 1. Delete relationships in festival_artists table (should be empty at this point)
+        # 1. Delete relationships in festival_artists table (should be empty at
+        # this point)
         from festival_playlist_generator.models.festival import festival_artists
 
         delete_relationships = delete(festival_artists).where(
@@ -2079,7 +2147,8 @@ async def admin_bulk_delete_artists(
 
         deleted_count = result.rowcount  # type: ignore[attr-defined]
         logger.info(
-            f"Bulk deleted {deleted_count} artists: {', '.join(artist_names_for_logging)}"
+            f"Bulk deleted {deleted_count} artists: "
+            f"{', '.join(artist_names_for_logging)}"
         )
 
         return {
@@ -2150,7 +2219,7 @@ async def admin_enrich_all_artists(
 
         # Get all artists without Spotify data
         result = await db.execute(
-            select(ArtistModel).filter(ArtistModel.spotify_id == None)
+            select(ArtistModel).filter(ArtistModel.spotify_id.is_(None))
         )
         artists_to_enrich = result.scalars().all()
 
@@ -2179,7 +2248,10 @@ async def admin_enrich_all_artists(
             status_code=200,
             content={
                 "success": True,
-                "message": f"Enriched {enrichment_result['enriched']} artists with Spotify data",
+                "message": (
+                    f"Enriched {enrichment_result['enriched']} artists with "
+                    f"Spotify data"
+                ),
                 **enrichment_result,
             },
         )
@@ -2202,8 +2274,6 @@ async def admin_delete_user(
         from uuid import UUID
 
         from sqlalchemy import delete
-
-        from festival_playlist_generator.core.redis import cache
 
         user_uuid = UUID(user_id)
 
@@ -2246,7 +2316,8 @@ async def admin_delete_user(
         # This is a limitation of the current session storage design
         # For now, we'll log this and the session will expire naturally
         logger.info(
-            f"User {user_email} deleted - active sessions will expire naturally within {24} hours"
+            f"User {user_email} deleted - active sessions will expire "
+            f"naturally within {24} hours"
         )
 
         # 5. Finally, delete the user
@@ -2281,9 +2352,6 @@ async def admin_refresh_festival_branding(
         import httpx
 
         from festival_playlist_generator.services.brand_extractor import BrandExtractor
-        from festival_playlist_generator.services.festival_scraper import (
-            FestivalScraper,
-        )
 
         festival_uuid = UUID(festival_id)
 
@@ -2305,13 +2373,17 @@ async def admin_refresh_festival_branding(
         if not festival_url:
             # Try to find the festival website using the scraper
             logger.info(
-                f"No URL found for festival {festival.name}, attempting to search..."
+                f"No URL found for festival {festival.name}, attempting to "
+                f"search..."
             )
             return JSONResponse(
                 status_code=400,
                 content={
                     "success": False,
-                    "message": "No festival URL available. Please add a ticket URL or website URL to the festival.",
+                    "message": (
+                        "No festival URL available. Please add a ticket URL or "
+                        "website URL to the festival."
+                    ),
                 },
             )
 
@@ -2341,13 +2413,17 @@ async def admin_refresh_festival_branding(
             # Store the extracted branding but mark that it came from a refresh
             # This allows the admin to review before saving
             # We return the branding data but don't automatically save it
-            # The JavaScript will populate the form fields, and the admin can review/modify before saving
+            # The JavaScript will populate the form fields, and the admin can
+            # review/modify before saving
 
             return JSONResponse(
                 status_code=200,
                 content={
                     "success": True,
-                    "message": "Branding extracted successfully. Review the values and save the form to apply changes.",
+                    "message": (
+                        "Branding extracted successfully. Review the values "
+                        "and save the form to apply changes."
+                    ),
                     "branding": {
                         "logo_url": branding.logo_url,
                         "primary_color": branding.primary_color,
@@ -2538,7 +2614,8 @@ async def admin_merge_artists(
             )
 
         logger.info(
-            f"Admin {admin_user} merging artists: primary={primary_id}, secondaries={secondary_ids}"
+            f"Admin {admin_user} merging artists: primary={primary_id}, "
+            f"secondaries={secondary_ids}"
         )
 
         # Create synchronous session for merge service
@@ -2558,13 +2635,17 @@ async def admin_merge_artists(
 
             if result.success:
                 logger.info(
-                    f"Successfully merged artists: {result.merged_artist_names} into {result.primary_artist_name}"
+                    f"Successfully merged artists: {result.merged_artist_names} "
+                    f"into {result.primary_artist_name}"
                 )
                 return JSONResponse(
                     status_code=200,
                     content={
                         "success": True,
-                        "message": f"Successfully merged {len(result.merged_artist_ids)} artist(s) into {result.primary_artist_name}",
+                        "message": (
+                            f"Successfully merged {len(result.merged_artist_ids)} "
+                            f"artist(s) into {result.primary_artist_name}"
+                        ),
                         "result": {
                             "primary_artist_id": result.primary_artist_id,
                             "primary_artist_name": result.primary_artist_name,

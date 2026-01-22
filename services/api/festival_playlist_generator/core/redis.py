@@ -2,16 +2,19 @@
 
 import json
 import logging
-from typing import Any, Callable, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 import redis.asyncio as redis
 
 from festival_playlist_generator.core.config import settings
 
+if TYPE_CHECKING:
+    from redis.asyncio.connection import Connection
+
 logger = logging.getLogger(__name__)
 
 # Redis connection pool
-redis_pool: Optional[redis.ConnectionPool] = None
+redis_pool: Optional["redis.ConnectionPool[Connection]"] = None
 
 
 async def init_redis() -> None:
@@ -27,7 +30,7 @@ async def init_redis() -> None:
         logger.warning("Continuing without Redis - caching will be disabled")
 
 
-async def get_redis() -> redis.Redis:
+async def get_redis() -> "redis.Redis[bytes]":
     """Get Redis connection."""
     if redis_pool is None:
         await init_redis()
@@ -38,9 +41,9 @@ class CacheManager:
     """Redis cache management utilities."""
 
     def __init__(self) -> None:
-        self.redis_client: Optional[redis.Redis] = None
+        self.redis_client: Optional["redis.Redis[bytes]"] = None
 
-    async def get_client(self) -> redis.Redis:
+    async def get_client(self) -> "redis.Redis[bytes]":
         """Get Redis client."""
         if self.redis_client is None:
             self.redis_client = await get_redis()

@@ -1,7 +1,7 @@
 """Song filtering service for user preferences."""
 
 import logging
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession

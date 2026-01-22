@@ -3,8 +3,7 @@
 import base64
 import json
 import logging
-import os
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
@@ -227,9 +226,9 @@ class PushNotificationService:
         # If no specific users, send to all subscribed users
         if not user_ids:
             redis = await get_redis()
-            user_ids = await redis.smembers("active_push_subscriptions")
+            user_ids_set = await redis.smembers("active_push_subscriptions")
             user_ids = [
-                uid.decode() if isinstance(uid, bytes) else uid for uid in user_ids
+                uid.decode() if isinstance(uid, bytes) else uid for uid in user_ids_set
             ]
 
         return await self.send_bulk_notification(
@@ -287,7 +286,8 @@ class PushNotificationService:
             return {
                 "active_subscriptions": active_count,
                 "total_sent_today": 0,  # Could be tracked with daily counters
-                "success_rate": 0.95,  # Could be calculated from delivery stats
+                # Could be calculated from delivery stats (percentage as int)
+                "success_rate": 95,
             }
 
         except Exception as e:

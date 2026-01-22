@@ -1,15 +1,13 @@
-"""Recommendation engine service for personalized festival and artist recommendations."""
+"""Recommendation engine for personalized festival recommendations."""
 
 import math
-from collections import Counter, defaultdict
+from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
-from sqlalchemy import and_, func
 from sqlalchemy.orm import Session
 
-from festival_playlist_generator.core.database import get_db
 from festival_playlist_generator.models.artist import Artist
 from festival_playlist_generator.models.festival import Festival
 from festival_playlist_generator.models.playlist import Playlist
@@ -62,7 +60,8 @@ class RecommendationEngine:
 
     async def analyze_user_preferences(self, user_id: str) -> UserProfile:
         """
-        Analyze user's music preferences from their playlist and song preference history.
+        Analyze user's music preferences from their playlist and song
+        preference history.
 
         Args:
             user_id: User identifier
@@ -340,7 +339,10 @@ class RecommendationEngine:
     def _calculate_genre_similarity(
         self, item_genres: List[str], user_genres: Dict[str, float]
     ) -> float:
-        """Calculate cosine similarity between item genres and user genre preferences."""
+        """
+        Calculate cosine similarity between item genres and user genre
+        preferences.
+        """
         if not item_genres or not user_genres:
             return 0.0
 

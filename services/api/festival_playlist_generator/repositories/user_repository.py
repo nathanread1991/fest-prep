@@ -1,7 +1,7 @@
 """User repository for database operations."""
 
-from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional, cast
+from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional, cast
 from uuid import UUID
 
 from sqlalchemy import func, select, update
@@ -264,7 +264,7 @@ class UserRepository(BaseRepository[User]):
         """
         result = await self.db.execute(
             select(User)
-            .where(User.marketing_opt_in == True)
+            .where(User.marketing_opt_in.is_(True))
             .order_by(User.created_at.desc())
             .offset(skip)
             .limit(limit)
@@ -296,7 +296,7 @@ class UserRepository(BaseRepository[User]):
             Number of users with marketing opt-in
         """
         result = await self.db.execute(
-            select(func.count(User.id)).where(User.marketing_opt_in == True)
+            select(func.count(User.id)).where(User.marketing_opt_in.is_(True))
         )
         count = result.scalar()
         return count if count is not None else 0
@@ -322,7 +322,3 @@ class UserRepository(BaseRepository[User]):
         )
 
         return list(result.scalars().all())
-
-
-# Import timedelta for recently_active method
-from datetime import timedelta

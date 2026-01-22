@@ -1,7 +1,6 @@
 """Compression middleware for FastAPI application."""
 
 import gzip
-import io
 from typing import Any, Callable, Optional, Set
 
 import brotli

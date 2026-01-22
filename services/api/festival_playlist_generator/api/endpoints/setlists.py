@@ -1,30 +1,20 @@
 """Setlist API endpoints."""
 
-import os
-from datetime import datetime
-from typing import Any, Callable, List, Optional
+from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import JSONResponse
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from festival_playlist_generator.api.response_formatter import APIVersionManager
-from festival_playlist_generator.api.versioning import (
-    get_request_version,
-    version_compatible_response,
-)
+from festival_playlist_generator.api.versioning import get_request_version
 from festival_playlist_generator.core.config import settings
 from festival_playlist_generator.core.database import get_db
 from festival_playlist_generator.models.artist import Artist as ArtistModel
 from festival_playlist_generator.models.setlist import Setlist as SetlistModel
-from festival_playlist_generator.schemas.setlist import (
-    Setlist,
-    SetlistCreate,
-    SetlistUpdate,
-)
 from festival_playlist_generator.services.artist_analyzer import ArtistAnalyzerService
 
 router = APIRouter()
@@ -62,15 +52,14 @@ async def get_artist_setlists(
     result_setlists = await db.execute(query)
     setlists_list = result_setlists.scalars().all()
 
-    # If no setlists found and external fetch is requested, try to fetch from external API
+    # If no setlists found and external fetch is requested, try to fetch from
+    # external API
     if not setlists_list and fetch_external:
         try:
             setlist_fm_api_key = settings.SETLIST_FM_API_KEY
             if setlist_fm_api_key:
                 analyzer = ArtistAnalyzerService(setlist_fm_api_key)
-                external_setlists = await analyzer.get_artist_setlists(
-                    artist.name, limit
-                )
+                await analyzer.get_artist_setlists(artist.name, limit)
 
                 # Refresh the query to get newly stored setlists
                 result_setlists = await db.execute(query)
@@ -152,15 +141,14 @@ async def get_recent_artist_setlists(
             result_recent = await db.execute(query)
             setlists_recent = result_recent.scalars().all()
 
-            # If no setlists found and external fetch is requested, try to fetch from external API
+            # If no setlists found and external fetch is requested, try to fetch from
+            # external API
             if not setlists_recent and fetch_external:
                 try:
                     setlist_fm_api_key = settings.SETLIST_FM_API_KEY
                     if setlist_fm_api_key:
                         analyzer = ArtistAnalyzerService(setlist_fm_api_key)
-                        external_setlists = await analyzer.get_artist_setlists(
-                            artist.name, limit
-                        )
+                        await analyzer.get_artist_setlists(artist.name, limit)
 
                         # Refresh the query to get newly stored setlists
                         result_recent = await db.execute(query)
@@ -171,7 +159,8 @@ async def get_recent_artist_setlists(
 
                     logger = logging.getLogger(__name__)
                     logger.error(
-                        f"Error fetching external setlists for artist {artist.name}: {e}"
+                        f"Error fetching external setlists for artist "
+                        f"{artist.name}: {e}"
                     )
 
             # Convert to simplified response format for UI
@@ -194,7 +183,10 @@ async def get_recent_artist_setlists(
 
             return formatter.success_response(
                 data=setlist_data,
-                message=f"Found {len(setlist_data)} recent setlists for artist '{artist.name}'",
+                message=(
+                    f"Found {len(setlist_data)} recent setlists "
+                    f"for artist '{artist.name}'"
+                ),
             )
 
     except Exception as e:
@@ -252,7 +244,10 @@ async def get_recent_artist_setlists(
 
         return formatter.success_response(
             data=mock_setlists,
-            message=f"Found {len(mock_setlists)} recent setlists (demo data - database unavailable)",
+            message=(
+                f"Found {len(mock_setlists)} recent setlists "
+                f"(demo data - database unavailable)"
+            ),
         )
 
 
@@ -318,7 +313,10 @@ async def refresh_artist_setlists(
     if not setlist_fm_api_key:
         return formatter.error_response(
             error="API key not configured",
-            message="Setlist.fm API key is not configured. Please add SETLIST_FM_API_KEY to your environment variables.",
+            message=(
+                "Setlist.fm API key is not configured. "
+                "Please add SETLIST_FM_API_KEY to your environment variables."
+            ),
             status_code=503,
         )
 
@@ -329,7 +327,10 @@ async def refresh_artist_setlists(
 
         return formatter.success_response(
             data={"fetched_count": len(external_setlists)},
-            message=f"Successfully refreshed {len(external_setlists)} setlists for artist '{artist.name}'",
+            message=(
+                f"Successfully refreshed {len(external_setlists)} setlists "
+                f"for artist '{artist.name}'"
+            ),
         )
 
     except Exception as e:

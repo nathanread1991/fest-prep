@@ -6,15 +6,12 @@ import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional
 
 import httpx
 from bs4 import BeautifulSoup
-from sqlalchemy import and_
-from sqlalchemy.orm import Session
 
 from festival_playlist_generator.core.config import settings
-from festival_playlist_generator.core.database import get_db
 from festival_playlist_generator.models.artist import Artist as ArtistModel
 from festival_playlist_generator.models.festival import Festival as FestivalModel
 from festival_playlist_generator.schemas.festival import Festival, FestivalCreate
@@ -47,12 +44,10 @@ class FestivalDataSource(ABC):
     @abstractmethod
     async def fetch_festivals(self) -> List[RawFestivalData]:
         """Fetch festival data from the source."""
-        pass
 
     @abstractmethod
     def validate_data(self, raw_data: Dict[str, Any]) -> bool:
         """Validate raw festival data."""
-        pass
 
     def normalize_artist_name(self, artist_name: str) -> str:
         """Normalize artist names for consistency."""
@@ -180,7 +175,8 @@ class ClashfinderAPIClient:
                     return {"raw_data": response.text}
             elif response.status_code == 401:
                 self.logger.error(
-                    "Clashfinder API authentication failed - check username and private key"
+                    "Clashfinder API authentication failed - "
+                    "check username and private key"
                 )
                 return None
             elif response.status_code == 403:
@@ -216,7 +212,8 @@ class ClashfinderAPIClient:
         # For now, we'll need to work with known clashfinder IDs
 
         self.logger.warning(
-            "Clashfinder search functionality not yet implemented - API may not support search"
+            "Clashfinder search functionality not yet implemented - "
+            "API may not support search"
         )
         return []
 
@@ -300,7 +297,8 @@ class ClashfinderSource(FestivalDataSource):
         self.private_key = private_key
         self.client: Optional[ClashfinderAPIClient] = None
 
-        # Known clashfinder IDs for major festivals (these would need to be updated regularly)
+        # Known clashfinder IDs for major festivals
+        # (these would need to be updated regularly)
         # Starting with the test endpoint and some common festival patterns
         self.known_festival_ids = [
             "test",  # Test endpoint provided by Clashfinder
@@ -551,7 +549,7 @@ class ClashfinderSource(FestivalDataSource):
             from dateutil import parser
 
             return parser.parse(date_str)
-        except:
+        except (ImportError, ValueError, TypeError):
             pass
 
         self.logger.debug(f"Could not parse Clashfinder date: {date_str}")
@@ -575,10 +573,7 @@ class WebScrapingSource(FestivalDataSource):
         self.logger.info(f"Fetching festivals from {self.base_url}")
 
         try:
-            import re
-            from datetime import datetime, timedelta
-
-            import httpx
+            pass
 
             festivals = []
 
@@ -649,7 +644,7 @@ class WebScrapingSource(FestivalDataSource):
                                     date = datetime.fromisoformat(
                                         date_str.replace("Z", "+00:00")
                                     )
-                                except:
+                                except ValueError:
                                     # Try parsing common date formats
                                     parsed_date = self._parse_date_string(date_str)
                                     if parsed_date is None:
@@ -892,7 +887,8 @@ class WebScrapingSource(FestivalDataSource):
                             # Try to extract location
                             location = ""
                             location_patterns = [
-                                r"([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*,\s*[A-Z]{2,})",  # City, State/Country
+                                # City, State/Country
+                                r"([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*,\s*[A-Z]{2,})",
                                 r"([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)",  # Just city
                             ]
                             for pattern in location_patterns:
@@ -914,7 +910,10 @@ class WebScrapingSource(FestivalDataSource):
                                 date_patterns = [
                                     r"(\d{1,2}[-/]\d{1,2}[-/]\d{4})",
                                     r"(\d{4}[-/]\d{1,2}[-/]\d{1,2})",
-                                    r"((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{1,2},?\s+\d{4})",
+                                    (
+                                        r"((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|"
+                                        r"Oct|Nov|Dec)[a-z]*\s+\d{1,2},?\s+\d{4})"
+                                    ),
                                 ]
                                 for pattern in date_patterns:
                                     match = re.search(pattern, text, re.IGNORECASE)
@@ -975,7 +974,7 @@ class WebScrapingSource(FestivalDataSource):
             from dateutil import parser
 
             return parser.parse(date_str)
-        except:
+        except (ImportError, ValueError, TypeError):
             pass
 
         self.logger.debug(f"Could not parse date: {date_str}")
@@ -1002,9 +1001,7 @@ class APISource(FestivalDataSource):
         self.logger.info(f"Fetching festivals from API: {self.api_url}")
 
         try:
-            from datetime import datetime
-
-            import httpx
+            pass
 
             festivals = []
 
@@ -1063,7 +1060,7 @@ class APISource(FestivalDataSource):
                                         life_span["begin"]
                                     )
                                     dates.append(begin_date)
-                                except:
+                                except ValueError:
                                     pass
 
                             # Extract location
@@ -1139,7 +1136,7 @@ class APISource(FestivalDataSource):
                                     date = datetime.strptime(
                                         start_date, "%a, %d %b %Y %H:%M:%S"
                                     )
-                                except:
+                                except ValueError:
                                     continue
                             else:
                                 continue
@@ -1190,7 +1187,8 @@ class APISource(FestivalDataSource):
                 self.logger.warning("Spotify API credentials not provided")
                 return festivals
 
-            # Spotify doesn't have direct festival endpoints, but we can search for festival playlists
+            # Spotify doesn't have direct festival endpoints,
+            # but we can search for festival playlists
             # This is a limited approach but can provide some festival information
             async with httpx.AsyncClient() as client:
                 # Get access token first
@@ -1224,15 +1222,17 @@ class APISource(FestivalDataSource):
                         for playlist in playlists:
                             try:
                                 name = playlist.get("name", "")
-                                description = playlist.get("description", "")
+                                playlist.get("description", "")
 
                                 # Extract festival info from playlist name/description
                                 if any(
                                     keyword in name.lower()
                                     for keyword in ["festival", "fest"]
                                 ):
-                                    # This is a very basic extraction - would need more sophisticated parsing
-                                    location = "Unknown Location"  # Spotify doesn't provide location info
+                                    # This is a very basic extraction - would need more
+                                    # sophisticated parsing
+                                    # Spotify doesn't provide location info
+                                    location = "Unknown Location"
                                     date = (
                                         datetime.now()
                                     )  # Would need to parse from name/description
@@ -1309,7 +1309,7 @@ class APISource(FestivalDataSource):
                                         )
                                     else:
                                         date = datetime.now()
-                                except:
+                                except ValueError:
                                     date = datetime.now()
                             else:
                                 continue
@@ -1796,7 +1796,10 @@ class FestivalCollectorService:
         self._initialize_data_sources()
 
     def _initialize_data_sources(self) -> None:
-        """Initialize data sources with Clashfinder as primary and web scraping as fallback."""
+        """
+        Initialize data sources with Clashfinder as primary and web scraping
+        as fallback.
+        """
         # Add Clashfinder API as primary source
         if settings.CLASHFINDER_USERNAME and settings.CLASHFINDER_PRIVATE_KEY:
             clashfinder_source = ClashfinderSource(
@@ -1846,14 +1849,15 @@ class FestivalCollectorService:
             if isinstance(source, ClashfinderSource):
                 try:
                     self.logger.info(
-                        "Attempting to collect from Clashfinder API (primary source)"
+                        "Attempting to collect from Clashfinder API " "(primary source)"
                     )
                     raw_festivals = await source.fetch_festivals()
                     if raw_festivals:
                         all_raw_data.extend(raw_festivals)
                         clashfinder_success = True
                         self.logger.info(
-                            f"Successfully collected {len(raw_festivals)} festivals from Clashfinder"
+                            f"Successfully collected {len(raw_festivals)} festivals "
+                            f"from Clashfinder"
                         )
                     else:
                         self.logger.warning("Clashfinder API returned no festivals")
@@ -1861,7 +1865,8 @@ class FestivalCollectorService:
                     self.logger.error(f"Error collecting from Clashfinder API: {e}")
                 break
 
-        # If Clashfinder failed or returned insufficient data, use fallback sources
+        # If Clashfinder failed or returned insufficient data,
+        # use fallback sources
         if (
             not clashfinder_success or len(all_raw_data) < 5
         ):  # Threshold for "insufficient data"
@@ -1872,7 +1877,8 @@ class FestivalCollectorService:
                         raw_festivals = await source.fetch_festivals()
                         all_raw_data.extend(raw_festivals)
                         self.logger.info(
-                            f"Collected {len(raw_festivals)} festivals from {source.source_name}"
+                            f"Collected {len(raw_festivals)} festivals "
+                            f"from {source.source_name}"
                         )
                     except Exception as e:
                         self.logger.error(
@@ -1892,7 +1898,8 @@ class FestivalCollectorService:
                 parsed_festivals.append(parsed)
 
         self.logger.info(
-            f"Parsed {len(parsed_festivals)} valid festivals from {len(all_raw_data)} raw entries"
+            f"Parsed {len(parsed_festivals)} valid festivals "
+            f"from {len(all_raw_data)} raw entries"
         )
 
         # Deduplicate festivals
@@ -1909,8 +1916,6 @@ class FestivalCollectorService:
     async def _store_festivals(self, festivals: List[FestivalCreate]) -> List[Festival]:
         """Store festivals in the database."""
         stored_festivals = []
-
-        from sqlalchemy import select
 
         from festival_playlist_generator.core.database import AsyncSessionLocal
 

@@ -7,8 +7,7 @@ Matches images to artists using AI-powered analysis and pattern matching.
 import json
 import logging
 import re
-from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import openai
 from bs4 import BeautifulSoup
@@ -31,7 +30,8 @@ class ImageMatcher:
         else:
             self.ai_available = False
             logger.warning(
-                "OpenAI API key not configured. AI-powered image matching will be disabled."
+                "OpenAI API key not configured. "
+                "AI-powered image matching will be disabled."
             )
 
     def extract_lineup_images(
@@ -303,7 +303,10 @@ class ImageMatcher:
                 image_descriptions.append(desc)
 
             # Create prompt for AI
-            prompt = f"""You are analyzing a festival website to match artist images to artist names.
+            max_img_idx = len(images) - 1
+            prompt_text = (
+                f"""You are analyzing a festival website to match """
+                f"""artist images to artist names.
 
 Artist Names:
 {json.dumps(artist_names, indent=2)}
@@ -311,15 +314,19 @@ Artist Names:
 Images found on the page:
 {json.dumps(image_descriptions, indent=2)}
 
-Based on the image URLs, alt text, and context, match as many images as possible to the artist names.
+Based on the image URLs, alt text, and context, match as many images as
+possible to the artist names.
 
 Please respond with a JSON object where:
 - Keys are artist names (exactly as provided)
 - Values are objects with:
-  - "image_index": the index of the matching image (0-{len(images)-1})
+  - "image_index": the index of the matching image (0-{max_img_idx})
   - "confidence": your confidence level (0.0 to 1.0)
 
-Only include matches where you have reasonable confidence (>0.3). If you can't match an artist, don't include them in the response."""
+Only include matches where you have reasonable confidence (>0.3).
+If you can't match an artist, don't include them in the response."""
+            )
+            prompt = prompt_text
 
             # Call OpenAI API
             response = openai.ChatCompletion.create(
@@ -327,7 +334,10 @@ Only include matches where you have reasonable confidence (>0.3). If you can't m
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are an expert at analyzing website structure and matching images to artist names.",
+                        "content": (
+                            "You are an expert at analyzing website structure "
+                            "and matching images to artist names."
+                        ),
                     },
                     {"role": "user", "content": prompt},
                 ],
@@ -354,7 +364,8 @@ Only include matches where you have reasonable confidence (>0.3). If you can't m
                 if image_index >= 0 and image_index < len(images) and confidence > 0.3:
                     matches[artist_name] = (images[image_index].url, confidence)
                     logger.info(
-                        f"Matched {artist_name} to image {image_index} with confidence {confidence}"
+                        f"Matched {artist_name} to image {image_index} "
+                        f"with confidence {confidence}"
                     )
 
             logger.info(f"AI matched {len(matches)} artists to images")

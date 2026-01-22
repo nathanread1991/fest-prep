@@ -1,13 +1,10 @@
-"""Streaming Integration Service for managing authentication and playlist creation across platforms."""
+"""Streaming Integration Service for managing authentication and playlists."""
 
-import asyncio
 import logging
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
-from typing import Any, Callable, Dict, List, Optional, Tuple, cast
-from uuid import UUID
+from typing import Any, Dict, List, Optional, Tuple
 
-import httpx
 import spotipy
 from pydantic import BaseModel
 from spotipy.oauth2 import SpotifyOAuth
@@ -49,33 +46,28 @@ class StreamingPlatformClient(ABC):
     @abstractmethod
     async def authenticate(self, credentials: Dict[str, Any]) -> AuthToken:
         """Authenticate with the streaming platform."""
-        pass
 
     @abstractmethod
     async def refresh_token(self, auth_token: AuthToken) -> AuthToken:
         """Refresh an expired authentication token."""
-        pass
 
     @abstractmethod
     async def search_song(
         self, song: str, artist: str, auth_token: AuthToken
     ) -> List[Track]:
         """Search for a song on the platform."""
-        pass
 
     @abstractmethod
     async def create_playlist(
         self, name: str, description: str, auth_token: AuthToken
     ) -> str:
         """Create a new playlist on the platform."""
-        pass
 
     @abstractmethod
     async def add_tracks_to_playlist(
         self, playlist_id: str, track_ids: List[str], auth_token: AuthToken
     ) -> bool:
         """Add tracks to an existing playlist."""
-        pass
 
 
 class SpotifyClient(StreamingPlatformClient):

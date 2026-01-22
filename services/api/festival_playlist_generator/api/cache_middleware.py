@@ -1,7 +1,5 @@
 """Cache middleware for API responses."""
 
-import hashlib
-import json
 from typing import Any, Callable
 
 from fastapi import Request, Response
@@ -90,7 +88,7 @@ class APICacheMiddleware(BaseHTTPMiddleware):
 
             return response
 
-        except Exception as e:
+        except Exception:
             # If middleware fails, just return the original response
             fallback_response: Response = await call_next(request)
             return fallback_response

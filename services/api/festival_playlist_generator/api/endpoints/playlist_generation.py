@@ -1,19 +1,16 @@
 """Playlist generation API endpoints that integrate all services."""
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from festival_playlist_generator.api.response_formatter import APIVersionManager
-from festival_playlist_generator.api.versioning import (
-    get_request_version,
-    version_compatible_response,
-)
+from festival_playlist_generator.api.versioning import get_request_version
 from festival_playlist_generator.core.database import get_db
 from festival_playlist_generator.core.dependencies import (
     get_artist_analyzer,
@@ -25,7 +22,6 @@ from festival_playlist_generator.core.dependencies import (
 from festival_playlist_generator.models.artist import Artist as ArtistModel
 from festival_playlist_generator.models.festival import Festival as FestivalModel
 from festival_playlist_generator.models.user import User as UserModel
-from festival_playlist_generator.schemas.playlist import PlaylistCreate
 from festival_playlist_generator.services import (
     ArtistAnalyzerService,
     FestivalCollectorService,
@@ -157,7 +153,10 @@ async def generate_festival_playlist(
 
         return formatter.success_response(
             data=response_data,
-            message=f"Festival playlist generated successfully with {len(song_list)} songs",
+            message=(
+                f"Festival playlist generated successfully "
+                f"with {len(song_list)} songs"
+            ),
         )
 
     except Exception as e:
@@ -260,7 +259,10 @@ async def generate_artist_playlist(
 
         return formatter.success_response(
             data=response_data,
-            message=f"Artist playlist generated successfully with {len(song_list)} songs",
+            message=(
+                f"Artist playlist generated successfully "
+                f"with {len(song_list)} songs"
+            ),
         )
 
     except Exception as e:

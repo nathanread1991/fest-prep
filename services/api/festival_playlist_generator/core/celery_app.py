@@ -57,14 +57,19 @@ celery_app.conf.update(
 # Periodic tasks configuration
 celery_app.conf.beat_schedule = {
     "daily-festival-collection": {
-        "task": "festival_playlist_generator.tasks.festival_collector.collect_daily_festivals",
+        "task": (
+            "festival_playlist_generator.tasks.festival_collector"
+            ".collect_daily_festivals"
+        ),
         "schedule": 86400.0,  # Run daily (24 hours)
         "options": {
             "expires": 3600,  # Task expires after 1 hour if not executed
         },
     },
     "update-playlists": {
-        "task": "festival_playlist_generator.tasks.playlist_updater.update_all_playlists",
+        "task": (
+            "festival_playlist_generator.tasks.playlist_updater" ".update_all_playlists"
+        ),
         "schedule": 604800.0,  # Run weekly (7 days)
         "options": {
             "expires": 7200,  # Task expires after 2 hours if not executed

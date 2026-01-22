@@ -1,6 +1,6 @@
 """Recommendation API endpoints."""
 
-from typing import Any, Callable, List
+from typing import Any, List
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
@@ -9,10 +9,7 @@ from sqlalchemy.orm import Session
 from festival_playlist_generator.api.versioning import version_compatible_response
 from festival_playlist_generator.core.database import get_db
 from festival_playlist_generator.services.recommendation_engine import (
-    ArtistRecommendation,
-    FestivalRecommendation,
     RecommendationEngine,
-    UserProfile,
 )
 
 router = APIRouter()

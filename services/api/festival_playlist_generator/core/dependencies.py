@@ -1,7 +1,7 @@
 """Dependency injection for services."""
 
 from functools import lru_cache
-from typing import Any, Callable, Type
+from typing import Type
 
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -50,9 +50,6 @@ def get_streaming_integration_service() -> StreamingIntegrationService:
         "apple_music": {"developer_token": "test_developer_token"},
     }
     return StreamingIntegrationService(default_config)
-
-
-from typing import Any, Callable, Type
 
 
 @lru_cache()

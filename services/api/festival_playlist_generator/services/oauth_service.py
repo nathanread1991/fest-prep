@@ -1,16 +1,14 @@
 """OAuth authentication service for multiple providers."""
 
-import json
 import logging
 import secrets
 from datetime import datetime, timedelta
-from typing import Any, Callable, Dict, List, Optional
-from urllib.parse import parse_qs, urlencode
+from typing import Any, Dict, List, Optional
+from urllib.parse import urlencode
 from uuid import UUID, uuid4
 
 import httpx
 from fastapi import HTTPException, status
-from jose import jwt
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -342,7 +340,8 @@ class OAuthService:
                 }
             elif provider.name == "x":
                 return {
-                    "email": f"{user_data.get('username')}@twitter.com",  # X doesn't always provide email
+                    # X doesn't always provide email
+                    "email": f"{user_data.get('username')}@twitter.com",
                     "name": user_data.get("name"),
                     "picture": user_data.get("profile_image_url"),
                     "provider_id": user_data.get("id"),
@@ -475,16 +474,6 @@ class OAuthService:
     def _generate_apple_client_secret(self) -> str:
         """Generate JWT client secret for Apple OAuth."""
         # Apple requires a JWT signed with their private key
-        headers = {"kid": settings.APPLE_KEY_ID, "alg": "ES256"}
-
-        payload = {
-            "iss": settings.APPLE_TEAM_ID,
-            "iat": datetime.utcnow(),
-            "exp": datetime.utcnow() + timedelta(hours=1),
-            "aud": "https://appleid.apple.com",
-            "sub": settings.APPLE_CLIENT_ID,
-        }
-
         # This would require the cryptography library and proper key handling
         # For now, return the client secret as-is
         return settings.APPLE_CLIENT_SECRET

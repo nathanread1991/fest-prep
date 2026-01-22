@@ -3,16 +3,15 @@
 import asyncio
 import logging
 from datetime import datetime, timedelta
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict
 from uuid import UUID
 
-from celery import current_task
-from sqlalchemy import and_, or_
+from celery import Task
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from festival_playlist_generator.core.celery_app import celery_app
 from festival_playlist_generator.core.database import get_db
-from festival_playlist_generator.models.artist import Artist as ArtistModel
 from festival_playlist_generator.models.festival import Festival as FestivalModel
 from festival_playlist_generator.models.playlist import Playlist as PlaylistModel
 from festival_playlist_generator.models.song import Song as SongModel
@@ -25,8 +24,10 @@ from festival_playlist_generator.services.playlist_generator import (
 logger = logging.getLogger(__name__)
 
 
-@celery_app.task(bind=True, max_retries=3, default_retry_delay=1800)  # type: ignore[untyped-decorator]  # 30 minutes
-def update_all_playlists(self: Any, days_since_update: int = 7) -> Dict[str, Any]:
+@celery_app.task(  # type: ignore[untyped-decorator]
+    bind=True, max_retries=3, default_retry_delay=1800
+)
+def update_all_playlists(self: Task, days_since_update: int = 7) -> Dict[str, Any]:
     """
     Update all playlists with new setlist data while preserving user customizations.
 
@@ -44,7 +45,8 @@ def update_all_playlists(self: Any, days_since_update: int = 7) -> Dict[str, Any
     """
     try:
         logger.info(
-            f"Starting playlist update task for playlists older than {days_since_update} days"
+            f"Starting playlist update task for playlists older than "
+            f"{days_since_update} days"
         )
 
         # Update task state
@@ -137,7 +139,8 @@ def update_all_playlists(self: Any, days_since_update: int = 7) -> Dict[str, Any
                     else:
                         failed_count += 1
                         logger.warning(
-                            f"Failed to update playlist: {playlist.name} - {result['error']}"
+                            f"Failed to update playlist: {playlist.name} - "
+                            f"{result['error']}"
                         )
 
                     update_results.append(
@@ -170,7 +173,7 @@ def update_all_playlists(self: Any, days_since_update: int = 7) -> Dict[str, Any
                     )
 
             # Final results
-            total_processed = updated_count + failed_count + skipped_count
+            updated_count + failed_count + skipped_count
 
             self.update_state(
                 state="SUCCESS",
@@ -185,7 +188,10 @@ def update_all_playlists(self: Any, days_since_update: int = 7) -> Dict[str, Any
 
             result = {
                 "status": "success",
-                "message": f"Playlist update completed. Updated: {updated_count}, Failed: {failed_count}, Skipped: {skipped_count}",
+                "message": (
+                    f"Playlist update completed. Updated: {updated_count}, "
+                    f"Failed: {failed_count}, Skipped: {skipped_count}"
+                ),
                 "playlists_checked": len(playlists_to_update),
                 "playlists_updated": updated_count,
                 "playlists_failed": failed_count,
@@ -195,13 +201,14 @@ def update_all_playlists(self: Any, days_since_update: int = 7) -> Dict[str, Any
             }
 
             logger.info(
-                f"Playlist update task completed. Updated: {updated_count}, Failed: {failed_count}, Skipped: {skipped_count}"
+                f"Playlist update task completed. Updated: {updated_count}, "
+                f"Failed: {failed_count}, Skipped: {skipped_count}"
             )
 
             db.close()
             return result
 
-        except Exception as e:
+        except Exception:
             db.rollback()
             db.close()
             raise
@@ -222,7 +229,8 @@ def update_all_playlists(self: Any, days_since_update: int = 7) -> Dict[str, Any
             retry_delay = min(1800 * (2**self.request.retries), 7200)  # Max 2 hours
 
             logger.info(
-                f"Retrying playlist update in {retry_delay} seconds (attempt {self.request.retries + 1}/{self.max_retries})"
+                f"Retrying playlist update in {retry_delay} seconds "
+                f"(attempt {self.request.retries + 1}/{self.max_retries})"
             )
 
             self.retry(countdown=retry_delay, exc=e)
@@ -234,17 +242,22 @@ def update_all_playlists(self: Any, days_since_update: int = 7) -> Dict[str, Any
                 "error": error_msg,
             }
         except self.MaxRetriesExceededError:
-            logger.error(f"Max retries exceeded for playlist update task")
+            logger.error("Max retries exceeded for playlist update task")
             return {
                 "status": "failed",
-                "message": f"Playlist update failed after {self.max_retries} retries: {error_msg}",
+                "message": (
+                    f"Playlist update failed after {self.max_retries} retries: "
+                    f"{error_msg}"
+                ),
                 "error": error_msg,
                 "failed_at": datetime.utcnow().isoformat(),
             }
 
 
-@celery_app.task(bind=True, max_retries=2, default_retry_delay=600)  # type: ignore[untyped-decorator]
-def update_single_playlist_task(self: Any, playlist_id: str) -> Dict[str, Any]:
+@celery_app.task(  # type: ignore[untyped-decorator]
+    bind=True, max_retries=2, default_retry_delay=600
+)
+def update_single_playlist_task(self: Task, playlist_id: str) -> Dict[str, Any]:
     """
     Update a single playlist with new setlist data.
 
@@ -274,11 +287,12 @@ def update_single_playlist_task(self: Any, playlist_id: str) -> Dict[str, Any]:
             db.close()
 
             logger.info(
-                f"Single playlist update completed for {playlist_id}: {result['status']}"
+                f"Single playlist update completed for {playlist_id}: "
+                f"{result['status']}"
             )
             return result
 
-        except Exception as e:
+        except Exception:
             db.rollback()
             db.close()
             raise
@@ -377,7 +391,10 @@ async def update_single_playlist(
                 if days_since_festival > 30:
                     return {
                         "status": "skipped",
-                        "reason": f"Festival is too old ({days_since_festival} days ago), skipping update",
+                        "reason": (
+                            f"Festival is too old ({days_since_festival} days ago), "
+                            f"skipping update"
+                        ),
                     }
 
             # Generate new festival playlist
@@ -479,15 +496,18 @@ async def update_single_playlist(
         return {"status": "failed", "error": str(e)}
 
 
-@celery_app.task(bind=True, max_retries=2, default_retry_delay=300)  # type: ignore[untyped-decorator]
-def update_playlists_for_festival(self: Any, festival_id: str) -> Dict[str, Any]:
+@celery_app.task(  # type: ignore[untyped-decorator]
+    bind=True, max_retries=2, default_retry_delay=300
+)
+def update_playlists_for_festival(self: Task, festival_id: str) -> Dict[str, Any]:
     """
     Update all playlists associated with a specific festival.
 
     Args:
         festival_id: UUID string of the festival
 
-    This task is useful when a festival lineup changes or new setlist data becomes available.
+    This task is useful when a festival lineup changes or new setlist data
+    becomes available.
     """
     try:
         logger.info(f"Starting playlist updates for festival {festival_id}")
@@ -564,7 +584,10 @@ def update_playlists_for_festival(self: Any, festival_id: str) -> Dict[str, Any]
 
             result = {
                 "status": "success",
-                "message": f"Festival playlist update completed. Updated: {updated_count}, Failed: {failed_count}",
+                "message": (
+                    f"Festival playlist update completed. Updated: {updated_count}, "
+                    f"Failed: {failed_count}"
+                ),
                 "festival_id": festival_id,
                 "playlists_updated": updated_count,
                 "playlists_failed": failed_count,
@@ -573,11 +596,12 @@ def update_playlists_for_festival(self: Any, festival_id: str) -> Dict[str, Any]
             }
 
             logger.info(
-                f"Festival playlist update completed for {festival_id}: {updated_count} updated, {failed_count} failed"
+                f"Festival playlist update completed for {festival_id}: "
+                f"{updated_count} updated, {failed_count} failed"
             )
             return result
 
-        except Exception as e:
+        except Exception:
             db.rollback()
             db.close()
             raise

@@ -1,20 +1,13 @@
 """User management API endpoints."""
 
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Cookie, Depends, HTTPException, Query, Request, status
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from festival_playlist_generator.api.response_formatter import APIVersionManager
-from festival_playlist_generator.api.versioning import (
-    get_request_version,
-    version_compatible_response,
-)
 from festival_playlist_generator.core.container import get_user_service
 from festival_playlist_generator.core.database import get_db
-from festival_playlist_generator.models.user import User
 from festival_playlist_generator.schemas.playlist import Playlist as PlaylistSchema
 from festival_playlist_generator.schemas.song import Song as SongSchema
 from festival_playlist_generator.schemas.user import User as UserSchema
@@ -218,7 +211,10 @@ async def filter_playlist(
     # For now, we'll return an error since playlist fetching isn't implemented yet
     raise HTTPException(
         status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="Playlist filtering will be implemented when playlist endpoints are available",
+        detail=(
+            "Playlist filtering will be implemented "
+            "when playlist endpoints are available"
+        ),
     )
 
 

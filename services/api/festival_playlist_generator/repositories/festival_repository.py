@@ -1,7 +1,7 @@
 """Festival repository for database operations."""
 
 from datetime import datetime
-from typing import Any, Callable, List, Optional, Tuple
+from typing import List, Optional, Tuple
 from uuid import UUID
 
 from sqlalchemy import func, or_, select

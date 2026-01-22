@@ -1,11 +1,10 @@
 """Base repository with generic CRUD operations."""
 
 from abc import ABC
-from typing import Any, Callable, Generic, List, Optional, Type, TypeVar, cast
+from typing import Any, Generic, List, Optional, Type, TypeVar, cast
 from uuid import UUID
 
 from sqlalchemy import delete, func, select
-from sqlalchemy.engine import Result
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeBase
 

@@ -1,7 +1,7 @@
 """User service for business logic with authentication."""
 
 import logging
-from typing import Any, Callable, Optional
+from typing import Optional
 from uuid import UUID
 
 from festival_playlist_generator.models.user import User

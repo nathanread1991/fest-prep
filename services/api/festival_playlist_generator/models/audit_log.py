@@ -2,9 +2,9 @@
 
 import uuid
 from datetime import datetime
-from typing import Any, Callable
+from typing import Any
 
-from sqlalchemy import Column, DateTime, String, Text
+from sqlalchemy import DateTime, String, Text
 from sqlalchemy.dialects.postgresql import JSON, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -33,4 +33,7 @@ class AuditLog(Base):
     )
 
     def __repr__(self) -> str:
-        return f"<AuditLog(user_id='{self.user_id}', action='{self.action}', created_at='{self.created_at}')>"
+        return (
+            f"<AuditLog(user_id='{self.user_id}', action='{self.action}', "
+            f"created_at='{self.created_at}')>"
+        )

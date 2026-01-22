@@ -3,18 +3,16 @@
 import json
 import smtplib
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from sqlalchemy import and_, func
 from sqlalchemy.orm import Session
 
 from festival_playlist_generator.core.config import settings
-from festival_playlist_generator.models.artist import Artist
 from festival_playlist_generator.models.festival import Festival
 from festival_playlist_generator.models.user import User
 
@@ -110,11 +108,17 @@ class NotificationService:
                 user.id, NotificationType.FESTIVAL_ANNOUNCEMENT
             ):
                 notification = Notification(
-                    id=f"festival_{festival_id}_{user.id}_{datetime.utcnow().timestamp()}",
+                    id=(
+                        f"festival_{festival_id}_{user.id}_"
+                        f"{datetime.utcnow().timestamp()}"
+                    ),
                     user_id=str(user.id),
                     notification_type=NotificationType.FESTIVAL_ANNOUNCEMENT,
                     title=f"New Festival: {festival.name}",
-                    message=f"A new festival '{festival.name}' has been announced in {festival.location}!",
+                    message=(
+                        f"A new festival '{festival.name}' has been announced in "
+                        f"{festival.location}!"
+                    ),
                     data={
                         "festival_id": str(festival.id),
                         "festival_name": festival.name,
@@ -155,7 +159,8 @@ class NotificationService:
         if user_ids:
             users = self.db.query(User).filter(User.id.in_(user_ids)).all()
         else:
-            # Get users who follow any of the new artists or are interested in the festival
+            # Get users who follow any of the new artists or are interested in the
+            # festival
             users = await self._get_users_following_artists(new_artists)
 
         notified_users = []
@@ -165,11 +170,18 @@ class NotificationService:
                 user.id, NotificationType.ARTIST_LINEUP_UPDATE
             ):
                 notification = Notification(
-                    id=f"lineup_{festival_id}_{user.id}_{datetime.utcnow().timestamp()}",
+                    id=(
+                        f"lineup_{festival_id}_{user.id}_"
+                        f"{datetime.utcnow().timestamp()}"
+                    ),
                     user_id=str(user.id),
                     notification_type=NotificationType.ARTIST_LINEUP_UPDATE,
                     title=f"Lineup Update: {festival.name}",
-                    message=f"New artists added to {festival.name}: {', '.join(new_artists[:3])}{'...' if len(new_artists) > 3 else ''}",
+                    message=(
+                        f"New artists added to {festival.name}: "
+                        f"{', '.join(new_artists[:3])}"
+                        f"{'...' if len(new_artists) > 3 else ''}"
+                    ),
                     data={
                         "festival_id": str(festival.id),
                         "festival_name": festival.name,
@@ -344,14 +356,24 @@ class NotificationService:
             {self._format_notification_data(notification)}
 
             <p>
-                <a href="https://festivalplaylist.com{notification.data.get('action_url', '')}"
-                   style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+                <a href=(
+                    "https://festivalplaylist.com"
+                    f"{notification.data.get('action_url', '')}"
+                )
+                   style=(
+                       "background-color: #4CAF50; color: white; "
+                       "padding: 10px 20px; text-decoration: none; "
+                       "border-radius: 5px;"
+                   )>
                     View Details
                 </a>
             </p>
 
             <hr>
-            <p><small>You can manage your notification preferences in your account settings.</small></p>
+            <p><small>
+                You can manage your notification preferences in your account
+                settings.
+            </small></p>
         </body>
         </html>
         """
@@ -379,7 +401,8 @@ class NotificationService:
         }
 
         print(
-            f"Push notification for user {user.id}: {json.dumps(push_payload, indent=2)}"
+            f"Push notification for user {user.id}: "
+            f"{json.dumps(push_payload, indent=2)}"
         )
         # TODO: Implement actual push notification sending
 
@@ -388,19 +411,31 @@ class NotificationService:
         if notification.notification_type == NotificationType.FESTIVAL_ANNOUNCEMENT:
             data = notification.data
             return f"""
-            <div style="background-color: #f5f5f5; padding: 15px; margin: 10px 0; border-radius: 5px;">
+            <div style=(
+                "background-color: #f5f5f5; padding: 15px; margin: 10px 0; "
+                "border-radius: 5px;"
+            )>
                 <h3>{data.get('festival_name')}</h3>
                 <p><strong>Location:</strong> {data.get('location')}</p>
                 <p><strong>Dates:</strong> {', '.join(data.get('dates', []))}</p>
-                <p><strong>Featured Artists:</strong> {', '.join(data.get('artists', []))}</p>
+                <p>
+                    <strong>Featured Artists:</strong>
+                    {', '.join(data.get('artists', []))}
+                </p>
             </div>
             """
         elif notification.notification_type == NotificationType.ARTIST_LINEUP_UPDATE:
             data = notification.data
             return f"""
-            <div style="background-color: #e8f4fd; padding: 15px; margin: 10px 0; border-radius: 5px;">
+            <div style=(
+                "background-color: #e8f4fd; padding: 15px; margin: 10px 0; "
+                "border-radius: 5px;"
+            )>
                 <h3>{data.get('festival_name')}</h3>
-                <p><strong>New Artists:</strong> {', '.join(data.get('new_artists', []))}</p>
+                <p>
+                    <strong>New Artists:</strong>
+                    {', '.join(data.get('new_artists', []))}
+                </p>
                 <p><strong>Total Artists:</strong> {data.get('total_artists')}</p>
             </div>
             """
@@ -431,9 +466,14 @@ class NotificationService:
     async def _get_interested_users_for_festival(
         self, festival: Festival
     ) -> List[User]:
-        """Get users who might be interested in a festival based on their preferences."""
-        # This would use the recommendation engine to find users with similar taste
-        # For now, return all users (in a real implementation, this would be more sophisticated)
+        """
+        Get users who might be interested in a festival based on their
+        preferences.
+        """
+        # Get users who might be interested in a festival based on preferences
+        # This would use the recommendation engine to find users with similar
+        # taste. For now, return all users (in a real implementation, this
+        # would be more sophisticated)
         return self.db.query(User).limit(100).all()
 
     async def _get_users_following_artists(self, artists: List[str]) -> List[User]:

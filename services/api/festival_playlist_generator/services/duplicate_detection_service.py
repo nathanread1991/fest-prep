@@ -1,9 +1,8 @@
 """Duplicate Detection Service - Find potential duplicate artists."""
 
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional
+from typing import Dict, List, Optional
 
-from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from festival_playlist_generator.models.artist import Artist

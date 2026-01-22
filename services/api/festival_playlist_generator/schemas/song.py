@@ -2,7 +2,7 @@
 
 import re
 from datetime import datetime
-from typing import Any, Callable, Optional
+from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -43,8 +43,6 @@ class SongBase(BaseModel):
 
 class SongCreate(SongBase):
     """Schema for creating a new song."""
-
-    pass
 
 
 class SongUpdate(BaseModel):

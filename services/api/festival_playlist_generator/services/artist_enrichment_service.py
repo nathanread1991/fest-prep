@@ -1,7 +1,7 @@
 """Artist Enrichment Service - Automatically populate artist data from Spotify."""
 
 import logging
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -75,8 +75,10 @@ class ArtistEnrichmentService:
                     ):
                         # This Spotify ID is already used by another artist
                         logger.warning(
-                            f"Spotify ID {spotify_info.id} for '{artist.name}' is already used by '{existing_spotify_artist.name}'. "
-                            f"These may be the same artist with different names. Skipping enrichment."
+                            f"Spotify ID {spotify_info.id} for '{artist.name}' "
+                            f"is already used by '{existing_spotify_artist.name}'. "
+                            f"These may be the same artist with different names. "
+                            f"Skipping enrichment."
                         )
                         skipped_count += 1
                     else:
@@ -102,7 +104,8 @@ class ArtistEnrichmentService:
         try:
             await db.commit()
             logger.info(
-                f"Artist enrichment complete: {enriched_count} enriched, {skipped_count} skipped, {failed_count} failed"
+                f"Artist enrichment complete: {enriched_count} enriched, "
+                f"{skipped_count} skipped, {failed_count} failed"
             )
         except Exception as e:
             logger.error(f"Error committing artist enrichment: {e}")
@@ -160,7 +163,8 @@ class ArtistEnrichmentService:
                 if existing_spotify_artist and existing_spotify_artist.id != artist.id:
                     # This Spotify ID is already used by another artist
                     logger.warning(
-                        f"Spotify ID {spotify_info.id} for '{artist.name}' is already used by '{existing_spotify_artist.name}'. "
+                        f"Spotify ID {spotify_info.id} for '{artist.name}' "
+                        f"is already used by '{existing_spotify_artist.name}'. "
                         f"These may be the same artist with different names."
                     )
                     return artist

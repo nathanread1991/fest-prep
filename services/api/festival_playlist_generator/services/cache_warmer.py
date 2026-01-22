@@ -2,13 +2,12 @@
 
 import asyncio
 import logging
-from typing import Any, Callable, Dict, List
+from typing import Any, Dict, List
 
 import httpx
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from festival_playlist_generator.core.config import settings
 from festival_playlist_generator.models.artist import Artist
 from festival_playlist_generator.models.festival import Festival
 from festival_playlist_generator.services.image_url_helper import convert_to_proxy_url
@@ -68,7 +67,8 @@ class CacheWarmer:
                 batch = image_urls[i : i + self.max_concurrent]
 
                 logger.info(
-                    f"Processing batch {batch_num}/{batch_count} ({len(batch)} images)..."
+                    f"Processing batch {batch_num}/{batch_count} "
+                    f"({len(batch)} images)..."
                 )
 
                 tasks = [self._fetch_image(client, url, stats) for url in batch]

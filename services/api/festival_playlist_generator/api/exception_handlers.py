@@ -2,7 +2,7 @@
 
 import logging
 from datetime import datetime, timezone
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Dict, Optional
 
 from fastapi import HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
@@ -88,7 +88,8 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> Respon
         },
     )
 
-    # For admin routes with 401 errors, preserve WWW-Authenticate header for browser auth
+    # For admin routes with 401 errors, preserve WWW-Authenticate header for
+    # browser auth
     if (
         exc.status_code == 401
         and str(request.url.path).startswith("/admin")
@@ -225,7 +226,10 @@ async def circuit_breaker_handler(
 
     return formatter.error_response(
         error="Service unavailable",
-        message=f"The {exc.service_name} service is temporarily unavailable. Please try again later.",
+        message=(
+            f"The {exc.service_name} service is temporarily unavailable. "
+            f"Please try again later."
+        ),
         status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
     )
 

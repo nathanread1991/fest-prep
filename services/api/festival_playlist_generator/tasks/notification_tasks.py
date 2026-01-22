@@ -2,9 +2,7 @@
 
 import asyncio
 from datetime import datetime, timedelta
-from typing import Any, Callable, List, cast
 
-from celery import Celery
 from celery.schedules import crontab
 
 from festival_playlist_generator.core.celery_app import celery_app
@@ -35,7 +33,10 @@ async def _send_daily_recommendations() -> None:
         recommendation_engine = RecommendationEngine(db)  # type: ignore[arg-type]
 
         # Get users who want daily recommendations
-        users = db.query(User).all()  # type: ignore[attr-defined]
+        from sqlalchemy import select
+
+        result = await db.execute(select(User))
+        users = result.scalars().all()
 
         for user in users:
             try:
@@ -94,7 +95,10 @@ async def _send_weekly_recommendations() -> None:
         recommendation_engine = RecommendationEngine(db)  # type: ignore[arg-type]
 
         # Get users who want weekly recommendations
-        users = db.query(User).all()  # type: ignore[attr-defined]
+        from sqlalchemy import select
+
+        result = await db.execute(select(User))
+        users = result.scalars().all()
 
         for user in users:
             try:
@@ -156,10 +160,13 @@ async def _check_new_festivals() -> None:
         notification_service = NotificationService(db)  # type: ignore[arg-type]
 
         # Get festivals announced in the last 24 hours
+        from sqlalchemy import select
+
         yesterday = datetime.utcnow() - timedelta(days=1)
-        new_festivals = (
-            db.query(Festival).filter(Festival.created_at >= yesterday).all()  # type: ignore[attr-defined]
+        result = await db.execute(
+            select(Festival).filter(Festival.created_at >= yesterday)
         )
+        new_festivals = result.scalars().all()
 
         for festival in new_festivals:
             try:
@@ -190,13 +197,15 @@ async def _check_lineup_updates() -> None:
         notification_service = NotificationService(db)  # type: ignore[arg-type]
 
         # Get festivals updated in the last 24 hours
+        from sqlalchemy import select
+
         yesterday = datetime.utcnow() - timedelta(days=1)
-        updated_festivals = (
-            db.query(Festival)  # type: ignore[attr-defined]
+        result = await db.execute(
+            select(Festival)
             .filter(Festival.updated_at >= yesterday)
             .filter(Festival.created_at < yesterday)  # Not newly created
-            .all()
         )
+        updated_festivals = result.scalars().all()
 
         for festival in updated_festivals:
             try:

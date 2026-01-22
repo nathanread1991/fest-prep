@@ -1,10 +1,7 @@
 """API endpoints for user data export and deletion."""
 
 import io
-import json
 import zipfile
-from typing import Any, Callable, Optional
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import JSONResponse, Response
@@ -65,7 +62,9 @@ async def export_user_data(
             return JSONResponse(
                 content=export_data,
                 headers={
-                    "Content-Disposition": f"attachment; filename=user_data_export_{current_user.id}.json"
+                    "Content-Disposition": (
+                        f"attachment; filename=user_data_export_{current_user.id}.json"
+                    )
                 },
             )
         elif format.lower() == "csv":
@@ -81,7 +80,9 @@ async def export_user_data(
                 content=zip_buffer.getvalue(),
                 media_type="application/zip",
                 headers={
-                    "Content-Disposition": f"attachment; filename=user_data_export_{current_user.id}.zip"
+                    "Content-Disposition": (
+                        f"attachment; filename=user_data_export_{current_user.id}.zip"
+                    )
                 },
             )
         elif format.lower() == "xml":
@@ -89,7 +90,9 @@ async def export_user_data(
                 content=export_data,
                 media_type="application/xml",
                 headers={
-                    "Content-Disposition": f"attachment; filename=user_data_export_{current_user.id}.xml"
+                    "Content-Disposition": (
+                        f"attachment; filename=user_data_export_{current_user.id}.xml"
+                    )
                 },
             )
         else:
@@ -101,7 +104,7 @@ async def export_user_data(
 
     except HTTPException:
         raise
-    except Exception as e:
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Data export failed",
@@ -149,7 +152,7 @@ async def delete_user_account(
 
     except HTTPException:
         raise
-    except Exception as e:
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Account deletion failed",
@@ -168,7 +171,8 @@ async def cleanup_old_audit_logs(
     **Validates: Requirements 27.6, 27.10**
 
     Removes audit logs older than the retention period (7 years).
-    This endpoint is typically called by system administrators or automated cleanup jobs.
+    This endpoint is typically called by system administrators or automated
+    cleanup jobs.
     """
     # Note: In a real implementation, you'd want to check if the user is an admin
     # For now, we'll allow any authenticated user to trigger cleanup
@@ -185,7 +189,7 @@ async def cleanup_old_audit_logs(
 
     except HTTPException:
         raise
-    except Exception as e:
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Audit log cleanup failed",
@@ -207,26 +211,44 @@ async def get_data_retention_policy() -> JSONResponse:
             "data_retention_policy": {
                 "user_data": {
                     "retention_period": "Until account deletion or user request",
-                    "description": "User profile, playlists, and preferences are retained until the user deletes their account or requests data deletion",
+                    "description": (
+                        "User profile, playlists, and preferences are retained "
+                        "until the user deletes their account or requests data deletion"
+                    ),
                 },
                 "audit_logs": {
                     "retention_period": "7 years",
                     "retention_days": data_export_service.DATA_RETENTION_DAYS,
-                    "description": "Security and access audit logs are retained for 7 years for compliance purposes",
+                    "description": (
+                        "Security and access audit logs are retained for 7 years "
+                        "for compliance purposes"
+                    ),
                 },
                 "session_data": {
                     "retention_period": "24 hours",
-                    "description": "User session data expires after 24 hours of inactivity",
+                    "description": (
+                        "User session data expires after 24 hours of inactivity"
+                    ),
                 },
                 "oauth_state": {
                     "retention_period": "10 minutes",
-                    "description": "OAuth state parameters expire after 10 minutes for security",
+                    "description": (
+                        "OAuth state parameters expire after 10 minutes for security"
+                    ),
                 },
             },
             "user_rights": {
-                "data_export": "Users can request a complete export of their data at any time",
-                "data_deletion": "Users can request complete deletion of their account and all associated data",
-                "data_portability": "Exported data is provided in standard formats (JSON, CSV, XML) for portability",
+                "data_export": (
+                    "Users can request a complete export of their data at any time"
+                ),
+                "data_deletion": (
+                    "Users can request complete deletion of their account "
+                    "and all associated data"
+                ),
+                "data_portability": (
+                    "Exported data is provided in standard formats "
+                    "(JSON, CSV, XML) for portability"
+                ),
             },
         }
     )

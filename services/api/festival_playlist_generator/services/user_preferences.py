@@ -1,7 +1,7 @@
 """User song preference tracking service."""
 
 import logging
-from typing import Any, Callable, Dict, List, Optional
+from typing import Dict, List, Optional
 from uuid import UUID
 
 from fastapi import HTTPException, status
@@ -14,10 +14,7 @@ from festival_playlist_generator.models.user import User, UserSongPreference
 from festival_playlist_generator.schemas.user import (
     UserSongPreference as UserSongPreferenceSchema,
 )
-from festival_playlist_generator.schemas.user import (
-    UserSongPreferenceCreate,
-    UserSongPreferenceUpdate,
-)
+from festival_playlist_generator.schemas.user import UserSongPreferenceCreate
 
 logger = logging.getLogger(__name__)
 

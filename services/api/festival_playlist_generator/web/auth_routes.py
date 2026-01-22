@@ -3,7 +3,7 @@
 import logging
 import os
 from datetime import datetime
-from typing import Any, Callable, Optional
+from typing import Optional
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -86,7 +86,10 @@ async def oauth_callback(
             user_id = auth_result["user"].id
 
             return RedirectResponse(
-                url=f"/auth/privacy-consent?user_id={user_id}&session_token={consent_token}",
+                url=(
+                    f"/auth/privacy-consent?user_id={user_id}"
+                    f"&session_token={consent_token}"
+                ),
                 status_code=302,
             )
 
@@ -101,7 +104,7 @@ async def oauth_callback(
             key="session_id",
             value=auth_result["session_id"],
             httponly=True,
-            secure=is_production,  # Only use secure flag in production with HTTPS
+            secure=is_production,  # Only use secure flag in production
             samesite="lax",
             max_age=24 * 3600,  # 24 hours
         )
@@ -113,7 +116,7 @@ async def oauth_callback(
 
     except HTTPException as e:
         logger.error(f"OAuth callback failed: {e.detail}")
-        return RedirectResponse(url=f"/auth/login?error=auth_failed", status_code=302)
+        return RedirectResponse(url="/auth/login?error=auth_failed", status_code=302)
     except Exception as e:
         logger.error(f"Unexpected error in OAuth callback: {e}")
         return RedirectResponse(url="/auth/login?error=server_error", status_code=302)
@@ -391,7 +394,7 @@ async def update_privacy_preferences(
         return RedirectResponse(url="/auth/login", status_code=302)
 
     # Update user preferences in database
-    from sqlalchemy import select, update
+    from sqlalchemy import update
 
     from festival_playlist_generator.models.user import User
 
@@ -482,7 +485,9 @@ async def export_user_data_request(
                 content=json.dumps(export_data, indent=2),
                 media_type="application/json",
                 headers={
-                    "Content-Disposition": f"attachment; filename=user_data_export_{user.id}.json"
+                    "Content-Disposition": (
+                        f"attachment; filename=user_data_export_{user.id}.json"
+                    )
                 },
             )
         elif format.lower() == "csv":
@@ -498,7 +503,9 @@ async def export_user_data_request(
                 content=zip_buffer.getvalue(),
                 media_type="application/zip",
                 headers={
-                    "Content-Disposition": f"attachment; filename=user_data_export_{user.id}.zip"
+                    "Content-Disposition": (
+                        f"attachment; filename=user_data_export_{user.id}.zip"
+                    )
                 },
             )
         elif format.lower() == "xml":
@@ -506,7 +513,9 @@ async def export_user_data_request(
                 content=export_data,
                 media_type="application/xml",
                 headers={
-                    "Content-Disposition": f"attachment; filename=user_data_export_{user.id}.xml"
+                    "Content-Disposition": (
+                        f"attachment; filename=user_data_export_{user.id}.xml"
+                    )
                 },
             )
         else:
@@ -515,7 +524,9 @@ async def export_user_data_request(
                 content=json.dumps(export_data, indent=2),
                 media_type="application/json",
                 headers={
-                    "Content-Disposition": f"attachment; filename=user_data_export_{user.id}.json"
+                    "Content-Disposition": (
+                        f"attachment; filename=user_data_export_{user.id}.json"
+                    )
                 },
             )
 
@@ -571,9 +582,7 @@ async def delete_account_request(
         client_ip = request.client.host if request.client else None
 
         # Delete user account
-        deletion_summary = await data_export_service.delete_user_account(
-            db, user.id, client_ip
-        )
+        await data_export_service.delete_user_account(db, user.id, client_ip)
 
         # Clear session cookie and redirect to home
         response = RedirectResponse(url="/?deleted=true", status_code=302)

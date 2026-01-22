@@ -8,16 +8,13 @@ import json
 import logging
 import re
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 import openai
 from bs4 import BeautifulSoup
 
 from festival_playlist_generator.core.config import settings
-from festival_playlist_generator.services.color_analyzer import (
-    ColorAnalyzer,
-    ColorScheme,
-)
+from festival_playlist_generator.services.color_analyzer import ColorAnalyzer
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +56,8 @@ class BrandExtractor:
         else:
             self.ai_available = False
             logger.warning(
-                "OpenAI API key not configured. AI-powered logo identification will be disabled."
+                "OpenAI API key not configured. "
+                "AI-powered logo identification will be disabled."
             )
 
     def extract_all_images(
@@ -341,7 +339,10 @@ class BrandExtractor:
                 image_descriptions.append(desc)
 
             # Create prompt for AI
-            prompt = f"""You are analyzing a festival website to identify the main festival logo.
+            max_idx = len(image_descriptions) - 1
+            prompt_text = (
+                f"""You are analyzing a festival website to identify """
+                f"""the main festival logo.
 
 Festival Name: {festival_name}
 
@@ -349,14 +350,18 @@ Here are the candidate images found on the page:
 
 {json.dumps(image_descriptions, indent=2)}
 
-Based on the image URLs, alt text, context, and position scores, which image is most likely the main festival logo?
+Based on the image URLs, alt text, context, and position scores,
+which image is most likely the main festival logo?
 
 Please respond with a JSON object containing:
-- "index": the index of the most likely logo image (0-{len(image_descriptions)-1})
+- "index": the index of the most likely logo image (0-{max_idx})
 - "confidence": your confidence level (0.0 to 1.0)
 - "reasoning": brief explanation of your choice
 
-If none of the images appear to be a festival logo, set index to -1 and confidence to 0.0."""
+If none of the images appear to be a festival logo,
+set index to -1 and confidence to 0.0."""
+            )
+            prompt = prompt_text
 
             # Call OpenAI API
             response = openai.ChatCompletion.create(
@@ -364,7 +369,10 @@ If none of the images appear to be a festival logo, set index to -1 and confiden
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are an expert at analyzing website structure and identifying brand logos.",
+                        "content": (
+                            "You are an expert at analyzing website structure "
+                            "and identifying brand logos."
+                        ),
                     },
                     {"role": "user", "content": prompt},
                 ],
@@ -387,7 +395,8 @@ If none of the images appear to be a festival logo, set index to -1 and confiden
             reasoning = result.get("reasoning", "")
 
             logger.info(
-                f"AI logo identification: index={index}, confidence={confidence}, reasoning={reasoning}"
+                f"AI logo identification: index={index}, "
+                f"confidence={confidence}, reasoning={reasoning}"
             )
 
             if index >= 0 and index < len(images):
@@ -460,7 +469,8 @@ If none of the images appear to be a festival logo, set index to -1 and confiden
             )
 
             logger.info(
-                f"Extracted branding: logo={bool(logo_url)}, colors={bool(color_scheme.primary)}"
+                f"Extracted branding: logo={bool(logo_url)}, "
+                f"colors={bool(color_scheme.primary)}"
             )
 
             return branding

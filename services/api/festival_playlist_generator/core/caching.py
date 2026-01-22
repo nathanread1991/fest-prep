@@ -8,7 +8,6 @@ from datetime import datetime, timedelta
 from functools import wraps
 from typing import Any, Callable, Dict, List, Optional, Union
 
-from festival_playlist_generator.core.config import settings
 from festival_playlist_generator.core.redis import get_redis
 
 logger = logging.getLogger(__name__)
@@ -44,7 +43,9 @@ class CacheManager:
 
             value = await redis.get(cache_key)
             if value:
-                return self._deserialize_value(value)
+                # Decode bytes to string if necessary
+                str_value = value.decode("utf-8") if isinstance(value, bytes) else value
+                return self._deserialize_value(str_value)
 
             return None
 

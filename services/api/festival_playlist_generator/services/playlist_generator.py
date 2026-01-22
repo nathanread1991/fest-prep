@@ -1,11 +1,11 @@
-"""Playlist Generator Service for creating ranked playlists based on setlist analysis."""
+"""Playlist Generator Service for creating ranked playlists."""
 
 import logging
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple
-from uuid import UUID, uuid4
+from typing import Any, Dict, List, Optional, Tuple
+from uuid import UUID
 
-from sqlalchemy import and_, or_
+from sqlalchemy import and_
 from sqlalchemy.orm import Session
 
 from festival_playlist_generator.core.database import get_db
@@ -15,7 +15,7 @@ from festival_playlist_generator.models.playlist import Playlist as PlaylistMode
 from festival_playlist_generator.models.song import Song as SongModel
 from festival_playlist_generator.models.user import User as UserModel
 from festival_playlist_generator.schemas.playlist import Playlist, PlaylistCreate
-from festival_playlist_generator.schemas.song import Song, SongCreate
+from festival_playlist_generator.schemas.song import Song
 from festival_playlist_generator.services.artist_analyzer import ArtistAnalyzerService
 
 logger = logging.getLogger(__name__)
@@ -92,7 +92,10 @@ class PlaylistGeneratorService:
 
             # Create playlist
             playlist_name = f"{artist.name} - Live Setlist Playlist"
-            playlist_description = f"Playlist based on {artist.name}'s most frequently played songs from their last {len(setlists)} concerts"
+            playlist_description = (
+                f"Playlist based on {artist.name}'s most frequently played songs "
+                f"from their last {len(setlists)} concerts"
+            )
 
             playlist_create = PlaylistCreate(
                 name=playlist_name,
@@ -110,7 +113,8 @@ class PlaylistGeneratorService:
             db.close()
 
             self.logger.info(
-                f"Successfully generated playlist for artist {artist.name} with {len(song_objects)} songs"
+                f"Successfully generated playlist for artist {artist.name} "
+                f"with {len(song_objects)} songs"
             )
             return playlist
 
@@ -221,13 +225,13 @@ class PlaylistGeneratorService:
                                 all_song_frequency[normalized_title]["artists"].append(
                                     artist.name
                                 )
-                        else:
                             # New song
                             all_song_frequency[normalized_title] = {
                                 "original_title": song_title,
                                 "frequency": frequency,
                                 "artists": [artist.name],
-                                "primary_artist": artist.name,  # First artist we found performing this song
+                                # First artist we found performing this song
+                                "primary_artist": artist.name,
                             }
 
                         # Track artist-song mapping for attribution
@@ -266,8 +270,8 @@ class PlaylistGeneratorService:
             # Create playlist
             playlist_name = f"{festival.name} - Festival Playlist"
             playlist_description = (
-                f"Comprehensive playlist for {festival.name} featuring the most frequently "
-                f"played songs from {processed_artists} festival artists"
+                f"Comprehensive playlist for {festival.name} featuring the most "
+                f"frequently played songs from {processed_artists} festival artists"
             )
 
             playlist_create = PlaylistCreate(
@@ -311,7 +315,8 @@ class PlaylistGeneratorService:
         if not songs:
             return []
 
-        # Sort by frequency (descending), then by song title (ascending) for consistent ordering
+        # Sort by frequency (descending), then by song title (ascending) for
+        # consistent ordering
         ranked = sorted(
             songs.items(),
             key=lambda x: (
@@ -583,7 +588,10 @@ class PlaylistGeneratorService:
         artist_song_mapping: Dict[str, List[str]],
         db: Session,
     ) -> List[Song]:
-        """Create or find songs in the database for a festival with proper artist attribution."""
+        """
+        Create or find songs in the database for a festival with proper
+        artist attribution.
+        """
         song_objects = []
 
         for song_title, frequency in ranked_songs:

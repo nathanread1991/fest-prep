@@ -1,6 +1,6 @@
-"""Helper functions for converting external image URLs to use the nginx image cache proxy."""
+"""Helper functions for converting image URLs to use nginx cache proxy."""
 
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 from urllib.parse import quote
 
 from festival_playlist_generator.core.config import settings

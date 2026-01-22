@@ -1,24 +1,21 @@
 """Playlist API endpoints."""
 
 import logging
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 import spotipy
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from spotipy.oauth2 import SpotifyOAuth
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Session
 
 from festival_playlist_generator.api.response_formatter import APIVersionManager
 from festival_playlist_generator.api.versioning import (
     get_request_version,
     version_compatible_response,
 )
-from festival_playlist_generator.core.config import settings
 from festival_playlist_generator.core.container import get_playlist_service
 from festival_playlist_generator.core.database import get_db
 from festival_playlist_generator.core.redis import cache
@@ -111,7 +108,10 @@ async def create_playlist_on_platform(
     if playlist_request.platform != "spotify":
         return formatter.error_response(
             error="Platform not supported",
-            message=f"Platform '{playlist_request.platform}' is not yet supported. Currently only Spotify is available.",
+            message=(
+                f"Platform '{playlist_request.platform}' is not yet supported. "
+                f"Currently only Spotify is available."
+            ),
             status_code=400,
         )
 
@@ -140,7 +140,10 @@ async def create_playlist_on_platform(
 
         # Create playlist name
         playlist_name = f"{playlist_request.artist_name} - Festival Prep"
-        playlist_description = f"Playlist generated for {playlist_request.artist_name} based on recent setlists"
+        playlist_description = (
+            f"Playlist generated for {playlist_request.artist_name} "
+            f"based on recent setlists"
+        )
 
         # Create the playlist
         spotify_playlist = sp.user_playlist_create(
@@ -171,7 +174,7 @@ async def create_playlist_on_platform(
                 else:
                     tracks_not_found.append(f"{song.title} by {song.artist}")
                     logger.warning(
-                        f"Track not found on Spotify: {song.title} by {song.artist}"
+                        f"Track not found on Spotify: {song.title} " f"by {song.artist}"
                     )
             except Exception as e:
                 logger.error(f"Error searching for track {song.title}: {e}")
@@ -193,7 +196,10 @@ async def create_playlist_on_platform(
                 "tracks_requested": len(playlist_request.songs),
                 "tracks_not_found": tracks_not_found if tracks_not_found else None,
             },
-            message=f"Playlist created successfully! Added {tracks_found} of {len(playlist_request.songs)} songs.",
+            message=(
+                f"Playlist created successfully! Added {tracks_found} of "
+                f"{len(playlist_request.songs)} songs."
+            ),
         )
 
     except spotipy.exceptions.SpotifyException as e:
@@ -308,7 +314,7 @@ async def list_playlists(
     from sqlalchemy import select
 
     version = get_request_version(request)
-    formatter = APIVersionManager.get_formatter(version)
+    APIVersionManager.get_formatter(version)
 
     # Build query using select()
     stmt = select(PlaylistModel)
@@ -577,7 +583,8 @@ async def get_user_playlists(
     playlist_service: PlaylistService = Depends(get_playlist_service),
 ) -> List[Playlist]:
     """Get all playlists for a specific user."""
-    # Verify user exists (using direct DB query for now, will use UserService in task 5.5)
+    # Verify user exists (using direct DB query for now, will use UserService
+    # in task 5.5)
     result = await db.execute(select(UserModel).filter(UserModel.id == user_id))
     user = result.scalar_one_or_none()
     if not user:

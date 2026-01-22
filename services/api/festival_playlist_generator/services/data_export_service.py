@@ -2,20 +2,18 @@
 
 import csv
 import io
-import json
 import logging
 from datetime import datetime, timedelta
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
 from fastapi import HTTPException, status
-from sqlalchemy import and_, delete, select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from festival_playlist_generator.models.audit_log import AuditLog
 from festival_playlist_generator.models.playlist import Playlist
 from festival_playlist_generator.models.user import User, UserSongPreference
-from festival_playlist_generator.schemas.user import User as UserSchema
 
 logger = logging.getLogger(__name__)
 
@@ -130,19 +128,25 @@ class DataExportService:
             preferences_result = await db.execute(
                 delete(UserSongPreference).where(UserSongPreference.user_id == user_id)
             )
-            deletion_summary["deleted_records"][
-                "song_preferences"
-            ] = preferences_result.rowcount  # type: ignore[attr-defined]
+            deletion_summary["deleted_records"]["song_preferences"] = (
+                getattr(preferences_result, "rowcount", 0) or 0
+            )
 
             # Delete user playlists
             playlists_result = await db.execute(
                 delete(Playlist).where(Playlist.user_id == user_id)
             )
-            deletion_summary["deleted_records"]["playlists"] = playlists_result.rowcount  # type: ignore[attr-defined]
+            deletion_summary["deleted_records"]["playlists"] = (
+                getattr(playlists_result, "rowcount", 0) or 0
+            )
 
             # Delete the user record
-            user_result = await db.execute(delete(User).where(User.id == user_id))
-            deletion_summary["deleted_records"]["user_profile"] = user_result.rowcount  # type: ignore[attr-defined]
+            user_delete_result = await db.execute(
+                delete(User).where(User.id == user_id)
+            )
+            deletion_summary["deleted_records"]["user_profile"] = (
+                getattr(user_delete_result, "rowcount", 0) or 0
+            )
 
             # Log successful deletion (before committing to ensure it's recorded)
             await self._log_audit_event(
@@ -176,7 +180,7 @@ class DataExportService:
                 delete(AuditLog).where(AuditLog.created_at < cutoff_date)
             )
 
-            deleted_count = result.rowcount  # type: ignore[attr-defined]
+            deleted_count = getattr(result, "rowcount", 0) or 0
             await db.commit()
 
             # Log the cleanup operation

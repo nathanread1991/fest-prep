@@ -1,15 +1,12 @@
 """Push notification API endpoints."""
 
 import logging
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
-from festival_playlist_generator.api.versioning import (
-    get_request_version,
-    version_compatible_response,
-)
+from festival_playlist_generator.api.versioning import version_compatible_response
 from festival_playlist_generator.core.config import settings
 from festival_playlist_generator.services.push_notifications import push_service
 
@@ -192,7 +189,8 @@ async def generate_vapid_keys(request: Request) -> Dict[str, str]:
         return version_compatible_response(
             request,
             keys,
-            "VAPID keys generated successfully. Add these to your environment variables.",
+            "VAPID keys generated successfully. "
+            "Add these to your environment variables.",
         )
 
     except Exception as e:

@@ -1,7 +1,7 @@
 """Web interface routes for the Festival Playlist Generator."""
 
 import logging
-from typing import Any, Callable, Optional
+from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -11,7 +11,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from festival_playlist_generator.core.database import get_db
 from festival_playlist_generator.models.festival import Festival
 from festival_playlist_generator.models.playlist import Playlist
-from festival_playlist_generator.models.user import User
 from festival_playlist_generator.web.utils import get_asset_url, get_css_url, get_js_url
 
 logger = logging.getLogger(__name__)
@@ -117,12 +116,18 @@ async def festivals_page(
     festivals = result.scalars().all()
 
     # Convert festival logo URLs to use proxy cache
-    # Add cached URLs as temporary attributes
+    # Create a list of festivals with cached logo URLs
+    festivals_with_cached_logos = []
     for festival in festivals:
-        festival._cached_logo = convert_to_proxy_url(festival.logo_url)  # type: ignore[attr-defined]
+        # Create a dict-like object with cached logo
+        festival_data = {
+            "festival": festival,
+            "cached_logo": convert_to_proxy_url(festival.logo_url),
+        }
+        festivals_with_cached_logos.append(festival_data)
 
     response = templates.TemplateResponse(
-        "festivals.html", {"request": request, "festivals": festivals}
+        "festivals.html", {"request": request, "festivals": festivals_with_cached_logos}
     )
 
     # Add no-cache headers if refresh parameter is present
@@ -426,9 +431,7 @@ async def artist_detail(
 
                 if settings.SETLIST_FM_API_KEY:
                     analyzer = ArtistAnalyzerService(settings.SETLIST_FM_API_KEY)
-                    external_setlists = await analyzer.get_artist_setlists(
-                        artist.name, limit=10
-                    )
+                    await analyzer.get_artist_setlists(artist.name, limit=10)
 
                     # Refresh the query to get newly stored setlists
                     result = await db.execute(recent_setlists_query)

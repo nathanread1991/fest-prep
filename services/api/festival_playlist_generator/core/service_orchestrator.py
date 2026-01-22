@@ -1,9 +1,7 @@
 """Service orchestrator for coordinating all application services."""
 
-import asyncio
-import logging
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, Optional
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -194,7 +192,12 @@ class ServiceOrchestrator:
                     select(UserModel).filter(UserModel.id == user_id)
                 )
                 user = result.scalar_one_or_none()
-                if user and user.preferences and user.preferences.get("notifications_enabled", False):  # type: ignore[attr-defined]
+                if (
+                    user
+                    and hasattr(user, "preferences")
+                    and user.preferences
+                    and user.preferences.get("notifications_enabled", False)
+                ):
                     await self.notification_service.send_playlist_ready_notification(
                         user_id=str(user_id),
                         playlist_id=str(playlist.id),
@@ -208,7 +211,8 @@ class ServiceOrchestrator:
             workflow_result["completed_at"] = datetime.utcnow().isoformat()
 
             self.logger.info(
-                f"Festival workflow completed successfully. Steps: {workflow_result['steps_completed']}"
+                f"Festival workflow completed successfully. "
+                f"Steps: {workflow_result['steps_completed']}"
             )
             return workflow_result
 
@@ -296,7 +300,8 @@ class ServiceOrchestrator:
             workflow_result["completed_at"] = datetime.utcnow().isoformat()
 
             self.logger.info(
-                f"Artist workflow completed successfully. Steps: {workflow_result['steps_completed']}"
+                f"Artist workflow completed successfully. "
+                f"Steps: {workflow_result['steps_completed']}"
             )
             return workflow_result
 
@@ -375,7 +380,8 @@ class ServiceOrchestrator:
             maintenance_result["completed_at"] = datetime.utcnow().isoformat()
 
             self.logger.info(
-                f"Daily maintenance completed. Tasks: {maintenance_result['tasks_completed']}"
+                f"Daily maintenance completed. "
+                f"Tasks: {maintenance_result['tasks_completed']}"
             )
             return maintenance_result
 

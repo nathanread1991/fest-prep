@@ -1,6 +1,6 @@
 """Playlist repository for database operations."""
 
-from typing import Any, Callable, List, Optional
+from typing import List, Optional
 from uuid import UUID
 
 from sqlalchemy import func, select

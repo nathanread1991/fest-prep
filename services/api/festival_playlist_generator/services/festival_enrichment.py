@@ -4,7 +4,7 @@ import hashlib
 import logging
 import re
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import httpx
 
@@ -146,7 +146,8 @@ class FestivalEnrichmentService:
             enriched_data["date_range"] = self._format_date_range(dates)
 
             logger.info(
-                f"Successfully parsed Clashfinder data: {enriched_data['name']} with {len(artists)} artists"
+                f"Successfully parsed Clashfinder data: {enriched_data['name']} "
+                f"with {len(artists)} artists"
             )
 
             return enriched_data
@@ -311,7 +312,7 @@ class FestivalEnrichmentService:
             try:
                 dt = datetime.strptime(dates[0], "%Y-%m-%d")
                 return dt.strftime("%B %d, %Y")
-            except:
+            except ValueError:
                 return dates[0]
 
         try:
@@ -329,7 +330,7 @@ class FestivalEnrichmentService:
                 return (
                     f"{start_dt.strftime('%B %d, %Y')} - {end_dt.strftime('%B %d, %Y')}"
                 )
-        except:
+        except ValueError:
             return f"{dates[0]} - {dates[-1]}"
 
 

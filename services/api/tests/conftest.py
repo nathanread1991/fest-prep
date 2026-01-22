@@ -1,6 +1,5 @@
 """Pytest configuration and fixtures for repository tests."""
 
-import uuid
 from datetime import datetime, timedelta
 
 import pytest
@@ -14,7 +13,6 @@ from festival_playlist_generator.models.playlist import Playlist, StreamingPlatf
 from festival_playlist_generator.models.setlist import Setlist
 from festival_playlist_generator.models.user import User
 from festival_playlist_generator.repositories.artist_repository import ArtistRepository
-from festival_playlist_generator.repositories.base_repository import BaseRepository
 from festival_playlist_generator.repositories.festival_repository import (
     FestivalRepository,
 )
@@ -40,10 +38,11 @@ except ImportError:
 
 @pytest.fixture(scope="session")
 def postgres_container():
-    """Create a PostgreSQL container for testing (session-scoped, reused across tests)."""
+    """Create a PostgreSQL container for testing (session-scoped, reused)."""
     if not TESTCONTAINERS_AVAILABLE:
         pytest.skip(
-            "testcontainers not installed. Install with: pip install testcontainers[postgresql]"
+            "testcontainers not installed. Install with: "
+            "pip install testcontainers[postgresql]"
         )
 
     container = PostgresContainer("postgres:15-alpine")
@@ -56,10 +55,11 @@ def postgres_container():
 
 @pytest.fixture(scope="session")
 def redis_container():
-    """Create a Redis container for testing (session-scoped, reused across tests)."""
+    """Create a Redis container for testing (session-scoped, reused)."""
     if not TESTCONTAINERS_AVAILABLE:
         pytest.skip(
-            "testcontainers not installed. Install with: pip install testcontainers[redis]"
+            "testcontainers not installed. Install with: "
+            "pip install testcontainers[redis]"
         )
 
     container = RedisContainer("redis:7-alpine")

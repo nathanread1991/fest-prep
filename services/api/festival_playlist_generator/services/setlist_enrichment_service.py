@@ -1,7 +1,7 @@
 """Setlist Enrichment Service for automatic setlist data population."""
 
 import logging
-from typing import Any, Callable, Dict, List, Optional
+from typing import Dict, List, Optional
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -107,7 +107,8 @@ class SetlistEnrichmentService:
             limit: Number of setlists to fetch (default: 10)
 
         Returns:
-            Number of setlists fetched, or None if artist was skipped (already has setlists)
+            Number of setlists fetched, or None if artist was skipped
+            (already has setlists)
         """
         try:
             # Get the artist from database
@@ -130,7 +131,8 @@ class SetlistEnrichmentService:
 
             if setlist_count and setlist_count > 0:
                 self.logger.info(
-                    f"Artist {artist.name} already has {setlist_count} setlists, skipping"
+                    f"Artist {artist.name} already has {setlist_count} "
+                    f"setlists, skipping"
                 )
                 return None
 
@@ -140,13 +142,14 @@ class SetlistEnrichmentService:
 
             if not setlists:
                 self.logger.warning(
-                    f"No setlist data found for artist {artist.name}, trying Spotify fallback"
+                    f"No setlist data found for artist {artist.name}, "
+                    f"trying Spotify fallback"
                 )
 
                 # Fallback to Spotify top tracks
                 from datetime import datetime
 
-                from festival_playlist_generator.services.spotify_artist_service import (
+                from festival_playlist_generator.services.spotify_artist_service import (  # noqa: E501
                     spotify_artist_service,
                 )
 
@@ -166,7 +169,8 @@ class SetlistEnrichmentService:
                             # Handle duplicate Spotify ID or other database errors
                             await db.rollback()
                             self.logger.warning(
-                                f"Could not update Spotify info for {artist.name}: {e}"
+                                f"Could not update Spotify info for "
+                                f"{artist.name}: {e}"
                             )
                             # Continue without Spotify info update
 
@@ -199,17 +203,20 @@ class SetlistEnrichmentService:
                             await db.commit()
 
                             self.logger.info(
-                                f"Created Spotify fallback setlist for {artist.name} with {len(song_names)} tracks"
+                                f"Created Spotify fallback setlist for "
+                                f"{artist.name} with {len(song_names)} tracks"
                             )
                             return 1  # Return 1 to indicate successful enrichment
 
                 self.logger.warning(
-                    f"No data found for artist {artist.name} (neither setlists nor Spotify)"
+                    f"No data found for artist {artist.name} "
+                    f"(neither setlists nor Spotify)"
                 )
                 return 0
 
             self.logger.info(
-                f"Successfully enriched artist {artist.name} with {len(setlists)} setlists"
+                f"Successfully enriched artist {artist.name} "
+                f"with {len(setlists)} setlists"
             )
             return len(setlists)
 

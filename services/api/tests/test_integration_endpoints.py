@@ -7,17 +7,12 @@ Tests verify:
 4. Service layer integration
 """
 
-import json
 from datetime import datetime, timedelta
-from uuid import UUID
 
 import pytest
 import pytest_asyncio
-from fastapi import FastAPI
-from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession
+from httpx import AsyncClient
 
-from festival_playlist_generator.core.container import Container
 from festival_playlist_generator.core.database import get_db
 from festival_playlist_generator.main import app
 from festival_playlist_generator.models.artist import Artist
@@ -546,8 +541,8 @@ class TestCleanArchitecture:
         for module in modules_to_check:
             source = inspect.getsource(module)
 
-            # Controllers should not have direct session.query() or session.execute(select())
-            # They should delegate to services
+            # Controllers should not have direct session.query() or
+            # session.execute(select()). They should delegate to services
             # Note: Some legacy code may still exist, this is aspirational
 
             # Check that service dependencies are used

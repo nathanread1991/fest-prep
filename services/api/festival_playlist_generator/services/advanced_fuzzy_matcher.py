@@ -15,7 +15,7 @@ import asyncio
 import logging
 import re
 from functools import lru_cache
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, cast
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -143,7 +143,7 @@ def double_metaphone(name: str) -> Tuple[str, str]:
     secondary = []
     current = 0
     length = len(name)
-    last = length - 1
+    length - 1
 
     # Helper function
     def get_at(index: int) -> str:
@@ -542,7 +542,7 @@ class AdvancedFuzzyMatcher:
                 )
 
         # Sort by score and limit
-        scored_artists.sort(key=lambda x: float(x["score"]), reverse=True)  # type: ignore[arg-type]
+        scored_artists.sort(key=lambda x: cast(int, x["score"]), reverse=True)
         scored_artists = scored_artists[:limit]
 
         # Format results

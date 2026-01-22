@@ -3,7 +3,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, ForeignKey, String, Text
+from sqlalchemy import DateTime, ForeignKey, String
 from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -38,4 +38,8 @@ class Setlist(Base):
     artist = relationship("Artist", back_populates="setlists")
 
     def __repr__(self) -> str:
-        return f"<Setlist(artist='{self.artist.name if self.artist else 'Unknown'}', venue='{self.venue}', date='{self.date}')>"
+        artist_name = self.artist.name if self.artist else "Unknown"
+        return (
+            f"<Setlist(artist='{artist_name}', "
+            f"venue='{self.venue}', date='{self.date}')>"
+        )

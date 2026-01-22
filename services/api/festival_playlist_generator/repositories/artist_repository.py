@@ -1,6 +1,6 @@
 """Artist repository for database operations."""
 
-from typing import Any, Callable, List, Optional, Tuple, cast
+from typing import Any, List, Optional, Tuple, cast
 from uuid import UUID
 
 from sqlalchemy import case, delete, func, or_, select

@@ -8,7 +8,7 @@ import colorsys
 import re
 from collections import Counter
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import List, Optional
 
 
 @dataclass
@@ -54,7 +54,6 @@ class ColorAnalyzer:
 
     def __init__(self) -> None:
         """Initialize the ColorAnalyzer."""
-        pass
 
     def extract_from_css(self, html_content: str) -> List[str]:
         """
@@ -333,14 +332,14 @@ class ColorAnalyzer:
         g = int(color[3:5], 16) / 255.0
         b = int(color[5:7], 16) / 255.0
 
-        h, l, s = colorsys.rgb_to_hls(r, g, b)
+        h, lightness, s = colorsys.rgb_to_hls(r, g, b)
 
         # Darken the color if it's too light
-        if l > 0.5:
-            l = 0.4
+        if lightness > 0.5:
+            lightness = 0.4
 
         # Convert back to RGB
-        r, g, b = colorsys.hls_to_rgb(h, l, s)
+        r, g, b = colorsys.hls_to_rgb(h, lightness, s)
 
         return f"#{int(r*255):02X}{int(g*255):02X}{int(b*255):02X}"
 

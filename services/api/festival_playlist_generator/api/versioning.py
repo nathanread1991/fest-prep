@@ -34,7 +34,10 @@ class APIVersioningMiddleware(BaseHTTPMiddleware):
                 content={
                     "success": False,
                     "error": "Unsupported API version",
-                    "message": f"API version '{version}' is not supported. Supported versions: {APIVersionManager.SUPPORTED_VERSIONS}",
+                    "message": (
+                        f"API version '{version}' is not supported. "
+                        f"Supported versions: {APIVersionManager.SUPPORTED_VERSIONS}"
+                    ),
                     "supported_versions": APIVersionManager.SUPPORTED_VERSIONS,
                     "latest_version": APIVersionManager.LATEST_VERSION,
                 },
@@ -67,7 +70,7 @@ def version_compatible_response(
 ) -> Dict[str, Any]:
     """Create version-compatible response based on request version."""
     version = get_request_version(request)
-    formatter = APIVersionManager.get_formatter(version)
+    APIVersionManager.get_formatter(version)
 
     if version == "1.1":
         from festival_playlist_generator.api.response_formatter import (

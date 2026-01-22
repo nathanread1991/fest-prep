@@ -1,8 +1,7 @@
 """Spotify service with circuit breaker pattern for API resilience."""
 
-import asyncio
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, cast
 

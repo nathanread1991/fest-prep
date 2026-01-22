@@ -1,10 +1,10 @@
 """API response formatting and versioning utilities."""
 
 from datetime import datetime, timezone
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Any, Dict, Optional, Union
 from uuid import UUID
 
-from fastapi import HTTPException, status
+from fastapi import status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 

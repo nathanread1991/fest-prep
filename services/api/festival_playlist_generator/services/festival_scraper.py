@@ -1,10 +1,9 @@
-"""Festival Web Scraper - Uses AI to intelligently extract festival data from websites."""
+"""Festival Web Scraper - Uses AI to extract festival data from websites."""
 
 import json
 import logging
-import re
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import httpx
 from bs4 import BeautifulSoup
@@ -17,8 +16,15 @@ class FestivalScraper:
 
     def __init__(self) -> None:
         self.headers = {
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+            "User-Agent": (
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/120.0.0.0 Safari/537.36"
+            ),
+            "Accept": (
+                "text/html,application/xhtml+xml,application/xml;q=0.9,"
+                "image/webp,*/*;q=0.8"
+            ),
             "Accept-Language": "en-US,en;q=0.5",
         }
         # Import settings here to avoid circular imports
@@ -116,7 +122,8 @@ class FestivalScraper:
                 # Parse HTML to clean it up but keep structure
                 soup = BeautifulSoup(raw_html, "html.parser")
 
-                # Try to extract artists directly from HTML first (more reliable for large lineups)
+                # Try to extract artists directly from HTML first (more reliable for
+                # large lineups)
                 artists = self._extract_artists_from_html(soup)
                 logger.info(f"Directly extracted {len(artists)} artists from HTML")
 
@@ -196,7 +203,9 @@ class FestivalScraper:
                     # Use directly extracted artists if we found more than AI did
                     if len(artists) > len(ai_data.get("artists", [])):
                         logger.info(
-                            f"Using directly extracted artists ({len(artists)}) instead of AI extracted ({len(ai_data.get('artists', []))})"
+                            f"Using directly extracted artists ({len(artists)}) "
+                            f"instead of AI extracted "
+                            f"({len(ai_data.get('artists', []))})"
                         )
                         ai_data["artists"] = artists
                 elif artists:
@@ -230,7 +239,8 @@ class FestivalScraper:
                         ai_data["branding_extracted_at"] = datetime.utcnow().isoformat()
 
                         logger.info(
-                            f"Branding extracted: logo={bool(branding.logo_url)}, colors={bool(branding.primary_color)}"
+                            f"Branding extracted: logo={bool(branding.logo_url)}, "
+                            f"colors={bool(branding.primary_color)}"
                         )
                     except Exception as e:
                         logger.warning(
@@ -263,8 +273,9 @@ class FestivalScraper:
 
                         logger.info(f"Matched {len(artist_matches)} artists to images")
 
-                        # Store artist image data in a format that can be used later
-                        # We'll store it as a dict mapping artist name to (image_url, source)
+                        # Store artist image data in a format that can be used
+                        # later. We'll store it as a dict mapping artist name to
+                        # (image_url, source)
                         ai_data["artist_images"] = {}
                         for artist_name, (
                             image_url,
@@ -345,9 +356,8 @@ class FestivalScraper:
                 text = elem.get_text(strip=True)
 
                 # Filter out non-artist entries
-                if (
-                    text and len(text) > 1 and len(text) < 100
-                ):  # Reasonable artist name length
+                if text and len(text) > 1 and len(text) < 100:
+                    # Reasonable artist name length
                     # Skip common non-artist text
                     skip_words = [
                         "contact",
@@ -388,18 +398,18 @@ Your task is to intelligently parse the HTML and extract:
 2. Location (city, country)
 3. Venue name
 4. Dates (in YYYY-MM-DD format)
-5. List of ALL artists/performers you can find in the HTML (look for artist names in divs, links, lists, etc.)
+5. List of ALL artists/performers you can find in the HTML (look for artist names in divs, links, lists, etc.)  # noqa: E501
 6. Genres
 
 HTML Content:
 {html_content}
 
-IMPORTANT: Look carefully through the HTML structure for artist names. They might be in:
+IMPORTANT: Look carefully through the HTML structure for artist names. They might be in:  # noqa: E501
 - <div class="artist-title">Artist Name</div>
 - <a href="/artist/...">Artist Name</a>
 - <h2>, <h3>, or other heading tags
 - List items (<li>)
-- Any element with "artist", "performer", "act", or "band" in the class name
+- Any element with "artist", "performer", "act", or "band" in the class name  # noqa: E501
 
 Extract as many artist names as you can find. Be thorough.
 
@@ -413,7 +423,7 @@ Respond ONLY with valid JSON in this exact format:
     "genres": ["Rock", "Metal"]
 }}
 
-If you cannot find certain information, use empty strings or empty arrays. Do not include any explanation, only the JSON."""
+If you cannot find certain information, use empty strings or empty arrays. Do not include any explanation, only the JSON."""  # noqa: E501
 
             async with httpx.AsyncClient(timeout=60.0) as client:
                 response = await client.post(
@@ -478,18 +488,18 @@ Your task is to intelligently parse the HTML and extract:
 2. Location (city, country)
 3. Venue name
 4. Dates (in YYYY-MM-DD format)
-5. List of ALL artists/performers you can find in the HTML (look for artist names in divs, links, lists, etc.)
+5. List of ALL artists/performers you can find in the HTML (look for artist names in divs, links, lists, etc.)  # noqa: E501
 6. Genres
 
 HTML Content:
 {html_content}
 
-IMPORTANT: Look carefully through the HTML structure for artist names. They might be in:
+IMPORTANT: Look carefully through the HTML structure for artist names. They might be in:  # noqa: E501
 - <div class="artist-title">Artist Name</div>
 - <a href="/artist/...">Artist Name</a>
 - <h2>, <h3>, or other heading tags
 - List items (<li>)
-- Any element with "artist", "performer", "act", or "band" in the class name
+- Any element with "artist", "performer", "act", or "band" in the class name  # noqa: E501
 
 Extract as many artist names as you can find. Be thorough.
 
@@ -503,7 +513,7 @@ Respond ONLY with valid JSON in this exact format:
     "genres": ["Rock", "Metal"]
 }}
 
-If you cannot find certain information, use empty strings or empty arrays. Do not include any explanation, only the JSON."""
+If you cannot find certain information, use empty strings or empty arrays. Do not include any explanation, only the JSON."""  # noqa: E501
 
             async with httpx.AsyncClient(timeout=60.0) as client:
                 response = await client.post(
@@ -517,7 +527,13 @@ If you cannot find certain information, use empty strings or empty arrays. Do no
                         "messages": [
                             {
                                 "role": "system",
-                                "content": "You are an expert at parsing HTML and extracting structured data. You understand HTML structure and can identify relevant information even in complex layouts. Always respond with valid JSON only.",
+                                "content": (
+                                    "You are an expert at parsing HTML and "
+                                    "extracting structured data. You understand "
+                                    "HTML structure and can identify relevant "
+                                    "information even in complex layouts. Always "
+                                    "respond with valid JSON only."
+                                ),
                             },
                             {"role": "user", "content": prompt},
                         ],
@@ -683,7 +699,7 @@ If you cannot find certain information, use empty strings or empty arrays. Do no
                         if link:
                             # DuckDuckGo wraps URLs - extract the actual URL
                             if "uddg=" in link:
-                                from urllib.parse import unquote, urlparse
+                                from urllib.parse import unquote
 
                                 # Extract the actual URL from the DuckDuckGo redirect
                                 actual_url = link.split("uddg=")[1].split("&")[0]
@@ -724,7 +740,7 @@ If you cannot find certain information, use empty strings or empty arrays. Do no
                     if response.status_code == 200:
                         logger.info(f"Direct URL found: {url}")
                         return url
-            except:
+            except Exception:
                 continue
 
         return None

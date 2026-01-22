@@ -6,18 +6,12 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from fastapi import HTTPException, Request
-from fastapi.testclient import TestClient
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from festival_playlist_generator.api.exception_handlers import (
     CircuitBreakerOpenError,
     ErrorResponse,
     circuit_breaker_handler,
-    general_exception_handler,
     http_exception_handler,
-    integrity_error_handler,
-    sqlalchemy_error_handler,
-    validation_exception_handler,
 )
 from festival_playlist_generator.api.middleware import RequestIDMiddleware
 from festival_playlist_generator.core.database import transaction_context
@@ -26,7 +20,6 @@ from festival_playlist_generator.core.logging_config import (
     clear_request_id,
     get_request_id,
     set_request_id,
-    setup_logging,
 )
 
 
@@ -230,7 +223,7 @@ class TestExceptionHandlers:
                 mock_formatter.error_response.return_value = Mock(status_code=404)
                 mock_manager.get_formatter.return_value = mock_formatter
 
-                response = await http_exception_handler(request, exc)
+                await http_exception_handler(request, exc)
 
                 mock_formatter.error_response.assert_called_once()
 
@@ -253,7 +246,7 @@ class TestExceptionHandlers:
                 mock_formatter.error_response.return_value = Mock(status_code=503)
                 mock_manager.get_formatter.return_value = mock_formatter
 
-                response = await circuit_breaker_handler(request, exc)
+                await circuit_breaker_handler(request, exc)
 
                 mock_formatter.error_response.assert_called_once()
                 call_args = mock_formatter.error_response.call_args
@@ -287,7 +280,7 @@ class TestTransactionContext:
         mock_session.is_active = True
 
         with pytest.raises(ValueError):
-            async with transaction_context(mock_session) as session:
+            async with transaction_context(mock_session):
                 raise ValueError("Test error")
 
         # Verify rollback was called
