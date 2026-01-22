@@ -50,7 +50,9 @@ ADMIN_PASSWORD = settings.ADMIN_PASSWORD
 security = HTTPBasic()
 
 
-def verify_admin_credentials(credentials: HTTPBasicCredentials = Depends(security)) -> str:
+def verify_admin_credentials(
+    credentials: HTTPBasicCredentials = Depends(security),
+) -> str:
     """Verify admin credentials."""
     is_correct_username = secrets.compare_digest(credentials.username, ADMIN_USERNAME)
     is_correct_password = secrets.compare_digest(credentials.password, ADMIN_PASSWORD)
@@ -2076,7 +2078,9 @@ async def admin_bulk_delete_artists(
         await db.commit()
 
         deleted_count = result.rowcount  # type: ignore[attr-defined]
-        logger.info(f"Bulk deleted {deleted_count} artists: {', '.join(artist_names_for_logging)}")
+        logger.info(
+            f"Bulk deleted {deleted_count} artists: {', '.join(artist_names_for_logging)}"
+        )
 
         return {
             "success": True,

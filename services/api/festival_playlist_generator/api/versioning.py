@@ -12,7 +12,9 @@ from festival_playlist_generator.api.response_formatter import APIVersionManager
 class APIVersioningMiddleware(BaseHTTPMiddleware):
     """Middleware to handle API versioning."""
 
-    async def dispatch(self, request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
+    async def dispatch(
+        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
         """Process request and add version information."""
         # Extract version from header or path
         version_header = request.headers.get("API-Version") or request.headers.get(

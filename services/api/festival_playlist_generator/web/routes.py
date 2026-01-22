@@ -60,7 +60,9 @@ async def debug_auth(request: Request) -> Response:
 
 
 @web_router.get("/artists", response_class=HTMLResponse)
-async def artists_page(request: Request, db: AsyncSession = Depends(get_db)) -> Response:
+async def artists_page(
+    request: Request, db: AsyncSession = Depends(get_db)
+) -> Response:
     """Artists listing page."""
     from sqlalchemy import func, select
 
@@ -99,7 +101,9 @@ async def artists_page(request: Request, db: AsyncSession = Depends(get_db)) -> 
 
 
 @web_router.get("/festivals", response_class=HTMLResponse)
-async def festivals_page(request: Request, db: AsyncSession = Depends(get_db)) -> Response:
+async def festivals_page(
+    request: Request, db: AsyncSession = Depends(get_db)
+) -> Response:
     """Festivals listing page."""
     from sqlalchemy import select
 
@@ -270,7 +274,9 @@ async def festival_detail(
 
 
 @web_router.get("/playlists", response_class=HTMLResponse)
-async def playlists_page(request: Request, db: AsyncSession = Depends(get_db)) -> Response:
+async def playlists_page(
+    request: Request, db: AsyncSession = Depends(get_db)
+) -> Response:
     """User playlists page (requires authentication)."""
     # Check authentication
     from festival_playlist_generator.services.oauth_service import oauth_service

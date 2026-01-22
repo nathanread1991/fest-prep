@@ -1781,7 +1781,9 @@ class TestFestivalServiceComplete:
 
         # Assert
         assert len(result) == 1
-        mock_festival_repo.get_upcoming_festivals.assert_called_once_with(5, from_date=None)
+        mock_festival_repo.get_upcoming_festivals.assert_called_once_with(
+            5, from_date=None
+        )
         # Should not cache when loading relationships
         mock_cache.set.assert_not_called()
 

@@ -143,9 +143,7 @@ async def validation_exception_handler(
     )
 
 
-async def integrity_error_handler(
-    request: Request, exc: IntegrityError
-) -> Response:
+async def integrity_error_handler(request: Request, exc: IntegrityError) -> Response:
     """Handle database integrity errors."""
     version = get_request_version(request)
     formatter = APIVersionManager.get_formatter(version)
@@ -181,9 +179,7 @@ async def integrity_error_handler(
         )
 
 
-async def sqlalchemy_error_handler(
-    request: Request, exc: SQLAlchemyError
-) -> Response:
+async def sqlalchemy_error_handler(request: Request, exc: SQLAlchemyError) -> Response:
     """Handle general SQLAlchemy errors."""
     version = get_request_version(request)
     formatter = APIVersionManager.get_formatter(version)

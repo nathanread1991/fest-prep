@@ -113,11 +113,11 @@ def create_app() -> FastAPI:
     # Mount static files
     import os
     from pathlib import Path
-    
+
     # Get the directory where this file is located
     base_dir = Path(__file__).parent
     static_dir = base_dir / "web" / "static"
-    
+
     app.mount(
         "/static",
         StaticFiles(directory=str(static_dir)),

@@ -52,7 +52,9 @@ class PushNotificationService:
             "public_key": base64.urlsafe_b64encode(public_key_bytes).decode("utf-8"),
         }
 
-    async def subscribe_user(self, user_id: str, subscription_data: Dict[str, Any]) -> bool:
+    async def subscribe_user(
+        self, user_id: str, subscription_data: Dict[str, Any]
+    ) -> bool:
         """Subscribe a user to push notifications."""
         try:
             redis = await get_redis()

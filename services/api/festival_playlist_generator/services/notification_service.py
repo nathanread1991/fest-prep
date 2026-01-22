@@ -202,8 +202,11 @@ class NotificationService:
             return False
 
         from uuid import UUID
+
         user_uuid = UUID(user_id) if isinstance(user_id, str) else user_id
-        if not await self._should_notify_user(user_uuid, NotificationType.PLAYLIST_READY):
+        if not await self._should_notify_user(
+            user_uuid, NotificationType.PLAYLIST_READY
+        ):
             return False
 
         # Get playlist details (assuming playlist model exists)
@@ -287,7 +290,9 @@ class NotificationService:
         if not user or not user.preferences:
             return self._get_default_preferences()
 
-        return dict(user.preferences.get("notifications", self._get_default_preferences()))
+        return dict(
+            user.preferences.get("notifications", self._get_default_preferences())
+        )
 
     async def _send_notification(self, notification: Notification, user: User) -> bool:
         """Send notification via email and/or push."""
@@ -320,7 +325,9 @@ class NotificationService:
         notification.sent_at = datetime.utcnow()
         return success
 
-    async def _send_email_notification(self, notification: Notification, user: User) -> None:
+    async def _send_email_notification(
+        self, notification: Notification, user: User
+    ) -> None:
         """Send email notification."""
         msg = MIMEMultipart()
         msg["From"] = self.from_email
@@ -333,16 +340,16 @@ class NotificationService:
         <body>
             <h2>{notification.title}</h2>
             <p>{notification.message}</p>
-            
+
             {self._format_notification_data(notification)}
-            
+
             <p>
-                <a href="https://festivalplaylist.com{notification.data.get('action_url', '')}" 
+                <a href="https://festivalplaylist.com{notification.data.get('action_url', '')}"
                    style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
                     View Details
                 </a>
             </p>
-            
+
             <hr>
             <p><small>You can manage your notification preferences in your account settings.</small></p>
         </body>
@@ -358,7 +365,9 @@ class NotificationService:
                 server.login(self.smtp_username, self.smtp_password)
                 server.send_message(msg)
 
-    async def _send_push_notification(self, notification: Notification, user: User) -> None:
+    async def _send_push_notification(
+        self, notification: Notification, user: User
+    ) -> None:
         """Send web push notification."""
         # This would integrate with a push notification service like Firebase
         # For now, just log the notification

@@ -252,13 +252,19 @@ class EnhancedFuzzySearch:
                 )
 
         # Sort by score (highest first) and limit
-        scored_artists.sort(key=lambda x: float(x["score"]) if isinstance(x["score"], (int, float)) else 0.0, reverse=True)
+        scored_artists.sort(
+            key=lambda x: (
+                float(x["score"]) if isinstance(x["score"], (int, float)) else 0.0
+            ),
+            reverse=True,
+        )
         scored_artists = scored_artists[:limit]
 
         # Format results
         formatted_results = []
         for item in scored_artists:
             from festival_playlist_generator.models.artist import Artist
+
             artist_obj = item["artist"]
             if not isinstance(artist_obj, Artist):
                 continue
@@ -266,7 +272,9 @@ class EnhancedFuzzySearch:
                 {
                     "id": str(artist_obj.id),
                     "name": artist_obj.name,
-                    "festival_count": len(artist_obj.festivals) if artist_obj.festivals else 0,
+                    "festival_count": (
+                        len(artist_obj.festivals) if artist_obj.festivals else 0
+                    ),
                     "setlist_count": len(artist.setlists) if artist.setlists else 0,
                     "has_spotify": bool(artist.spotify_id),
                     "genres": artist.genres if artist.genres else [],

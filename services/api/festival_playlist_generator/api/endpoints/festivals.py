@@ -168,7 +168,9 @@ async def scrape_festival_by_name(
 
 
 @router.post("/scrape/import")
-async def scrape_and_import_festivals(db: AsyncSession = Depends(get_db)) -> JSONResponse:
+async def scrape_and_import_festivals(
+    db: AsyncSession = Depends(get_db),
+) -> JSONResponse:
     """
     Scrape festivals from web sources and import them into the database.
     This will create new festivals and update existing ones.
@@ -301,7 +303,9 @@ async def scrape_and_import_festivals(db: AsyncSession = Depends(get_db)) -> JSO
 
 
 @router.post("/", status_code=201)
-async def create_festival(festival: FestivalCreate, db: AsyncSession = Depends(get_db)) -> JSONResponse:
+async def create_festival(
+    festival: FestivalCreate, db: AsyncSession = Depends(get_db)
+) -> JSONResponse:
     """Create a new festival."""
     try:
         from sqlalchemy.orm import selectinload

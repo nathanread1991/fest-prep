@@ -151,7 +151,9 @@ async def logout(request: Request) -> Response:
         # For JSON requests (fetch), return JSON response with cookie deletion
         from fastapi.responses import JSONResponse
 
-        json_response = JSONResponse({"success": True, "message": "Logged out successfully"})
+        json_response = JSONResponse(
+            {"success": True, "message": "Logged out successfully"}
+        )
         json_response.delete_cookie(
             key="session_id",
             path="/",
@@ -203,7 +205,9 @@ async def logout_get(request: Request) -> Response:
 
 
 @auth_router.get("/profile", response_class=HTMLResponse)
-async def profile_page(request: Request, db: AsyncSession = Depends(get_db)) -> Response:
+async def profile_page(
+    request: Request, db: AsyncSession = Depends(get_db)
+) -> Response:
     """User profile page (requires authentication)."""
     session_id = request.cookies.get("session_id")
 
@@ -220,7 +224,9 @@ async def profile_page(request: Request, db: AsyncSession = Depends(get_db)) -> 
 
 
 @auth_router.get("/settings", response_class=HTMLResponse)
-async def account_settings_page(request: Request, db: AsyncSession = Depends(get_db)) -> Response:
+async def account_settings_page(
+    request: Request, db: AsyncSession = Depends(get_db)
+) -> Response:
     """Account settings page (requires authentication)."""
     session_id = request.cookies.get("session_id")
 
@@ -408,7 +414,9 @@ async def update_privacy_preferences(
 
 
 # Dependency to get current authenticated user
-async def get_current_user(request: Request, db: AsyncSession = Depends(get_db)) -> Optional[UserSchema]:
+async def get_current_user(
+    request: Request, db: AsyncSession = Depends(get_db)
+) -> Optional[UserSchema]:
     """Dependency to get current authenticated user."""
     session_id = request.cookies.get("session_id")
 
@@ -419,7 +427,9 @@ async def get_current_user(request: Request, db: AsyncSession = Depends(get_db))
 
 
 # Dependency that requires authentication
-async def require_auth(request: Request, db: AsyncSession = Depends(get_db)) -> UserSchema:
+async def require_auth(
+    request: Request, db: AsyncSession = Depends(get_db)
+) -> UserSchema:
     """Dependency that requires user to be authenticated."""
     user = await get_current_user(request, db)
 

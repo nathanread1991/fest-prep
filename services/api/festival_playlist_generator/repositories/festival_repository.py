@@ -197,7 +197,7 @@ class FestivalRepository(BaseRepository[Festival]):
         # Execute query
         result = await self.db.execute(base_query)
         festivals = list(result.scalars().all())
-        
+
         total_count_int = total_count if total_count is not None else 0
 
         return festivals, total_count_int

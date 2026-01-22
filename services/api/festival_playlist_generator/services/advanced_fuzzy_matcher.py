@@ -549,13 +549,18 @@ class AdvancedFuzzyMatcher:
         formatted_results = []
         for item in scored_artists:
             from festival_playlist_generator.models.artist import Artist
+
             matched_artist: Artist = item["artist"]  # type: ignore[assignment]
             formatted_results.append(
                 {
                     "id": str(matched_artist.id),
                     "name": matched_artist.name,
-                    "festival_count": len(matched_artist.festivals) if matched_artist.festivals else 0,
-                    "setlist_count": len(matched_artist.setlists) if matched_artist.setlists else 0,
+                    "festival_count": (
+                        len(matched_artist.festivals) if matched_artist.festivals else 0
+                    ),
+                    "setlist_count": (
+                        len(matched_artist.setlists) if matched_artist.setlists else 0
+                    ),
                     "has_spotify": bool(artist.spotify_id),
                     "genres": artist.genres if artist.genres else [],
                     "match_score": item["score"],

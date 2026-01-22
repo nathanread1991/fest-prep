@@ -167,7 +167,9 @@ class PlaylistGeneratorService:
 
             # Collect setlists for all artists
             all_song_frequency: Dict[str, Dict[str, Any]] = {}
-            artist_song_mapping: Dict[str, List[str]] = {}  # Track which artist performs each song
+            artist_song_mapping: Dict[str, List[str]] = (
+                {}
+            )  # Track which artist performs each song
             processed_artists = 0
 
             for artist in artists:
@@ -701,9 +703,12 @@ class PlaylistGeneratorService:
         # Convert model StreamingPlatform enum to schema StreamingPlatform enum
         platform_value = None
         if playlist_model.platform:
-            from festival_playlist_generator.schemas.playlist import StreamingPlatform as SchemaStreamingPlatform
+            from festival_playlist_generator.schemas.playlist import (
+                StreamingPlatform as SchemaStreamingPlatform,
+            )
+
             platform_value = SchemaStreamingPlatform(playlist_model.platform.value)
-        
+
         playlist = Playlist(
             id=playlist_model.id,
             name=playlist_model.name,

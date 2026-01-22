@@ -100,7 +100,9 @@ async def get_artist_setlists(
                 "source": setlist_item.source,
                 "created_at": setlist_item.created_at.isoformat(),
                 "updated_at": (
-                    setlist_item.updated_at.isoformat() if setlist_item.updated_at else None
+                    setlist_item.updated_at.isoformat()
+                    if setlist_item.updated_at
+                    else None
                 ),
             }
         )

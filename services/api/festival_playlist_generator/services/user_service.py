@@ -23,7 +23,9 @@ class UserService:
     Requirements: US-4.2, US-4.6
     """
 
-    def __init__(self, user_repository: UserRepository, cache_service: CacheService) -> None:
+    def __init__(
+        self, user_repository: UserRepository, cache_service: CacheService
+    ) -> None:
         """
         Initialize user service.
 
@@ -213,7 +215,7 @@ class UserService:
         """
         # Import auth service to avoid circular dependency
         from festival_playlist_generator.services.auth import auth_service
-        
+
         # Use auth service method for password verification
         authenticated_user = await auth_service.authenticate_user(
             self.user_repo.db, user.email, password
@@ -233,13 +235,13 @@ class UserService:
         """
         # Import auth service to avoid circular dependency
         from festival_playlist_generator.services.auth import auth_service
-        
+
         # Hash the new password
         hashed_password = auth_service._hash_password(new_password)
-        
+
         # Store hashed password in cache
         await self.cache.set(f"user_password:{user.id}", hashed_password)
-        
+
         # Invalidate caches
         await self._invalidate_user_caches(user.id)
 

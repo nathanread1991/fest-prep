@@ -16,10 +16,16 @@ class Artist(Base):
 
     __tablename__ = "artists"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
     name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
-    musicbrainz_id: Mapped[str | None] = mapped_column(String(36), nullable=True, unique=True)
-    spotify_id: Mapped[str | None] = mapped_column(String(50), nullable=True, unique=True)
+    musicbrainz_id: Mapped[str | None] = mapped_column(
+        String(36), nullable=True, unique=True
+    )
+    spotify_id: Mapped[str | None] = mapped_column(
+        String(50), nullable=True, unique=True
+    )
     spotify_image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     spotify_popularity: Mapped[float | None] = mapped_column(Float, nullable=True)
     spotify_followers: Mapped[float | None] = mapped_column(Float, nullable=True)
@@ -31,7 +37,9 @@ class Artist(Base):
     logo_source: Mapped[str | None] = mapped_column(String(50), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
 
     # Relationships
     festivals = relationship(

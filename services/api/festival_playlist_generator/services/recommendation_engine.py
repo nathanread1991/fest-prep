@@ -121,7 +121,9 @@ class RecommendationEngine:
                     self.db.query(Artist).filter(Artist.name == song.artist).first()
                 )
                 if artist:
-                    artist_counter[str(artist.id)] += 0.5  # Lower weight for playlist songs
+                    artist_counter[
+                        str(artist.id)
+                    ] += 0.5  # Lower weight for playlist songs
                     for genre in artist.genres or []:
                         genre_counter[genre] += 0.5
 
@@ -177,10 +179,9 @@ class RecommendationEngine:
         festivals = self.db.query(Festival).all()
         # Filter in Python for now (could be optimized with proper SQLAlchemy query)
         festivals = [
-            f for f in festivals
-            if f.dates and any(
-                datetime.utcnow() < d < cutoff_date for d in f.dates
-            )
+            f
+            for f in festivals
+            if f.dates and any(datetime.utcnow() < d < cutoff_date for d in f.dates)
         ]
 
         recommendations = []

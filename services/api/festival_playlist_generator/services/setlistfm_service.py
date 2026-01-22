@@ -110,7 +110,10 @@ class SetlistFmService:
             # Respect rate limit
             await self.rate_limiter.acquire()
 
-            headers: Dict[str, str] = {"x-api-key": str(self.api_key), "Accept": "application/json"}
+            headers: Dict[str, str] = {
+                "x-api-key": str(self.api_key),
+                "Accept": "application/json",
+            }
             params: Dict[str, str | int] = {"p": str(page), "artistMbid": artist_mbid}
 
             response = await self.client.get(
@@ -144,7 +147,10 @@ class SetlistFmService:
             # Respect rate limit
             await self.rate_limiter.acquire()
 
-            headers: Dict[str, str] = {"x-api-key": str(self.api_key), "Accept": "application/json"}
+            headers: Dict[str, str] = {
+                "x-api-key": str(self.api_key),
+                "Accept": "application/json",
+            }
 
             response = await self.client.get(
                 f"{self.base_url}/setlist/{setlist_id}", headers=headers
@@ -179,8 +185,15 @@ class SetlistFmService:
             # Respect rate limit
             await self.rate_limiter.acquire()
 
-            headers: Dict[str, str] = {"x-api-key": str(self.api_key), "Accept": "application/json"}
-            params: Dict[str, str | int] = {"artistName": artist_name, "p": str(page), "sort": "relevance"}
+            headers: Dict[str, str] = {
+                "x-api-key": str(self.api_key),
+                "Accept": "application/json",
+            }
+            params: Dict[str, str | int] = {
+                "artistName": artist_name,
+                "p": str(page),
+                "sort": "relevance",
+            }
 
             response = await self.client.get(
                 f"{self.base_url}/search/artists", headers=headers, params=params
@@ -222,7 +235,10 @@ class SetlistFmService:
             # Respect rate limit
             await self.rate_limiter.acquire()
 
-            headers: Dict[str, str] = {"x-api-key": str(self.api_key), "Accept": "application/json"}
+            headers: Dict[str, str] = {
+                "x-api-key": str(self.api_key),
+                "Accept": "application/json",
+            }
             params: Dict[str, str | int] = {"p": str(page)}
 
             if artist_name:
@@ -263,7 +279,10 @@ class SetlistFmService:
             # Respect rate limit
             await self.rate_limiter.acquire()
 
-            headers: Dict[str, str] = {"x-api-key": str(self.api_key), "Accept": "application/json"}
+            headers: Dict[str, str] = {
+                "x-api-key": str(self.api_key),
+                "Accept": "application/json",
+            }
 
             response = await self.client.get(
                 f"{self.base_url}/venue/{venue_id}", headers=headers

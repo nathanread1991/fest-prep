@@ -29,7 +29,7 @@ async def _send_daily_recommendations() -> None:
     """Async implementation of send_daily_recommendations."""
     db_gen = get_db_session()
     db = await db_gen.__anext__()
-    
+
     try:
         notification_service = NotificationService(db)  # type: ignore[arg-type]
         recommendation_engine = RecommendationEngine(db)  # type: ignore[arg-type]
@@ -88,7 +88,7 @@ async def _send_weekly_recommendations() -> None:
     """Async implementation of send_weekly_recommendations."""
     db_gen = get_db_session()
     db = await db_gen.__anext__()
-    
+
     try:
         notification_service = NotificationService(db)  # type: ignore[arg-type]
         recommendation_engine = RecommendationEngine(db)  # type: ignore[arg-type]
@@ -151,7 +151,7 @@ async def _check_new_festivals() -> None:
     """Async implementation of check_new_festivals."""
     db_gen = get_db_session()
     db = await db_gen.__anext__()
-    
+
     try:
         notification_service = NotificationService(db)  # type: ignore[arg-type]
 
@@ -185,7 +185,7 @@ async def _check_lineup_updates() -> None:
     """Async implementation of check_lineup_updates."""
     db_gen = get_db_session()
     db = await db_gen.__anext__()
-    
+
     try:
         notification_service = NotificationService(db)  # type: ignore[arg-type]
 

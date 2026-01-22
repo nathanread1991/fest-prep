@@ -18,15 +18,11 @@ from festival_playlist_generator.models.user import User
 from festival_playlist_generator.schemas.playlist import Playlist as PlaylistSchema
 from festival_playlist_generator.schemas.song import Song as SongSchema
 from festival_playlist_generator.schemas.user import User as UserSchema
-from festival_playlist_generator.schemas.user import (
-    UserCreate,
-)
+from festival_playlist_generator.schemas.user import UserCreate
 from festival_playlist_generator.schemas.user import (
     UserSongPreference as UserSongPreferenceSchema,
 )
-from festival_playlist_generator.schemas.user import (
-    UserUpdate,
-)
+from festival_playlist_generator.schemas.user import UserUpdate
 from festival_playlist_generator.services.auth import auth_service
 from festival_playlist_generator.services.song_filtering import song_filtering_service
 from festival_playlist_generator.services.user_preferences import (
@@ -302,7 +298,9 @@ async def get_filter_toggle_options() -> Dict[str, List[Dict[str, Any]]]:
 
 
 @router.post("/me/filter-toggle")
-async def toggle_filter_settings(show_known: bool, show_unknown: bool) -> Dict[str, Any]:
+async def toggle_filter_settings(
+    show_known: bool, show_unknown: bool
+) -> Dict[str, Any]:
     """Toggle filter settings and get description."""
     return song_filtering_service.create_filter_toggle_response(
         show_known, show_unknown
@@ -318,17 +316,19 @@ async def create_api_key_endpoint(
     # TODO: Implement API key creation functionality
     raise HTTPException(
         status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="API key management not yet implemented"
+        detail="API key management not yet implemented",
     )
 
 
 @router.get("/me/api-keys", response_model=List[Dict[str, Any]])
-async def list_api_keys(current_user: UserSchema = Depends(get_current_user)) -> List[Dict[str, Any]]:
+async def list_api_keys(
+    current_user: UserSchema = Depends(get_current_user),
+) -> List[Dict[str, Any]]:
     """List API keys for the current user."""
     # TODO: Implement API key listing functionality
     raise HTTPException(
         status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="API key management not yet implemented"
+        detail="API key management not yet implemented",
     )
 
 
@@ -340,5 +340,5 @@ async def revoke_api_key(
     # TODO: Implement API key revocation functionality
     raise HTTPException(
         status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="API key management not yet implemented"
+        detail="API key management not yet implemented",
     )

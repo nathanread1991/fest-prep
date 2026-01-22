@@ -158,13 +158,13 @@ class TestArtistEndpoints:
         assert "success" in data
         assert data["success"] is True
         assert "data" in data
-        
+
         # Handle paginated response format
         if "items" in data["data"]:
             artists = data["data"]["items"]
         else:
             artists = data["data"]
-        
+
         assert len(artists) > 0, f"Expected at least 1 artist, got {len(artists)}"
 
         # Verify artist data structure

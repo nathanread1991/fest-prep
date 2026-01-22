@@ -16,16 +16,30 @@ class User(Base):
 
     __tablename__ = "users"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True, index=True)
-    oauth_provider: Mapped[str | None] = mapped_column(String(50), nullable=True, index=True)
-    oauth_provider_id: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    email: Mapped[str] = mapped_column(
+        String(255), nullable=False, unique=True, index=True
+    )
+    oauth_provider: Mapped[str | None] = mapped_column(
+        String(50), nullable=True, index=True
+    )
+    oauth_provider_id: Mapped[str | None] = mapped_column(
+        String(255), nullable=True, index=True
+    )
     display_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     profile_picture_url: Mapped[str | None] = mapped_column(Text, nullable=True)
-    marketing_opt_in: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    marketing_opt_in: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False
+    )
     preferences: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
-    connected_platforms: Mapped[list[str] | None] = mapped_column(ARRAY(String), nullable=True)
-    festival_history: Mapped[list[uuid.UUID] | None] = mapped_column(ARRAY(UUID), nullable=True)
+    connected_platforms: Mapped[list[str] | None] = mapped_column(
+        ARRAY(String), nullable=True
+    )
+    festival_history: Mapped[list[uuid.UUID] | None] = mapped_column(
+        ARRAY(UUID), nullable=True
+    )
     known_songs: Mapped[list[str] | None] = mapped_column(ARRAY(String), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     last_login: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
@@ -43,7 +57,9 @@ class UserSongPreference(Base):
 
     __tablename__ = "user_song_preferences"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True
     )

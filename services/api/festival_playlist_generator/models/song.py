@@ -26,12 +26,18 @@ class Song(Base):
 
     __tablename__ = "songs"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
     title: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     artist: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
-    original_artist: Mapped[str | None] = mapped_column(String(255), nullable=True)  # For covers
+    original_artist: Mapped[str | None] = mapped_column(
+        String(255), nullable=True
+    )  # For covers
     is_cover: Mapped[bool] = mapped_column(Boolean, default=False)
-    normalized_title: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    normalized_title: Mapped[str] = mapped_column(
+        String(255), nullable=False, index=True
+    )
     performance_count: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 

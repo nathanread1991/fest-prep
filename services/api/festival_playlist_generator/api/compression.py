@@ -7,7 +7,6 @@ from typing import Any, Callable, Optional, Set
 import brotli
 from fastapi import Request, Response
 from fastapi.responses import StreamingResponse
-
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 
@@ -37,7 +36,9 @@ class CompressionMiddleware(BaseHTTPMiddleware):
             "image/svg+xml",
         }
 
-    async def dispatch(self, request: Request, call_next: Callable[..., Any]) -> Response:
+    async def dispatch(
+        self, request: Request, call_next: Callable[..., Any]
+    ) -> Response:
         """Process request and compress response if appropriate."""
         response: Response = await call_next(request)
 
@@ -76,7 +77,11 @@ class CompressionMiddleware(BaseHTTPMiddleware):
                     if isinstance(chunk, bytes):
                         body_parts.append(chunk)
                     elif isinstance(chunk, (str, memoryview)):
-                        body_parts.append(bytes(chunk) if isinstance(chunk, memoryview) else chunk.encode())
+                        body_parts.append(
+                            bytes(chunk)
+                            if isinstance(chunk, memoryview)
+                            else chunk.encode()
+                        )
                 body = b"".join(body_parts)
             elif hasattr(response, "body") and response.body:
                 body_raw = response.body
@@ -134,7 +139,9 @@ class StaticFileCompressionMiddleware(BaseHTTPMiddleware):
     def __init__(self, app: ASGIApp) -> None:
         super().__init__(app)
 
-    async def dispatch(self, request: Request, call_next: Callable[..., Any]) -> Response:
+    async def dispatch(
+        self, request: Request, call_next: Callable[..., Any]
+    ) -> Response:
         """Add cache headers for static files."""
         response: Response = await call_next(request)
 

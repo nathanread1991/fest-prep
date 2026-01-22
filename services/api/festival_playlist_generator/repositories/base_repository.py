@@ -52,7 +52,7 @@ class BaseRepository(ABC, Generic[T]):
             Entity instance or None if not found
         """
         result = await self.db.execute(
-            select(self.model_class).where(getattr(self.model_class, 'id') == id)
+            select(self.model_class).where(getattr(self.model_class, "id") == id)
         )
         return result.scalar_one_or_none()
 
@@ -75,7 +75,9 @@ class BaseRepository(ABC, Generic[T]):
         Returns:
             List of entity instances
         """
-        order_column: Any = getattr(self.model_class, order_by, getattr(self.model_class, 'created_at'))
+        order_column: Any = getattr(
+            self.model_class, order_by, getattr(self.model_class, "created_at")
+        )
 
         query = select(self.model_class)
 
@@ -132,7 +134,7 @@ class BaseRepository(ABC, Generic[T]):
             True if entity was deleted, False if not found
         """
         result = await self.db.execute(
-            delete(self.model_class).where(getattr(self.model_class, 'id') == id)
+            delete(self.model_class).where(getattr(self.model_class, "id") == id)
         )
         # Cast to access rowcount attribute
         rowcount = cast(Any, result).rowcount
@@ -149,7 +151,7 @@ class BaseRepository(ABC, Generic[T]):
             Number of entities deleted
         """
         result = await self.db.execute(
-            delete(self.model_class).where(getattr(self.model_class, 'id').in_(ids))
+            delete(self.model_class).where(getattr(self.model_class, "id").in_(ids))
         )
         # Cast to access rowcount attribute
         rowcount = cast(Any, result).rowcount
@@ -166,7 +168,9 @@ class BaseRepository(ABC, Generic[T]):
             True if entity exists, False otherwise
         """
         result = await self.db.execute(
-            select(func.count(getattr(self.model_class, 'id'))).where(getattr(self.model_class, 'id') == id)
+            select(func.count(getattr(self.model_class, "id"))).where(
+                getattr(self.model_class, "id") == id
+            )
         )
         count = result.scalar()
         return count is not None and count > 0
@@ -178,7 +182,9 @@ class BaseRepository(ABC, Generic[T]):
         Returns:
             Total number of entities
         """
-        result = await self.db.execute(select(func.count(getattr(self.model_class, 'id'))))
+        result = await self.db.execute(
+            select(func.count(getattr(self.model_class, "id")))
+        )
         count = result.scalar()
         return count if count is not None else 0
 
@@ -189,5 +195,5 @@ class BaseRepository(ABC, Generic[T]):
         Returns:
             List of all entity UUIDs
         """
-        result = await self.db.execute(select(getattr(self.model_class, 'id')))
+        result = await self.db.execute(select(getattr(self.model_class, "id")))
         return [row[0] for row in result]

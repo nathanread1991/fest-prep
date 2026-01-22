@@ -83,9 +83,14 @@ class SetlistFmClient:
 
         try:
             if self.session is None:
-                raise RuntimeError("Session not initialized. Use async context manager.")
+                raise RuntimeError(
+                    "Session not initialized. Use async context manager."
+                )
 
-            params: Dict[str, Any] = {"artistName": artist_name, "p": 1}  # First page only
+            params: Dict[str, Any] = {
+                "artistName": artist_name,
+                "p": 1,
+            }  # First page only
 
             response = await self.session.get(
                 f"{self.BASE_URL}/search/artists", params=params
@@ -175,7 +180,9 @@ class SetlistFmClient:
 
         return best_artist
 
-    async def _calculate_artist_score(self, artist: Dict[str, Any], search_name: str) -> float:
+    async def _calculate_artist_score(
+        self, artist: Dict[str, Any], search_name: str
+    ) -> float:
         """Calculate a likelihood score for an artist match."""
         score = 0.0
         artist_name = artist.get("name", "")
@@ -194,7 +201,9 @@ class SetlistFmClient:
 
         try:
             if self.session is None:
-                raise RuntimeError("Session not initialized. Use async context manager.")
+                raise RuntimeError(
+                    "Session not initialized. Use async context manager."
+                )
 
             # Factor 2: Setlist activity (most important for active bands)
             await self._rate_limit()
@@ -312,7 +321,9 @@ class SetlistFmClient:
 
         try:
             if self.session is None:
-                raise RuntimeError("Session not initialized. Use async context manager.")
+                raise RuntimeError(
+                    "Session not initialized. Use async context manager."
+                )
 
             params_get: Dict[str, Any] = {"p": 1}  # Page number
 
@@ -349,7 +360,9 @@ class SetlistFmClient:
             self.logger.error(f"Error getting setlists for artist {artist_mbid}: {e}")
             return []
 
-    def _parse_setlist_data(self, setlist_data: Dict[str, Any]) -> Optional[SetlistData]:
+    def _parse_setlist_data(
+        self, setlist_data: Dict[str, Any]
+    ) -> Optional[SetlistData]:
         """Parse raw setlist data from API response."""
         try:
             # Extract basic info
@@ -686,12 +699,8 @@ class SongFrequencyAnalyzer:
                 # Update frequency and metadata
                 song_data: Dict[str, Any] = song_frequency[normalized_title]
                 song_data["frequency"] = song_data["frequency"] + 1
-                song_data["last_seen"] = max(
-                    song_data["last_seen"], setlist.date
-                )
-                song_data["first_seen"] = min(
-                    song_data["first_seen"], setlist.date
-                )
+                song_data["last_seen"] = max(song_data["last_seen"], setlist.date)
+                song_data["first_seen"] = min(song_data["first_seen"], setlist.date)
 
                 venues_list: List[str] = song_data["venues"]
                 if setlist.venue not in venues_list:

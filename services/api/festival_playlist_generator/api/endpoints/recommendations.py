@@ -143,7 +143,10 @@ async def get_artist_recommendations(
 
 @router.post("/users/{user_id}/similarity")
 async def calculate_similarity_scores(
-    user_id: str, items: List[dict[str, Any]], request: Request, db: Session = Depends(get_db)
+    user_id: str,
+    items: List[dict[str, Any]],
+    request: Request,
+    db: Session = Depends(get_db),
 ) -> JSONResponse:
     """Calculate similarity scores between user profile and provided items."""
     try:

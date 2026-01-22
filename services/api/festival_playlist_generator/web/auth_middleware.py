@@ -29,7 +29,9 @@ class AuthenticationMiddleware:
 
         self.api_protected_routes = {"/api/playlists", "/api/user", "/api/auth/me"}
 
-    async def __call__(self, request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
+    async def __call__(
+        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
         """Process request through authentication middleware."""
         path = request.url.path
 

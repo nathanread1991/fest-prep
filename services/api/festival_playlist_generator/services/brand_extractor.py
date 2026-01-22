@@ -86,7 +86,7 @@ class BrandExtractor:
             url_raw = img.get("src") or img.get("data-src") or img.get("data-lazy-src")
             if not url_raw:
                 continue
-            
+
             # Convert to string (handle AttributeValueList)
             url = str(url_raw) if url_raw else ""
             if not url:

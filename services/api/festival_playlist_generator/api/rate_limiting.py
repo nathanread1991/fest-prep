@@ -14,7 +14,9 @@ logger = logging.getLogger(__name__)
 class RateLimiter:
     """Redis-based rate limiter using sliding window algorithm."""
 
-    def __init__(self, requests_per_minute: int = 60, requests_per_hour: int = 1000) -> None:
+    def __init__(
+        self, requests_per_minute: int = 60, requests_per_hour: int = 1000
+    ) -> None:
         self.requests_per_minute = requests_per_minute
         self.requests_per_hour = requests_per_hour
 

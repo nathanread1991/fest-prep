@@ -13,7 +13,9 @@ router = APIRouter()
 
 
 @router.get("/me", response_model=UserSchema)
-async def get_current_user_api(request: Request, db: AsyncSession = Depends(get_db)) -> UserSchema:
+async def get_current_user_api(
+    request: Request, db: AsyncSession = Depends(get_db)
+) -> UserSchema:
     """Get current authenticated user information."""
     session_id = request.cookies.get("session_id")
 

@@ -31,6 +31,8 @@ from festival_playlist_generator.schemas.playlist import (
     Playlist,
     PlaylistCreate,
     PlaylistUpdate,
+)
+from festival_playlist_generator.schemas.playlist import (
     StreamingPlatform as SchemaStreamingPlatform,
 )
 from festival_playlist_generator.services.playlist_service import PlaylistService
@@ -219,7 +221,9 @@ async def create_playlist(
     formatter = APIVersionManager.get_formatter(version)
 
     # Verify user exists
-    result = await db.execute(select(UserModel).filter(UserModel.id == playlist.user_id))
+    result = await db.execute(
+        select(UserModel).filter(UserModel.id == playlist.user_id)
+    )
     user = result.scalar_one_or_none()
     if not user:
         return formatter.not_found_response("User", playlist.user_id)
@@ -255,7 +259,9 @@ async def create_playlist(
 
     # Add songs if provided
     if playlist.song_ids:
-        result = await db.execute(select(SongModel).filter(SongModel.id.in_(playlist.song_ids)))
+        result = await db.execute(
+            select(SongModel).filter(SongModel.id.in_(playlist.song_ids))
+        )
         songs = result.scalars().all()
         if len(songs) != len(playlist.song_ids):
             return formatter.error_response(
@@ -356,10 +362,10 @@ async def list_playlists(
             count_stmt = count_stmt.where(PlaylistModel.artist_id == artist_id)
         if platform:
             count_stmt = count_stmt.where(PlaylistModel.platform == platform)
-        
+
         count_result = await db.execute(count_stmt)
         total_count = count_result.scalar() or 0
-        
+
         response_data = {
             "items": playlist_data,
             "pagination": {
@@ -424,7 +430,9 @@ async def update_playlist(
     db: AsyncSession = Depends(get_db),
 ) -> Playlist:
     """Update a playlist."""
-    result = await db.execute(select(PlaylistModel).filter(PlaylistModel.id == playlist_id))
+    result = await db.execute(
+        select(PlaylistModel).filter(PlaylistModel.id == playlist_id)
+    )
     playlist = result.scalar_one_or_none()
 
     if not playlist:
@@ -439,7 +447,9 @@ async def update_playlist(
         playlist.songs.clear()
 
         if song_ids:
-            result = await db.execute(select(SongModel).filter(SongModel.id.in_(song_ids)))
+            result = await db.execute(
+                select(SongModel).filter(SongModel.id.in_(song_ids))
+            )
             songs = result.scalars().all()
             if len(songs) != len(song_ids):
                 raise HTTPException(
@@ -483,9 +493,13 @@ async def delete_playlist(
 
 
 @router.get("/{playlist_id}/songs", response_model=List[Dict[str, Any]])
-async def get_playlist_songs(playlist_id: UUID, db: AsyncSession = Depends(get_db)) -> List[Dict[str, Any]]:
+async def get_playlist_songs(
+    playlist_id: UUID, db: AsyncSession = Depends(get_db)
+) -> List[Dict[str, Any]]:
     """Get songs in a playlist."""
-    result = await db.execute(select(PlaylistModel).filter(PlaylistModel.id == playlist_id))
+    result = await db.execute(
+        select(PlaylistModel).filter(PlaylistModel.id == playlist_id)
+    )
     playlist = result.scalar_one_or_none()
 
     if not playlist:
@@ -509,7 +523,9 @@ async def add_song_to_playlist(
     playlist_id: UUID, song_id: UUID, db: AsyncSession = Depends(get_db)
 ) -> Dict[str, str]:
     """Add a song to a playlist."""
-    result = await db.execute(select(PlaylistModel).filter(PlaylistModel.id == playlist_id))
+    result = await db.execute(
+        select(PlaylistModel).filter(PlaylistModel.id == playlist_id)
+    )
     playlist = result.scalar_one_or_none()
     if not playlist:
         raise HTTPException(status_code=404, detail="Playlist not found")
@@ -527,12 +543,15 @@ async def add_song_to_playlist(
 
     return {"message": "Song added to playlist"}
 
+
 @router.delete("/{playlist_id}/songs/{song_id}", status_code=204)
 async def remove_song_from_playlist(
     playlist_id: UUID, song_id: UUID, db: AsyncSession = Depends(get_db)
 ) -> None:
     """Remove a song from a playlist."""
-    result = await db.execute(select(PlaylistModel).filter(PlaylistModel.id == playlist_id))
+    result = await db.execute(
+        select(PlaylistModel).filter(PlaylistModel.id == playlist_id)
+    )
     playlist = result.scalar_one_or_none()
     if not playlist:
         raise HTTPException(status_code=404, detail="Playlist not found")

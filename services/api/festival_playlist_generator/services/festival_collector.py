@@ -167,7 +167,9 @@ class ClashfinderAPIClient:
             self.logger.debug(f"API URL: {api_url}")
 
             if self.session is None:
-                raise RuntimeError("Session not initialized. Use async context manager.")
+                raise RuntimeError(
+                    "Session not initialized. Use async context manager."
+                )
 
             response = await self.session.get(api_url, params=params)
 
@@ -1030,7 +1032,11 @@ class APISource(FestivalDataSource):
         try:
             async with httpx.AsyncClient() as client:
                 # Search for events with festival in the name
-                params: Dict[str, str | int] = {"query": "type:festival", "limit": 50, "fmt": "json"}
+                params: Dict[str, str | int] = {
+                    "query": "type:festival",
+                    "limit": 50,
+                    "fmt": "json",
+                }
 
                 response = await client.get(
                     f"{self.api_url}/ws/2/event",

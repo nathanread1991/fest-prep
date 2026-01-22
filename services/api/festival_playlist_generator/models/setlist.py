@@ -15,7 +15,9 @@ class Setlist(Base):
 
     __tablename__ = "setlists"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
     artist_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("artists.id"), nullable=False, index=True
     )
@@ -24,9 +26,13 @@ class Setlist(Base):
     songs: Mapped[list[str]] = mapped_column(ARRAY(String), nullable=False)
     tour_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     festival_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    source: Mapped[str] = mapped_column(String(50), nullable=False, default="setlist.fm")
+    source: Mapped[str] = mapped_column(
+        String(50), nullable=False, default="setlist.fm"
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
 
     # Relationships
     artist = relationship("Artist", back_populates="setlists")

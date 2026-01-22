@@ -30,7 +30,7 @@ class SongFilteringService:
         show_unknown: bool = True,
     ) -> PlaylistSchema:
         """Filter playlist songs based on user preferences.
-        
+
         Note: This method returns the playlist as-is since PlaylistSchema
         doesn't contain songs. Use filter_songs_by_preferences for song filtering.
         """

@@ -117,7 +117,7 @@ async def generate_festival_playlist(
 
         # Step 4: If platform specified, create playlist on streaming service
         external_playlist_id = None
-        song_list = getattr(playlist, 'songs', [])
+        song_list = getattr(playlist, "songs", [])
         if platform and song_list:
             try:
                 # This would require user authentication with the streaming service
@@ -222,7 +222,7 @@ async def generate_artist_playlist(
 
         # Step 3: If platform specified, create playlist on streaming service
         external_playlist_id = None
-        song_list = getattr(playlist, 'songs', [])
+        song_list = getattr(playlist, "songs", [])
         if platform and song_list:
             try:
                 logger.info(

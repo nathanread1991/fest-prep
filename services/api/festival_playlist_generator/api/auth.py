@@ -26,7 +26,9 @@ api_auth_router = APIRouter(prefix="/api/auth", tags=["api-authentication"])
 
 
 @api_auth_router.get("/me")
-async def get_current_user_api(request: Request, db: AsyncSession = Depends(get_db)) -> Dict[str, Any]:
+async def get_current_user_api(
+    request: Request, db: AsyncSession = Depends(get_db)
+) -> Dict[str, Any]:
     """API endpoint to get current authenticated user."""
     session_id = request.cookies.get("session_id")
 
@@ -53,7 +55,9 @@ async def get_current_user_api(request: Request, db: AsyncSession = Depends(get_
 
 
 @api_auth_router.get("/status")
-async def get_auth_status(request: Request, db: AsyncSession = Depends(get_db)) -> Dict[str, Any]:
+async def get_auth_status(
+    request: Request, db: AsyncSession = Depends(get_db)
+) -> Dict[str, Any]:
     """Check authentication status without returning user data."""
     session_id = request.cookies.get("session_id")
 

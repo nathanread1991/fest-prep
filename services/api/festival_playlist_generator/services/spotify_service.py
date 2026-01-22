@@ -179,7 +179,11 @@ class SpotifyService:
 
         async def _search() -> List[Dict[str, Any]]:
             headers = {"Authorization": f"Bearer {access_token}"}
-            params: Dict[str, str | int] = {"q": artist_name, "type": "artist", "limit": str(limit)}
+            params: Dict[str, str | int] = {
+                "q": artist_name,
+                "type": "artist",
+                "limit": str(limit),
+            }
 
             response = await self.client.get(
                 f"{self.base_url}/search", headers=headers, params=params

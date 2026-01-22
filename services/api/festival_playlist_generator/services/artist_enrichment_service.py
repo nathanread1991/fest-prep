@@ -17,7 +17,9 @@ logger = logging.getLogger(__name__)
 class ArtistEnrichmentService:
     """Service for enriching artist records with Spotify data."""
 
-    async def enrich_artists(self, artist_ids: List[str], db: AsyncSession) -> Dict[str, Any]:
+    async def enrich_artists(
+        self, artist_ids: List[str], db: AsyncSession
+    ) -> Dict[str, Any]:
         """
         Enrich multiple artists with Spotify data.
 

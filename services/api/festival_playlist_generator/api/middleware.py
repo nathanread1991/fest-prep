@@ -33,7 +33,9 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
     - Adds X-Request-ID header to all responses
     """
 
-    async def dispatch(self, request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
+    async def dispatch(
+        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
         # Extract or generate request ID
         request_id = request.headers.get("X-Request-ID")
         if not request_id:
@@ -58,7 +60,9 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
 class RateLimitMiddleware(BaseHTTPMiddleware):
     """Middleware to apply rate limiting to API endpoints."""
 
-    async def dispatch(self, request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
+    async def dispatch(
+        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
         # Skip rate limiting for health check and docs
         if request.url.path in ["/health", "/docs", "/redoc", "/openapi.json"]:
             return await call_next(request)
@@ -105,7 +109,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 class APILoggingMiddleware(BaseHTTPMiddleware):
     """Middleware to log API requests and responses."""
 
-    async def dispatch(self, request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
+    async def dispatch(
+        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
         start_time = time.time()
 
         # Log request (request ID will be automatically included from context)

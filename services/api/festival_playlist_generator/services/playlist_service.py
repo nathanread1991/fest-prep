@@ -1,7 +1,7 @@
 """Playlist service for business logic with Spotify integration and circuit breaker."""
 
 import logging
-from typing import Any, Callable, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Callable, List, Optional
 from uuid import UUID
 
 from festival_playlist_generator.models.festival import Festival

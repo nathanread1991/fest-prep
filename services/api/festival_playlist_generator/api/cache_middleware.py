@@ -22,7 +22,9 @@ class APICacheMiddleware(BaseHTTPMiddleware):
         self.http_cache = HTTPCacheManager()
         self.browser_cache = BrowserCacheOptimizer()
 
-    async def dispatch(self, request: Request, call_next: Callable[..., Any]) -> Response:
+    async def dispatch(
+        self, request: Request, call_next: Callable[..., Any]
+    ) -> Response:
         """Add cache headers to responses."""
         try:
             response: Response = await call_next(request)
@@ -75,7 +77,11 @@ class APICacheMiddleware(BaseHTTPMiddleware):
                     # Add ETag for HTML responses
                     if hasattr(response, "body") and response.body:
                         body_data = response.body
-                        body_bytes = bytes(body_data) if isinstance(body_data, memoryview) else body_data
+                        body_bytes = (
+                            bytes(body_data)
+                            if isinstance(body_data, memoryview)
+                            else body_data
+                        )
                         etag = self.http_cache.generate_etag(body_bytes)
                         response.headers["etag"] = f'"{etag}"'
                 except Exception:
@@ -140,7 +146,9 @@ class ConditionalCacheMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
         self.http_cache = HTTPCacheManager()
 
-    async def dispatch(self, request: Request, call_next: Callable[..., Any]) -> Response:
+    async def dispatch(
+        self, request: Request, call_next: Callable[..., Any]
+    ) -> Response:
         """Handle conditional requests."""
         try:
             response: Response = await call_next(request)
@@ -156,7 +164,11 @@ class ConditionalCacheMiddleware(BaseHTTPMiddleware):
                 try:
                     if hasattr(response, "body") and response.body:
                         body_data = response.body
-                        body_bytes = bytes(body_data) if isinstance(body_data, memoryview) else body_data
+                        body_bytes = (
+                            bytes(body_data)
+                            if isinstance(body_data, memoryview)
+                            else body_data
+                        )
                         etag = self.http_cache.generate_etag(body_bytes)
                         response.headers["etag"] = f'"{etag}"'
                 except Exception:

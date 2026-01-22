@@ -313,7 +313,9 @@ class ColorAnalyzer:
         b_corrected: float = gamma_correct(b)
 
         # Calculate luminance
-        luminance: float = 0.2126 * r_corrected + 0.7152 * g_corrected + 0.0722 * b_corrected
+        luminance: float = (
+            0.2126 * r_corrected + 0.7152 * g_corrected + 0.0722 * b_corrected
+        )
         return luminance
 
     def _adjust_for_contrast(self, color: str) -> str:

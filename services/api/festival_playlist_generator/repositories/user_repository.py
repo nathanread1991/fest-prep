@@ -160,7 +160,9 @@ class UserRepository(BaseRepository[User]):
         rowcount = cast(Any, result).rowcount
         return rowcount is not None and rowcount > 0
 
-    async def update_preferences(self, user_id: UUID, preferences: Dict[str, Any]) -> bool:
+    async def update_preferences(
+        self, user_id: UUID, preferences: Dict[str, Any]
+    ) -> bool:
         """
         Update user preferences.
 

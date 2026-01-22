@@ -186,7 +186,9 @@ def collect_daily_festivals(self: Any) -> Dict[str, Any]:
 
 
 @celery_app.task(bind=True, max_retries=2, default_retry_delay=600)  # type: ignore[untyped-decorator]
-def collect_festivals_from_source(self: Any, source_config: Dict[str, Any]) -> Dict[str, Any]:
+def collect_festivals_from_source(
+    self: Any, source_config: Dict[str, Any]
+) -> Dict[str, Any]:
     """
     Collect festivals from a specific source.
 

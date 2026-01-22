@@ -269,7 +269,9 @@ class RequestLoggingContext:
 
 
 # Service operation logging decorator
-def log_service_operation(operation_name: str) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+def log_service_operation(
+    operation_name: str,
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Decorator to log service operations."""
 
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:

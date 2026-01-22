@@ -25,9 +25,13 @@ class Festival(Base):
 
     __tablename__ = "festivals"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
     name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
-    dates: Mapped[list[datetime]] = mapped_column(ARRAY(DateTime), nullable=False, index=True)
+    dates: Mapped[list[datetime]] = mapped_column(
+        ARRAY(DateTime), nullable=False, index=True
+    )
     location: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     venue: Mapped[str | None] = mapped_column(String(255), nullable=True)
     genres: Mapped[list[str] | None] = mapped_column(ARRAY(String), nullable=True)
@@ -38,11 +42,17 @@ class Festival(Base):
     primary_color: Mapped[str | None] = mapped_column(String(7), nullable=True)
     secondary_color: Mapped[str | None] = mapped_column(String(7), nullable=True)
     text_color: Mapped[str | None] = mapped_column(String(7), nullable=True)
-    accent_colors: Mapped[list[str] | None] = mapped_column(ARRAY(String), nullable=True)
-    branding_extracted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    accent_colors: Mapped[list[str] | None] = mapped_column(
+        ARRAY(String), nullable=True
+    )
+    branding_extracted_at: Mapped[datetime | None] = mapped_column(
+        DateTime, nullable=True
+    )
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
 
     # Relationships
     artists = relationship(
