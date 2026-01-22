@@ -212,13 +212,11 @@ class MergeService:
                 # Transfer setlists using direct SQL UPDATE to avoid ORM issues
                 if setlist_count > 0:
                     # Use raw SQL to update setlists - must cast UUIDs explicitly
-                    update_query = text(
-                        """
+                    update_query = text("""
                         UPDATE setlists
                         SET artist_id = CAST(:primary_id AS uuid), updated_at = NOW()
                         WHERE artist_id = CAST(:secondary_id AS uuid)
-                    """
-                    )
+                    """)
                     self.db.execute(
                         update_query,
                         {
@@ -261,11 +259,9 @@ class MergeService:
             # Delete secondary artists using raw SQL to avoid ORM relationship issues
             for secondary in secondaries:
                 # Use raw SQL DELETE to bypass ORM relationship management
-                delete_query = text(
-                    """
+                delete_query = text("""
                     DELETE FROM artists WHERE id = CAST(:artist_id AS uuid)
-                """
-                )
+                """)
                 self.db.execute(delete_query, {"artist_id": str(secondary.id)})
 
                 # Expunge from session to prevent ORM from trying to manage it
@@ -327,8 +323,7 @@ class MergeService:
         """
         # Insert into merge_audit_log using raw SQL
         # (We don't have a model for this table yet)
-        query = text(
-            """
+        query = text("""
             INSERT INTO merge_audit_log (
                 primary_artist_id,
                 primary_artist_name,
@@ -348,8 +343,7 @@ class MergeService:
                 :spotify_source,
                 :performed_by
             )
-        """
-        )
+        """)
 
         # Convert UUID objects to strings for the array cast
         merged_ids_str = "{" + ",".join([str(sid) for sid in secondary_ids]) + "}"
