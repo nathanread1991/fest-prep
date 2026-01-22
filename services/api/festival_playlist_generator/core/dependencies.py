@@ -46,7 +46,7 @@ def get_streaming_integration_service() -> StreamingIntegrationService:
             "client_secret": "test_client_secret",
             "redirect_uri": "http://localhost:8000/callback/spotify",
         },
-        "youtube_music": {"oauth_file": "/tmp/test_oauth.json"},
+        "youtube_music": {"oauth_file": "/tmp/test_oauth.json"},  # nosec B108
         "apple_music": {"developer_token": "test_developer_token"},
     }
     return StreamingIntegrationService(default_config)

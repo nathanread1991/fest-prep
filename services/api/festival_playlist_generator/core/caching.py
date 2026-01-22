@@ -170,7 +170,7 @@ def cache_key_from_args(*args: Any, **kwargs: Any) -> str:
 
     # Create hash of the key parts
     key_string = "|".join(key_parts)
-    return hashlib.md5(key_string.encode()).hexdigest()
+    return hashlib.md5(key_string.encode(), usedforsecurity=False).hexdigest()
 
 
 def cached(
@@ -258,7 +258,7 @@ class HTTPCacheManager:
         if isinstance(content, str):
             content = content.encode("utf-8")
 
-        return hashlib.md5(content).hexdigest()
+        return hashlib.md5(content, usedforsecurity=False).hexdigest()
 
     @staticmethod
     def is_not_modified(request_headers: Dict[str, str], etag: str) -> bool:
@@ -312,7 +312,7 @@ class APIResponseCache:
         """Create cache key for API endpoint."""
         param_string = "&".join(f"{k}={v}" for k, v in sorted(params.items()))
         key_string = f"{endpoint}?{param_string}"
-        return hashlib.md5(key_string.encode()).hexdigest()
+        return hashlib.md5(key_string.encode(), usedforsecurity=False).hexdigest()
 
     async def invalidate_endpoint(self, endpoint: str) -> int:
         """Invalidate all cached responses for an endpoint."""

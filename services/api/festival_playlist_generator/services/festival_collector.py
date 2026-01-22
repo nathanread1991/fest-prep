@@ -2144,4 +2144,4 @@ class FestivalCollectorService:
         if festival_data.dates:
             content += f"|{festival_data.dates[0].strftime('%Y-%m-%d')}"
 
-        return hashlib.md5(content.encode()).hexdigest()
+        return hashlib.md5(content.encode(), usedforsecurity=False).hexdigest()

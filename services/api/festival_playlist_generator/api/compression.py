@@ -183,7 +183,7 @@ class StaticFileCompressionMiddleware(BaseHTTPMiddleware):
             ):
                 import hashlib
 
-                etag = hashlib.md5(response.body).hexdigest()
+                etag = hashlib.md5(response.body, usedforsecurity=False).hexdigest()
                 response.headers["etag"] = f'"{etag}"'
 
         return response

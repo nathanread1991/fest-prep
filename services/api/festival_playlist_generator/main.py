@@ -223,7 +223,7 @@ if __name__ == "__main__":
     # Configure uvicorn
     uvicorn_config: Dict[str, Any] = {
         "app": "festival_playlist_generator.main:app",
-        "host": "0.0.0.0",
+        "host": "0.0.0.0",  # nosec B104
         "port": 8000,
         "reload": True,
     }
