@@ -271,16 +271,14 @@ class SetlistRepository(BaseRepository[Setlist]):
         # PostgreSQL specific query
         from sqlalchemy import text
 
-        query = text(
-            """
+        query = text("""
             SELECT song, COUNT(*) as play_count
             FROM setlists, unnest(songs) as song
             WHERE artist_id = :artist_id
             GROUP BY song
             ORDER BY play_count DESC
             LIMIT :limit
-        """
-        )
+        """)
 
         result = await self.db.execute(query, {"artist_id": artist_id, "limit": limit})
 
