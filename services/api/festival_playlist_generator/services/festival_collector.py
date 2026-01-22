@@ -546,9 +546,13 @@ class ClashfinderSource(FestivalDataSource):
 
         # Try parsing with dateutil if available
         try:
+            from datetime import datetime as dt
+
             from dateutil import parser
 
-            return parser.parse(date_str)
+            parsed_date = parser.parse(date_str)
+            # Ensure we return a datetime object, not Any
+            return dt.fromisoformat(parsed_date.isoformat()) if parsed_date else None
         except (ImportError, ValueError, TypeError):
             pass
 
@@ -971,9 +975,13 @@ class WebScrapingSource(FestivalDataSource):
 
         # Try parsing with dateutil if available
         try:
+            from datetime import datetime as dt
+
             from dateutil import parser
 
-            return parser.parse(date_str)
+            parsed_date = parser.parse(date_str)
+            # Ensure we return a datetime object, not Any
+            return dt.fromisoformat(parsed_date.isoformat()) if parsed_date else None
         except (ImportError, ValueError, TypeError):
             pass
 

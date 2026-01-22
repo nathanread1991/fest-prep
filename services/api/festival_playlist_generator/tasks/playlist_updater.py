@@ -24,9 +24,7 @@ from festival_playlist_generator.services.playlist_generator import (
 logger = logging.getLogger(__name__)
 
 
-@celery_app.task(  # type: ignore[untyped-decorator]
-    bind=True, max_retries=3, default_retry_delay=1800
-)
+@celery_app.task(bind=True, max_retries=3, default_retry_delay=1800)
 def update_all_playlists(self: Task, days_since_update: int = 7) -> Dict[str, Any]:
     """
     Update all playlists with new setlist data while preserving user customizations.
@@ -254,9 +252,7 @@ def update_all_playlists(self: Task, days_since_update: int = 7) -> Dict[str, An
             }
 
 
-@celery_app.task(  # type: ignore[untyped-decorator]
-    bind=True, max_retries=2, default_retry_delay=600
-)
+@celery_app.task(bind=True, max_retries=2, default_retry_delay=600)
 def update_single_playlist_task(self: Task, playlist_id: str) -> Dict[str, Any]:
     """
     Update a single playlist with new setlist data.
@@ -496,9 +492,7 @@ async def update_single_playlist(
         return {"status": "failed", "error": str(e)}
 
 
-@celery_app.task(  # type: ignore[untyped-decorator]
-    bind=True, max_retries=2, default_retry_delay=300
-)
+@celery_app.task(bind=True, max_retries=2, default_retry_delay=300)
 def update_playlists_for_festival(self: Task, festival_id: str) -> Dict[str, Any]:
     """
     Update all playlists associated with a specific festival.

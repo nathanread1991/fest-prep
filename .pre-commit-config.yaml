@@ -40,8 +40,11 @@ repos:
         additional_dependencies: [
           'types-redis',
           'types-requests',
+          'types-python-dateutil',
           'sqlalchemy[mypy]',
           'pydantic',
+          'pydantic-settings',
+          'dependency-injector',
         ]
 
   # General file checks

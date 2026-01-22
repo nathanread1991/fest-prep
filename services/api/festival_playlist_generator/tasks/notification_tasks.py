@@ -17,7 +17,7 @@ from festival_playlist_generator.services.recommendation_engine import (
 )
 
 
-@celery_app.task(name="send_daily_recommendations")  # type: ignore[untyped-decorator]
+@celery_app.task(name="send_daily_recommendations")
 def send_daily_recommendations() -> None:
     """Send daily personalized recommendations to users."""
     asyncio.run(_send_daily_recommendations())
@@ -79,7 +79,7 @@ async def _send_daily_recommendations() -> None:
         await db.close()
 
 
-@celery_app.task(name="send_weekly_recommendations")  # type: ignore[untyped-decorator]
+@celery_app.task(name="send_weekly_recommendations")
 def send_weekly_recommendations() -> None:
     """Send weekly personalized recommendations to users."""
     asyncio.run(_send_weekly_recommendations())
@@ -145,7 +145,7 @@ async def _send_weekly_recommendations() -> None:
         await db.close()
 
 
-@celery_app.task(name="check_new_festivals")  # type: ignore[untyped-decorator]
+@celery_app.task(name="check_new_festivals")
 def check_new_festivals() -> None:
     """Check for new festivals and send notifications."""
     asyncio.run(_check_new_festivals())
@@ -182,7 +182,7 @@ async def _check_new_festivals() -> None:
         await db.close()
 
 
-@celery_app.task(name="check_lineup_updates")  # type: ignore[untyped-decorator]
+@celery_app.task(name="check_lineup_updates")
 def check_lineup_updates() -> None:
     """Check for festival lineup updates and send notifications."""
     asyncio.run(_check_lineup_updates())
@@ -225,7 +225,7 @@ async def _check_lineup_updates() -> None:
         await db.close()
 
 
-@celery_app.task(name="cleanup_old_notifications")  # type: ignore[untyped-decorator]
+@celery_app.task(name="cleanup_old_notifications")
 def cleanup_old_notifications() -> None:
     """Clean up old notification data."""
     # This would clean up old notification records from the database

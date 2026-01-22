@@ -154,7 +154,7 @@ class BaseRepository(ABC, Generic[T]):
         )
         # Cast to access rowcount attribute
         rowcount = cast(Any, result).rowcount
-        return rowcount if rowcount is not None else 0
+        return int(rowcount) if rowcount is not None else 0
 
     async def exists(self, id: UUID) -> bool:
         """

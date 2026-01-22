@@ -181,7 +181,7 @@ class ArtistRepository:
         """
         result = await self.db.execute(delete(Artist).where(Artist.id.in_(artist_ids)))
         rowcount = cast(Any, result).rowcount
-        return rowcount if rowcount is not None else 0
+        return int(rowcount) if rowcount is not None else 0
 
     async def exists_by_name(self, name: str) -> bool:
         """Check if artist exists by name."""

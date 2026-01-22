@@ -72,9 +72,7 @@ class MockFestivalSource(WebScrapingSource):
         return True  # Mock data is always valid
 
 
-@celery_app.task(  # type: ignore[untyped-decorator]
-    bind=True, max_retries=3, default_retry_delay=300
-)
+@celery_app.task(bind=True, max_retries=3, default_retry_delay=300)
 def collect_daily_festivals(self: Task) -> Dict[str, Any]:
     """
     Collect festival data daily using the service orchestrator.
@@ -188,9 +186,7 @@ def collect_daily_festivals(self: Task) -> Dict[str, Any]:
             }
 
 
-@celery_app.task(  # type: ignore[untyped-decorator]
-    bind=True, max_retries=2, default_retry_delay=600
-)
+@celery_app.task(bind=True, max_retries=2, default_retry_delay=600)
 def collect_festivals_from_source(
     self: Task, source_config: Dict[str, Any]
 ) -> Dict[str, Any]:
@@ -268,7 +264,7 @@ def collect_festivals_from_source(
             }
 
 
-@celery_app.task(bind=True)  # type: ignore[untyped-decorator]
+@celery_app.task(bind=True)
 def cleanup_old_festivals(self: Task, days_old: int = 30) -> Dict[str, Any]:
     """
     Clean up old festival data that's no longer relevant.
