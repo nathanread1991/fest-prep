@@ -11,11 +11,15 @@ from festival_playlist_generator.core.database import get_db
 from festival_playlist_generator.schemas.playlist import Playlist as PlaylistSchema
 from festival_playlist_generator.schemas.song import Song as SongSchema
 from festival_playlist_generator.schemas.user import User as UserSchema
-from festival_playlist_generator.schemas.user import UserCreate
+from festival_playlist_generator.schemas.user import (
+    UserCreate,
+)
 from festival_playlist_generator.schemas.user import (
     UserSongPreference as UserSongPreferenceSchema,
 )
-from festival_playlist_generator.schemas.user import UserUpdate
+from festival_playlist_generator.schemas.user import (
+    UserUpdate,
+)
 from festival_playlist_generator.services.auth import auth_service
 from festival_playlist_generator.services.song_filtering import song_filtering_service
 from festival_playlist_generator.services.user_preferences import (

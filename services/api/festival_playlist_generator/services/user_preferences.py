@@ -14,7 +14,9 @@ from festival_playlist_generator.models.user import User, UserSongPreference
 from festival_playlist_generator.schemas.user import (
     UserSongPreference as UserSongPreferenceSchema,
 )
-from festival_playlist_generator.schemas.user import UserSongPreferenceCreate
+from festival_playlist_generator.schemas.user import (
+    UserSongPreferenceCreate,
+)
 
 logger = logging.getLogger(__name__)
 
