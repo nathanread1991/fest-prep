@@ -21,6 +21,12 @@ variable "alb_arn" {
   default     = ""
 }
 
+variable "enable_waf_alb_association" {
+  description = "Whether to associate WAF with ALB (set to true after ALB is created)"
+  type        = bool
+  default     = true
+}
+
 variable "vpc_id" {
   description = "VPC ID for security resources"
   type        = string
