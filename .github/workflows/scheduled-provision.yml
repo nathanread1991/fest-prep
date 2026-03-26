@@ -108,7 +108,7 @@ jobs:
       - name: Terraform Plan
         run: |
           terraform plan \
-            -var="aws_profile=default" \
+            -var="aws_profile=" \
             -var="database_restore_from_snapshot=${{ needs.find-snapshot.outputs.restore }}" \
             -out=tfplan
 
