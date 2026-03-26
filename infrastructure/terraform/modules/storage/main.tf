@@ -7,7 +7,8 @@
 
 # S3 bucket for application data (user uploads, backups, etc.)
 resource "aws_s3_bucket" "app_data" {
-  bucket = "${var.project_name}-${var.environment}-app-data"
+  bucket        = "${var.project_name}-${var.environment}-app-data"
+  force_destroy = true
 
   tags = merge(
     var.common_tags,
@@ -79,7 +80,8 @@ resource "aws_s3_bucket_intelligent_tiering_configuration" "app_data" {
 
 # S3 bucket for CloudFront access logs
 resource "aws_s3_bucket" "cloudfront_logs" {
-  bucket = "${var.project_name}-${var.environment}-cloudfront-logs"
+  bucket        = "${var.project_name}-${var.environment}-cloudfront-logs"
+  force_destroy = true
 
   tags = merge(
     var.common_tags,
