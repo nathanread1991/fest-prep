@@ -293,7 +293,7 @@ resource "aws_secretsmanager_secret" "spotify" {
   )
 
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 
@@ -325,7 +325,7 @@ resource "aws_secretsmanager_secret" "setlistfm" {
   )
 
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 
@@ -356,7 +356,7 @@ resource "aws_secretsmanager_secret" "jwt" {
   )
 
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 

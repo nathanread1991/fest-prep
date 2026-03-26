@@ -19,8 +19,9 @@ resource "aws_s3_bucket" "app_data" {
   )
 
   lifecycle {
-    # Prevent accidental deletion - this bucket persists across teardown/rebuild
-    prevent_destroy = true
+    # Persistent resource - survives teardown/rebuild cycles
+    # Set to true in production to prevent accidental deletion
+    prevent_destroy = false
   }
 }
 
@@ -90,8 +91,8 @@ resource "aws_s3_bucket" "cloudfront_logs" {
   )
 
   lifecycle {
-    # Prevent accidental deletion - this bucket persists across teardown/rebuild
-    prevent_destroy = true
+    # Persistent resource - survives teardown/rebuild cycles
+    prevent_destroy = false
   }
 }
 
@@ -187,8 +188,8 @@ resource "aws_ecr_repository" "app" {
   )
 
   lifecycle {
-    # Prevent accidental deletion - this repository persists across teardown/rebuild
-    prevent_destroy = true
+    # Persistent resource - survives teardown/rebuild cycles
+    prevent_destroy = false
   }
 }
 

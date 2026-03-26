@@ -177,8 +177,7 @@ resource "aws_secretsmanager_secret" "redis_url" {
   )
 
   lifecycle {
-    # Prevent accidental deletion
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 

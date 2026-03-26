@@ -197,8 +197,7 @@ resource "aws_secretsmanager_secret" "db_credentials" {
   )
 
   lifecycle {
-    # Prevent accidental deletion
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 
