@@ -10,7 +10,6 @@ terraform {
     key          = "terraform.tfstate"
     region       = "eu-west-2"
     encrypt      = true
-    profile      = "festival-playlist"
     use_lockfile = true # Native S3 locking (Terraform v1.10+)
   }
 }
