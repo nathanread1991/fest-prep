@@ -25,6 +25,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   # Job 1: Code Quality - Linting and Formatting
   lint:
@@ -147,7 +150,7 @@ jobs:
       - name: Install security tools
         run: |
           python -m pip install --upgrade pip
-          pip install bandit safety
+          pip install bandit pip-audit
 
       - name: Run Bandit (security linter)
         run: |
@@ -155,12 +158,11 @@ jobs:
           bandit -r festival_playlist_generator -ll
         continue-on-error: false
 
-      - name: Run Safety (dependency vulnerability scan)
+      - name: Run pip-audit (dependency vulnerability check)
         run: |
           pip install -r requirements.txt
-          safety scan --output json --save-as safety-report.json || true
-          safety scan
-        continue-on-error: true  # Don't fail on safety warnings for now
+          pip-audit
+        continue-on-error: true  # Don't fail on warnings for now
 
       - name: Upload Bandit report
         if: always()
