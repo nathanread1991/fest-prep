@@ -169,6 +169,7 @@ resource "aws_s3_bucket_ownership_controls" "cloudfront_logs" {
 resource "aws_ecr_repository" "app" {
   name                 = "${var.project_name}-${var.environment}"
   image_tag_mutability = "MUTABLE"
+  force_delete         = true
 
   # Enable image scanning on push
   image_scanning_configuration {

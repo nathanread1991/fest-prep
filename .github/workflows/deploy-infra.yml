@@ -1,11 +1,10 @@
-name: Deploy to Dev
+name: Deploy Infrastructure
 
 on:
   push:
     branches:
       - main
     paths:
-      - 'services/api/**'
       - 'infrastructure/terraform/**'
   workflow_dispatch:
     inputs:
@@ -19,7 +18,7 @@ on:
           - 'true'
 
 concurrency:
-  group: deploy-dev
+  group: deploy-infra
   cancel-in-progress: false
 
 env:
@@ -30,37 +29,9 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  # Run tests before deploying
-  test:
-    name: Run Tests
+  validate:
+    name: Validate Terraform
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: services/api
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: 'pip'
-          cache-dependency-path: services/api/requirements.txt
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
-      - name: Run tests
-        run: pytest tests/ -m "not integration" -v
-
-  # Deploy infrastructure (creates ECR repo, VPC, RDS, etc.)
-  deploy-infra:
-    name: Deploy Infrastructure
-    runs-on: ubuntu-latest
-    needs: test
     defaults:
       run:
         working-directory: ${{ env.TF_WORKING_DIR }}
@@ -83,6 +54,9 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
+      - name: Terraform Validate
+        run: terraform validate
+
       - name: Terraform Plan
         run: |
           terraform plan \
@@ -91,7 +65,3 @@ jobs:
 
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
-
-  # TODO: The following jobs are disabled until the Docker image is built and pushed to ECR.
-  # Re-enable build-push, deploy-app, smoke-test, and notify jobs when ready for Week 3 Task 23/24.
-  # See tasks.md: Task 23 (Build and test Docker image) and Task 24 (Deploy application to ECS)
