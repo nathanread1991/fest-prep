@@ -58,20 +58,45 @@ output "project_name" {
 # ============================================================================
 
 # Networking Module
-# output "vpc_id" {
-#   description = "ID of the VPC"
-#   value       = module.networking.vpc_id
-# }
+output "vpc_id" {
+  description = "ID of the VPC"
+  value       = module.networking.vpc_id
+}
 
-# output "public_subnet_ids" {
-#   description = "IDs of public subnets"
-#   value       = module.networking.public_subnet_ids
-# }
+output "vpc_cidr" {
+  description = "CIDR block of the VPC"
+  value       = module.networking.vpc_cidr
+}
 
-# output "private_subnet_ids" {
-#   description = "IDs of private subnets"
-#   value       = module.networking.private_subnet_ids
-# }
+output "public_subnet_ids" {
+  description = "IDs of public subnets"
+  value       = module.networking.public_subnet_ids
+}
+
+output "private_subnet_ids" {
+  description = "IDs of private subnets"
+  value       = module.networking.private_subnet_ids
+}
+
+output "alb_security_group_id" {
+  description = "ID of the ALB security group"
+  value       = module.networking.alb_security_group_id
+}
+
+output "ecs_tasks_security_group_id" {
+  description = "ID of the ECS tasks security group"
+  value       = module.networking.ecs_tasks_security_group_id
+}
+
+output "rds_security_group_id" {
+  description = "ID of the RDS security group"
+  value       = module.networking.rds_security_group_id
+}
+
+output "redis_security_group_id" {
+  description = "ID of the Redis security group"
+  value       = module.networking.redis_security_group_id
+}
 
 # Database Module
 # output "db_cluster_endpoint" {

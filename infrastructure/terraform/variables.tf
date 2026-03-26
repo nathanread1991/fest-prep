@@ -62,3 +62,141 @@ variable "common_tags" {
     ManagedBy   = "terraform"
   }
 }
+
+# Domain Configuration
+variable "domain_name" {
+  description = "Custom domain name for the application"
+  type        = string
+  default     = "gig-prep.co.uk"
+}
+
+# Database Configuration
+variable "database_name" {
+  description = "Name of the database"
+  type        = string
+  default     = "festival_playlist"
+}
+
+variable "database_master_username" {
+  description = "Master username for the database"
+  type        = string
+  default     = "festival_admin"
+}
+
+variable "database_engine_version" {
+  description = "PostgreSQL engine version"
+  type        = string
+  default     = "15.3"
+}
+
+variable "database_min_capacity" {
+  description = "Minimum ACU capacity for Aurora Serverless v2"
+  type        = number
+  default     = 0.5
+}
+
+variable "database_max_capacity" {
+  description = "Maximum ACU capacity for Aurora Serverless v2"
+  type        = number
+  default     = 2
+}
+
+variable "database_backup_retention_period" {
+  description = "Number of days to retain database backups"
+  type        = number
+  default     = 7
+}
+
+variable "database_restore_from_snapshot" {
+  description = "Whether to restore database from latest snapshot"
+  type        = bool
+  default     = false
+}
+
+# Redis Configuration
+variable "redis_node_type" {
+  description = "ElastiCache Redis node type"
+  type        = string
+  default     = "cache.t4g.micro"
+}
+
+variable "redis_parameter_group_family" {
+  description = "Redis parameter group family"
+  type        = string
+  default     = "redis7"
+}
+
+variable "redis_engine_version" {
+  description = "Redis engine version"
+  type        = string
+  default     = "7.0"
+}
+
+# ECS Configuration
+variable "ecs_api_cpu" {
+  description = "CPU units for API task (256 = 0.25 vCPU)"
+  type        = number
+  default     = 256
+}
+
+variable "ecs_api_memory" {
+  description = "Memory for API task in MB"
+  type        = number
+  default     = 512
+}
+
+variable "ecs_api_desired_count" {
+  description = "Desired number of API tasks"
+  type        = number
+  default     = 1
+}
+
+variable "ecs_api_min_capacity" {
+  description = "Minimum number of API tasks for auto-scaling"
+  type        = number
+  default     = 1
+}
+
+variable "ecs_api_max_capacity" {
+  description = "Maximum number of API tasks for auto-scaling"
+  type        = number
+  default     = 4
+}
+
+variable "ecs_worker_cpu" {
+  description = "CPU units for worker task (256 = 0.25 vCPU)"
+  type        = number
+  default     = 256
+}
+
+variable "ecs_worker_memory" {
+  description = "Memory for worker task in MB"
+  type        = number
+  default     = 512
+}
+
+variable "ecs_worker_desired_count" {
+  description = "Desired number of worker tasks"
+  type        = number
+  default     = 1
+}
+
+# WAF Configuration
+variable "enable_waf" {
+  description = "Enable AWS WAF for ALB protection"
+  type        = bool
+  default     = true
+}
+
+variable "waf_rate_limit" {
+  description = "Rate limit for WAF (requests per 5 minutes per IP)"
+  type        = number
+  default     = 1000
+}
+
+# CloudWatch Configuration
+variable "cloudwatch_log_retention_days" {
+  description = "Number of days to retain CloudWatch logs"
+  type        = number
+  default     = 7
+}
