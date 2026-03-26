@@ -34,6 +34,7 @@ async def login_page(request: Request) -> Response:
     return_url = request.query_params.get("return_url", "/")
 
     return templates.TemplateResponse(
+        request,
         "auth/login.html",
         {
             "request": request,
@@ -222,7 +223,7 @@ async def profile_page(
         return RedirectResponse(url="/auth/login", status_code=302)
 
     return templates.TemplateResponse(
-        "auth/profile.html", {"request": request, "user": user}
+        request, "auth/profile.html", {"request": request, "user": user}
     )
 
 
@@ -241,7 +242,7 @@ async def account_settings_page(
         return RedirectResponse(url="/auth/login", status_code=302)
 
     return templates.TemplateResponse(
-        "auth/account_settings.html", {"request": request, "user": user}
+        request, "auth/account_settings.html", {"request": request, "user": user}
     )
 
 
@@ -286,6 +287,7 @@ async def privacy_consent_page(
     # Verify session token (basic validation)
     # In production, this should be more secure
     return templates.TemplateResponse(
+        request,
         "auth/privacy_consent.html",
         {"request": request, "user_id": user_id, "session_token": session_token},
     )
@@ -371,7 +373,7 @@ async def privacy_preferences_page(
         return RedirectResponse(url="/auth/login", status_code=302)
 
     return templates.TemplateResponse(
-        "auth/privacy_preferences.html", {"request": request, "user": user}
+        request, "auth/privacy_preferences.html", {"request": request, "user": user}
     )
 
 
@@ -448,6 +450,7 @@ async def export_user_data_page(
 ) -> Response:
     """Display data export page."""
     return templates.TemplateResponse(
+        request,
         "auth/export_data.html",
         {"request": request, "user": user, "title": "Export My Data"},
     )
@@ -533,6 +536,7 @@ async def export_user_data_request(
     except Exception as e:
         logger.error(f"Data export failed for user {user.id}: {str(e)}")
         return templates.TemplateResponse(
+            request,
             "auth/export_data.html",
             {
                 "request": request,
@@ -549,6 +553,7 @@ async def delete_account_page(
 ) -> Response:
     """Display account deletion confirmation page."""
     return templates.TemplateResponse(
+        request,
         "auth/delete_account.html",
         {"request": request, "user": user, "title": "Delete My Account"},
     )
@@ -568,6 +573,7 @@ async def delete_account_request(
 
     if confirm_deletion.lower() != "delete my account":
         return templates.TemplateResponse(
+            request,
             "auth/delete_account.html",
             {
                 "request": request,
@@ -593,6 +599,7 @@ async def delete_account_request(
     except Exception as e:
         logger.error(f"Account deletion failed for user {user.id}: {str(e)}")
         return templates.TemplateResponse(
+            request,
             "auth/delete_account.html",
             {
                 "request": request,

@@ -42,7 +42,7 @@ async def home(request: Request) -> Response:
     welcome = request.query_params.get("welcome") == "true"
 
     response = templates.TemplateResponse(
-        "index.html", {"request": request, "welcome_new_user": welcome}
+        request, "index.html", {"request": request, "welcome_new_user": welcome}
     )
 
     # Add no-cache headers if refresh parameter is present
@@ -55,7 +55,7 @@ async def home(request: Request) -> Response:
 @web_router.get("/debug-auth", response_class=HTMLResponse)
 async def debug_auth(request: Request) -> Response:
     """Debug page for authentication issues."""
-    return templates.TemplateResponse("debug_auth.html", {"request": request})
+    return templates.TemplateResponse(request, "debug_auth.html", {"request": request})
 
 
 @web_router.get("/artists", response_class=HTMLResponse)
@@ -89,7 +89,7 @@ async def artists_page(
         artist._cached_logo = convert_to_proxy_url(artist.logo_url)
 
     response = templates.TemplateResponse(
-        "artists.html", {"request": request, "artists": artists_with_counts}
+        request, "artists.html", {"request": request, "artists": artists_with_counts}
     )
 
     # Add no-cache headers if refresh parameter is present
@@ -127,7 +127,9 @@ async def festivals_page(
         festivals_with_cached_logos.append(festival_data)
 
     response = templates.TemplateResponse(
-        "festivals.html", {"request": request, "festivals": festivals_with_cached_logos}
+        request,
+        "festivals.html",
+        {"request": request, "festivals": festivals_with_cached_logos},
     )
 
     # Add no-cache headers if refresh parameter is present
@@ -237,6 +239,7 @@ async def festival_detail(
 
     # Render template
     response = templates.TemplateResponse(
+        request,
         "festival_detail.html",
         {
             "request": request,
@@ -307,7 +310,9 @@ async def playlists_page(
     playlists = result.scalars().all()
 
     response = templates.TemplateResponse(
-        "playlists.html", {"request": request, "playlists": playlists, "user": user}
+        request,
+        "playlists.html",
+        {"request": request, "playlists": playlists, "user": user},
     )
 
     # Add no-cache headers if refresh parameter is present
@@ -332,7 +337,7 @@ async def playlist_detail(
         raise HTTPException(status_code=404, detail="Playlist not found")
 
     return templates.TemplateResponse(
-        "playlist.html", {"request": request, "playlist": playlist}
+        request, "playlist.html", {"request": request, "playlist": playlist}
     )
 
 
@@ -507,6 +512,7 @@ async def artist_detail(
             )
 
         return templates.TemplateResponse(
+            request,
             "artist_detail.html",
             {
                 "request": request,
@@ -542,35 +548,35 @@ async def search_page(
 ) -> Response:
     """Search results page."""
     return templates.TemplateResponse(
-        "search.html", {"request": request, "query": q, "search_type": type}
+        request, "search.html", {"request": request, "query": q, "search_type": type}
     )
 
 
 @web_router.get("/about", response_class=HTMLResponse)
 async def about_page(request: Request) -> Response:
     """About page."""
-    return templates.TemplateResponse("about.html", {"request": request})
+    return templates.TemplateResponse(request, "about.html", {"request": request})
 
 
 @web_router.get("/privacy", response_class=HTMLResponse)
 async def privacy_page(request: Request) -> Response:
     """Privacy policy page."""
-    return templates.TemplateResponse("privacy.html", {"request": request})
+    return templates.TemplateResponse(request, "privacy.html", {"request": request})
 
 
 @web_router.get("/streaming", response_class=HTMLResponse)
 async def streaming_page(request: Request) -> Response:
     """Streaming services management page."""
-    return templates.TemplateResponse("streaming.html", {"request": request})
+    return templates.TemplateResponse(request, "streaming.html", {"request": request})
 
 
 @web_router.get("/terms", response_class=HTMLResponse)
 async def terms_page(request: Request) -> Response:
     """Terms of service page."""
-    return templates.TemplateResponse("terms.html", {"request": request})
+    return templates.TemplateResponse(request, "terms.html", {"request": request})
 
 
 @web_router.get("/offline", response_class=HTMLResponse)
 async def offline_page(request: Request) -> Response:
     """Offline page for PWA functionality."""
-    return templates.TemplateResponse("offline.html", {"request": request})
+    return templates.TemplateResponse(request, "offline.html", {"request": request})

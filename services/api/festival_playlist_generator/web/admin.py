@@ -83,6 +83,7 @@ async def admin_dashboard(
         users_count = len(users_result.scalars().all())
 
         response = templates.TemplateResponse(
+            request,
             "admin/dashboard.html",
             {
                 "request": request,
@@ -101,6 +102,7 @@ async def admin_dashboard(
 
     except Exception as e:
         response = templates.TemplateResponse(
+            request,
             "admin/dashboard.html",
             {
                 "request": request,
@@ -136,6 +138,7 @@ async def admin_festivals(
         festivals = result.scalars().all()
 
         response = templates.TemplateResponse(
+            request,
             "admin/festivals.html",
             {"request": request, "admin_user": admin_user, "festivals": festivals},
         )
@@ -148,6 +151,7 @@ async def admin_festivals(
 
     except Exception as e:
         response = templates.TemplateResponse(
+            request,
             "admin/festivals.html",
             {
                 "request": request,
@@ -170,6 +174,7 @@ async def admin_new_festival(
 ) -> Response:
     """New festival form."""
     return templates.TemplateResponse(
+        request,
         "admin/festival_form.html",
         {
             "request": request,
@@ -205,6 +210,7 @@ async def admin_edit_festival(
 
         if not festival:
             return templates.TemplateResponse(
+                request,
                 "admin/festivals.html",
                 {
                     "request": request,
@@ -229,6 +235,7 @@ async def admin_edit_festival(
         )
 
         return templates.TemplateResponse(
+            request,
             "admin/festival_form.html",
             {
                 "request": request,
@@ -253,6 +260,7 @@ async def admin_edit_festival(
 
     except ValueError:
         return templates.TemplateResponse(
+            request,
             "admin/festivals.html",
             {
                 "request": request,
@@ -264,6 +272,7 @@ async def admin_edit_festival(
     except Exception as e:
         logger.error(f"Error loading festival for edit: {e}")
         return templates.TemplateResponse(
+            request,
             "admin/festivals.html",
             {
                 "request": request,
@@ -418,6 +427,7 @@ async def admin_create_festival(
             )
 
         return templates.TemplateResponse(
+            request,
             "admin/festival_form.html",
             {
                 "request": request,
@@ -462,6 +472,7 @@ async def admin_create_festival(
         logger.error(f"Error creating festival '{name}': {e}")
 
         return templates.TemplateResponse(
+            request,
             "admin/festival_form.html",
             {
                 "request": request,
@@ -531,6 +542,7 @@ async def admin_artists(
         has_next = page < total_pages
 
         response = templates.TemplateResponse(
+            request,
             "admin/artists.html",
             {
                 "request": request,
@@ -557,6 +569,7 @@ async def admin_artists(
     except Exception as e:
         logger.error(f"Error loading artists page: {e}", exc_info=True)
         response = templates.TemplateResponse(
+            request,
             "admin/artists.html",
             {
                 "request": request,
@@ -588,6 +601,7 @@ async def admin_new_artist(
 ) -> Response:
     """New artist form."""
     return templates.TemplateResponse(
+        request,
         "admin/artist_form.html",
         {
             "request": request,
@@ -679,6 +693,7 @@ async def admin_create_artist(
                 )
 
             return templates.TemplateResponse(
+                request,
                 "admin/artist_form.html",
                 {
                     "request": request,
@@ -720,6 +735,7 @@ async def admin_create_artist(
                 )
 
                 return templates.TemplateResponse(
+                    request,
                     "admin/artist_form.html",
                     {
                         "request": request,
@@ -757,6 +773,7 @@ async def admin_create_artist(
                 error_msg += "Each artist can only have one unique MusicBrainz ID."
 
                 return templates.TemplateResponse(
+                    request,
                     "admin/artist_form.html",
                     {
                         "request": request,
@@ -834,6 +851,7 @@ async def admin_create_artist(
         logger.error(f"Error creating artist '{name}': {e}")
 
         return templates.TemplateResponse(
+            request,
             "admin/artist_form.html",
             {
                 "request": request,
@@ -1048,6 +1066,7 @@ async def admin_update_festival(
             festival = None
 
         return templates.TemplateResponse(
+            request,
             "admin/festival_form.html",
             {
                 "request": request,
@@ -1087,6 +1106,7 @@ async def admin_update_festival(
             festival = None
 
         return templates.TemplateResponse(
+            request,
             "admin/festival_form.html",
             {
                 "request": request,
@@ -1201,6 +1221,7 @@ async def admin_edit_artist(
 
         if not artist:
             return templates.TemplateResponse(
+                request,
                 "admin/artists.html",
                 {
                     "request": request,
@@ -1214,6 +1235,7 @@ async def admin_edit_artist(
         genres_str = ", ".join(artist.genres) if artist.genres else ""
 
         return templates.TemplateResponse(
+            request,
             "admin/artist_edit_form.html",
             {
                 "request": request,
@@ -1236,6 +1258,7 @@ async def admin_edit_artist(
 
     except ValueError:
         return templates.TemplateResponse(
+            request,
             "admin/artists.html",
             {
                 "request": request,
@@ -1247,6 +1270,7 @@ async def admin_edit_artist(
     except Exception as e:
         logger.error(f"Error loading artist for edit: {e}")
         return templates.TemplateResponse(
+            request,
             "admin/artists.html",
             {
                 "request": request,
@@ -1854,6 +1878,7 @@ async def admin_update_artist(
             artist = None
 
         return templates.TemplateResponse(
+            request,
             "admin/artist_edit_form.html",
             {
                 "request": request,
@@ -1894,6 +1919,7 @@ async def admin_update_artist(
             artist = None
 
         return templates.TemplateResponse(
+            request,
             "admin/artist_edit_form.html",
             {
                 "request": request,
@@ -2178,6 +2204,7 @@ async def admin_users(
         users = result.scalars().all()
 
         response = templates.TemplateResponse(
+            request,
             "admin/users.html",
             {"request": request, "admin_user": admin_user, "users": users},
         )
@@ -2190,6 +2217,7 @@ async def admin_users(
 
     except Exception as e:
         response = templates.TemplateResponse(
+            request,
             "admin/users.html",
             {
                 "request": request,
@@ -2478,6 +2506,7 @@ async def admin_duplicates(
             groups = detection_service.find_all_duplicates()
 
             response = templates.TemplateResponse(
+                request,
                 "admin/duplicates.html",
                 {
                     "request": request,
@@ -2499,6 +2528,7 @@ async def admin_duplicates(
     except Exception as e:
         logger.error(f"Error finding duplicates: {e}")
         response = templates.TemplateResponse(
+            request,
             "admin/duplicates.html",
             {
                 "request": request,
