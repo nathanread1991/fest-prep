@@ -53,11 +53,6 @@ resource "aws_cloudfront_distribution" "main" {
       origin_read_timeout    = 60
       origin_keepalive_timeout = 5
     }
-
-    custom_header {
-      name  = "X-Custom-Header"
-      value = var.custom_header_value
-    }
   }
 
   # ============================================================================
