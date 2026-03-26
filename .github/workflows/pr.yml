@@ -155,11 +155,11 @@ jobs:
           bandit -r festival_playlist_generator -ll
         continue-on-error: false
 
-      - name: Run Safety (dependency vulnerability check)
+      - name: Run Safety (dependency vulnerability scan)
         run: |
           pip install -r requirements.txt
-          safety check --json || true
-          safety check
+          safety scan --output json --save-as safety-report.json || true
+          safety scan
         continue-on-error: true  # Don't fail on safety warnings for now
 
       - name: Upload Bandit report
