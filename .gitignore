@@ -71,6 +71,10 @@ playwright-report/
 test-results/
 *.webm
 
+# Cache files
+.cache
+*.cache
+
 # Celery
 celerybeat-schedule
 celerybeat.pid

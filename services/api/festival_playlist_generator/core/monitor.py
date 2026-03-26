@@ -1,9 +1,11 @@
 """Celery monitoring utilities."""
 
 import logging
-from typing import Dict, List, Optional
+from typing import Any, Dict, Optional
+
 from celery import Celery
 from celery.events.state import State
+
 from festival_playlist_generator.core.celery_app import celery_app
 
 logger = logging.getLogger(__name__)
@@ -11,12 +13,12 @@ logger = logging.getLogger(__name__)
 
 class TaskMonitor:
     """Monitor Celery tasks and workers."""
-    
-    def __init__(self, app: Celery):
+
+    def __init__(self, app: Celery) -> None:
         self.app = app
         self.state = State()
-    
-    def get_active_tasks(self) -> Dict:
+
+    def get_active_tasks(self) -> Dict[str, Any]:
         """Get currently active tasks."""
         try:
             inspect = self.app.control.inspect()
@@ -25,8 +27,8 @@ class TaskMonitor:
         except Exception as e:
             logger.error(f"Error getting active tasks: {e}")
             return {}
-    
-    def get_scheduled_tasks(self) -> Dict:
+
+    def get_scheduled_tasks(self) -> Dict[str, Any]:
         """Get scheduled tasks."""
         try:
             inspect = self.app.control.inspect()
@@ -35,8 +37,8 @@ class TaskMonitor:
         except Exception as e:
             logger.error(f"Error getting scheduled tasks: {e}")
             return {}
-    
-    def get_worker_stats(self) -> Dict:
+
+    def get_worker_stats(self) -> Dict[str, Any]:
         """Get worker statistics."""
         try:
             inspect = self.app.control.inspect()
@@ -45,8 +47,8 @@ class TaskMonitor:
         except Exception as e:
             logger.error(f"Error getting worker stats: {e}")
             return {}
-    
-    def get_registered_tasks(self) -> Dict:
+
+    def get_registered_tasks(self) -> Dict[str, Any]:
         """Get registered tasks on workers."""
         try:
             inspect = self.app.control.inspect()
@@ -55,8 +57,8 @@ class TaskMonitor:
         except Exception as e:
             logger.error(f"Error getting registered tasks: {e}")
             return {}
-    
-    def ping_workers(self) -> Dict:
+
+    def ping_workers(self) -> Dict[str, Any]:
         """Ping all workers to check if they're alive."""
         try:
             inspect = self.app.control.inspect()
@@ -65,8 +67,8 @@ class TaskMonitor:
         except Exception as e:
             logger.error(f"Error pinging workers: {e}")
             return {}
-    
-    def get_queue_lengths(self) -> Dict:
+
+    def get_queue_lengths(self) -> Dict[str, Any]:
         """Get queue lengths (requires Redis broker)."""
         try:
             # This is a simplified version - in production you might want
@@ -77,7 +79,7 @@ class TaskMonitor:
         except Exception as e:
             logger.error(f"Error getting queue lengths: {e}")
             return {}
-    
+
     def revoke_task(self, task_id: str, terminate: bool = False) -> bool:
         """Revoke a task by ID."""
         try:
@@ -87,87 +89,93 @@ class TaskMonitor:
         except Exception as e:
             logger.error(f"Error revoking task {task_id}: {e}")
             return False
-    
-    def get_task_info(self, task_id: str) -> Optional[Dict]:
+
+    def get_task_info(self, task_id: str) -> Optional[Dict[str, Any]]:
         """Get information about a specific task."""
         try:
             result = self.app.AsyncResult(task_id)
             return {
-                'id': task_id,
-                'status': result.status,
-                'result': result.result,
-                'traceback': result.traceback,
-                'date_done': result.date_done,
+                "id": task_id,
+                "status": result.status,
+                "result": result.result,
+                "traceback": result.traceback,
+                "date_done": result.date_done,
             }
         except Exception as e:
             logger.error(f"Error getting task info for {task_id}: {e}")
             return None
-    
-    def health_check(self) -> Dict:
+
+    def health_check(self) -> Dict[str, Any]:
         """Perform a comprehensive health check."""
         health = {
-            'workers': {},
-            'queues': {},
-            'broker': 'unknown',
-            'overall_status': 'healthy'
+            "workers": {},
+            "queues": {},
+            "broker": "unknown",
+            "overall_status": "healthy",
         }
-        
+
         try:
             # Check workers
             workers = self.ping_workers()
-            health['workers'] = {
-                'count': len(workers),
-                'online': list(workers.keys()),
-                'status': 'healthy' if workers else 'no_workers'
+            health["workers"] = {
+                "count": len(workers),
+                "online": list(workers.keys()),
+                "status": "healthy" if workers else "no_workers",
             }
-            
+
             # Check broker connection
             try:
                 self.app.broker_connection().ensure_connection(max_retries=1)
-                health['broker'] = 'connected'
+                health["broker"] = "connected"
             except Exception:
-                health['broker'] = 'disconnected'
-                health['overall_status'] = 'unhealthy'
-            
+                health["broker"] = "disconnected"
+                health["overall_status"] = "unhealthy"
+
             # Check if we have workers
             if not workers:
-                health['overall_status'] = 'degraded'
-            
+                health["overall_status"] = "degraded"
+
         except Exception as e:
             logger.error(f"Error during health check: {e}")
-            health['overall_status'] = 'error'
-            health['error'] = str(e)
-        
+            health["overall_status"] = "error"
+            health["error"] = str(e)
+
         return health
 
 
-def monitor_cli():
+def monitor_cli() -> None:
     """CLI entry point for monitoring."""
     import argparse
     import json
     import time
-    
-    parser = argparse.ArgumentParser(description='Monitor Celery tasks')
-    parser.add_argument('--command', choices=['status', 'health', 'tasks', 'workers'], 
-                       default='status', help='Monitoring command')
-    parser.add_argument('--watch', action='store_true', help='Watch mode (refresh every 5 seconds)')
-    
+
+    parser = argparse.ArgumentParser(description="Monitor Celery tasks")
+    parser.add_argument(
+        "--command",
+        choices=["status", "health", "tasks", "workers"],
+        default="status",
+        help="Monitoring command",
+    )
+    parser.add_argument(
+        "--watch", action="store_true", help="Watch mode (refresh every 5 seconds)"
+    )
+
     args = parser.parse_args()
-    
+
     monitor = TaskMonitor(celery_app)
-    
-    def print_status():
-        if args.command == 'health':
+
+    def print_status() -> None:
+        if args.command == "health":
             health = monitor.health_check()
             print(json.dumps(health, indent=2, default=str))
-        elif args.command == 'tasks':
+        elif args.command == "tasks":
             active = monitor.get_active_tasks()
             scheduled = monitor.get_scheduled_tasks()
             print("Active tasks:")
             print(json.dumps(active, indent=2, default=str))
             print("\nScheduled tasks:")
             print(json.dumps(scheduled, indent=2, default=str))
-        elif args.command == 'workers':
+        elif args.command == "workers":
             stats = monitor.get_worker_stats()
             print(json.dumps(stats, indent=2, default=str))
         else:  # status
@@ -177,7 +185,7 @@ def monitor_cli():
             print(f"Workers Online: {len(health['workers']['online'])}")
             print(f"Broker Status: {health['broker']}")
             print(f"Active Tasks: {sum(len(tasks) for tasks in active.values())}")
-    
+
     if args.watch:
         try:
             while True:

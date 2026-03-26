@@ -1,0 +1,185 @@
+name: Scheduled Provision
+
+on:
+  schedule:
+    # 9 AM GMT weekdays (adjust for your timezone)
+    - cron: '0 9 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to provision'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+      skip_snapshot_restore:
+        description: 'Create fresh database instead of restoring from snapshot'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+
+concurrency:
+  group: infra-${{ github.event.inputs.environment || 'dev' }}
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: eu-west-2
+  ENVIRONMENT: ${{ github.event.inputs.environment || 'dev' }}
+  PROJECT_NAME: festival-playlist
+  TF_WORKING_DIR: infrastructure/terraform
+
+jobs:
+  find-snapshot:
+    name: Find Latest Snapshot
+    runs-on: ubuntu-latest
+    outputs:
+      snapshot_id: ${{ steps.find.outputs.snapshot_id }}
+      restore: ${{ steps.find.outputs.restore }}
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Find latest snapshot
+        id: find
+        run: |
+          if [ "${{ github.event.inputs.skip_snapshot_restore }}" = "true" ]; then
+            echo "Skipping snapshot restore — will create fresh database"
+            echo "snapshot_id=" >> "$GITHUB_OUTPUT"
+            echo "restore=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          SNAPSHOT_ID=$(aws rds describe-db-cluster-snapshots \
+            --query "reverse(sort_by(DBClusterSnapshots[?starts_with(DBClusterSnapshotIdentifier, '${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-snapshot-') && Status=='available'], &SnapshotCreateTime))[0].DBClusterSnapshotIdentifier" \
+            --output text 2>/dev/null || echo "None")
+
+          if [ "$SNAPSHOT_ID" = "None" ] || [ -z "$SNAPSHOT_ID" ]; then
+            echo "No snapshot found — will create fresh database"
+            echo "snapshot_id=" >> "$GITHUB_OUTPUT"
+            echo "restore=false" >> "$GITHUB_OUTPUT"
+          else
+            SNAP_TIME=$(aws rds describe-db-cluster-snapshots \
+              --db-cluster-snapshot-identifier "$SNAPSHOT_ID" \
+              --query 'DBClusterSnapshots[0].SnapshotCreateTime' \
+              --output text 2>/dev/null || echo "unknown")
+            echo "Found snapshot: $SNAPSHOT_ID (created: $SNAP_TIME)"
+            echo "snapshot_id=${SNAPSHOT_ID}" >> "$GITHUB_OUTPUT"
+            echo "restore=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  provision:
+    name: Terraform Apply
+    runs-on: ubuntu-latest
+    needs: find-snapshot
+    defaults:
+      run:
+        working-directory: ${{ env.TF_WORKING_DIR }}
+    outputs:
+      alb_dns: ${{ steps.outputs.outputs.alb_dns }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~> 1.10"
+          terraform_wrapper: false
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Plan
+        run: |
+          terraform plan \
+            -var="aws_profile=default" \
+            -var="database_restore_from_snapshot=${{ needs.find-snapshot.outputs.restore }}" \
+            -out=tfplan
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan
+
+      - name: Get outputs
+        id: outputs
+        run: |
+          ALB_DNS=$(terraform output -raw alb_dns_name 2>/dev/null || echo "")
+          echo "alb_dns=${ALB_DNS}" >> "$GITHUB_OUTPUT"
+
+  wait-for-services:
+    name: Wait for ECS Services
+    runs-on: ubuntu-latest
+    needs: provision
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Wait for API service stability
+        run: |
+          CLUSTER="${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-cluster"
+          SERVICE="${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-api"
+          echo "Waiting for ECS service to stabilize..."
+          aws ecs wait services-stable \
+            --cluster "$CLUSTER" \
+            --services "$SERVICE" \
+            --region "${{ env.AWS_REGION }}" || echo "⚠️ Service may not be stable yet"
+
+  health-check:
+    name: Health Check
+    runs-on: ubuntu-latest
+    needs: [provision, wait-for-services]
+    steps:
+      - name: Run health check
+        if: needs.provision.outputs.alb_dns != ''
+        run: |
+          ALB_DNS="${{ needs.provision.outputs.alb_dns }}"
+          MAX_RETRIES=15
+          RETRY=0
+          echo "Checking health at: http://${ALB_DNS}/health"
+          until curl -sf "http://${ALB_DNS}/health" || [ $RETRY -eq $MAX_RETRIES ]; do
+            echo "Waiting... (attempt $((RETRY+1))/$MAX_RETRIES)"
+            sleep 20
+            RETRY=$((RETRY+1))
+          done
+          if [ $RETRY -eq $MAX_RETRIES ]; then
+            echo "⚠️ Health check did not pass within timeout"
+            echo "Service may still be starting — check manually"
+            exit 0
+          fi
+          echo "✅ Health check passed"
+
+  notify:
+    name: Provision Notification
+    runs-on: ubuntu-latest
+    needs: [find-snapshot, provision, health-check]
+    if: always()
+    steps:
+      - name: Provision status
+        run: |
+          if [ "${{ needs.provision.result }}" == "success" ]; then
+            echo "✅ Environment provisioned: ${{ env.ENVIRONMENT }}"
+            echo "   Snapshot restored: ${{ needs.find-snapshot.outputs.restore }}"
+            echo "   ALB DNS: ${{ needs.provision.outputs.alb_dns }}"
+            echo "   Health: http://${{ needs.provision.outputs.alb_dns }}/health"
+          else
+            echo "❌ Provision failed for ${{ env.ENVIRONMENT }}"
+            exit 1
+          fi

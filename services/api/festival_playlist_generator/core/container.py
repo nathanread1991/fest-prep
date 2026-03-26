@@ -1,108 +1,92 @@
 """Dependency injection container for the application."""
 
 from dependency_injector import containers, providers
-from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from festival_playlist_generator.core.database import AsyncSessionLocal, get_db
-from festival_playlist_generator.core.redis import get_redis, cache
-from festival_playlist_generator.core.config import settings
 
 # Import repositories
 from festival_playlist_generator.repositories.artist_repository import ArtistRepository
-from festival_playlist_generator.repositories.festival_repository import FestivalRepository
-from festival_playlist_generator.repositories.playlist_repository import PlaylistRepository
-from festival_playlist_generator.repositories.setlist_repository import SetlistRepository
+from festival_playlist_generator.repositories.festival_repository import (
+    FestivalRepository,
+)
+from festival_playlist_generator.repositories.playlist_repository import (
+    PlaylistRepository,
+)
+from festival_playlist_generator.repositories.setlist_repository import (
+    SetlistRepository,
+)
 from festival_playlist_generator.repositories.user_repository import UserRepository
+from festival_playlist_generator.services.artist_service import ArtistService
 
 # Import services
 from festival_playlist_generator.services.cache_service import CacheService
-from festival_playlist_generator.services.artist_service import ArtistService
 from festival_playlist_generator.services.festival_service import FestivalService
 from festival_playlist_generator.services.playlist_service import PlaylistService
-from festival_playlist_generator.services.user_service import UserService
-from festival_playlist_generator.services.spotify_service import SpotifyService
 from festival_playlist_generator.services.setlistfm_service import SetlistFmService
+from festival_playlist_generator.services.spotify_service import SpotifyService
+from festival_playlist_generator.services.user_service import UserService
 
 
 class Container(containers.DeclarativeContainer):
     """Dependency injection container for all services and repositories."""
-    
+
     # Configuration
     config = providers.Configuration()
-    
+
     # Database session factory
-    db_session_factory = providers.Singleton(
-        lambda: AsyncSessionLocal
-    )
-    
+    db_session_factory = providers.Singleton(lambda: AsyncSessionLocal)
+
     # Cache service (initialized without redis_client, will create its own pool lazily)
-    cache_service = providers.Singleton(
-        CacheService,
-        redis_client=None
-    )
-    
+    cache_service = providers.Singleton(CacheService, redis_client=None)
+
     # Repositories
     artist_repository = providers.Factory(
-        ArtistRepository,
-        session=providers.Dependency()
+        ArtistRepository, session=providers.Dependency()
     )
-    
+
     festival_repository = providers.Factory(
-        FestivalRepository,
-        session=providers.Dependency()
+        FestivalRepository, session=providers.Dependency()
     )
-    
+
     playlist_repository = providers.Factory(
-        PlaylistRepository,
-        session=providers.Dependency()
+        PlaylistRepository, session=providers.Dependency()
     )
-    
+
     setlist_repository = providers.Factory(
-        SetlistRepository,
-        session=providers.Dependency()
+        SetlistRepository, session=providers.Dependency()
     )
-    
-    user_repository = providers.Factory(
-        UserRepository,
-        session=providers.Dependency()
-    )
-    
+
+    user_repository = providers.Factory(UserRepository, session=providers.Dependency())
+
     # Services
     artist_service = providers.Factory(
-        ArtistService,
-        artist_repository=artist_repository,
-        cache_service=cache_service
+        ArtistService, artist_repository=artist_repository, cache_service=cache_service
     )
-    
+
     festival_service = providers.Factory(
         FestivalService,
         festival_repository=festival_repository,
         artist_repository=artist_repository,
-        cache_service=cache_service
+        cache_service=cache_service,
     )
-    
+
     playlist_service = providers.Factory(
         PlaylistService,
         playlist_repository=playlist_repository,
         festival_repository=festival_repository,
         artist_repository=artist_repository,
-        cache_service=cache_service
+        cache_service=cache_service,
     )
-    
+
     user_service = providers.Factory(
-        UserService,
-        user_repository=user_repository,
-        cache_service=cache_service
+        UserService, user_repository=user_repository, cache_service=cache_service
     )
-    
-    spotify_service = providers.Singleton(
-        SpotifyService
-    )
-    
-    setlistfm_service = providers.Singleton(
-        SetlistFmService
-    )
+
+    spotify_service = providers.Singleton(SpotifyService)
+
+    setlistfm_service = providers.Singleton(SetlistFmService)
 
 
 # Global container instance
@@ -125,7 +109,7 @@ def get_festival_service(db: AsyncSession = Depends(get_db)) -> FestivalService:
     return FestivalService(
         festival_repository=festival_repo,
         artist_repository=artist_repo,
-        cache_service=cache_service
+        cache_service=cache_service,
     )
 
 
@@ -137,7 +121,7 @@ def get_playlist_service(db: AsyncSession = Depends(get_db)) -> PlaylistService:
     return PlaylistService(
         playlist_repository=playlist_repo,
         festival_repository=festival_repo,
-        cache_service=cache_service
+        cache_service=cache_service,
     )
 
 

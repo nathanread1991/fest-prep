@@ -32,7 +32,7 @@ source venv/bin/activate
 # Install dependencies if needed
 if [ ! -f "venv/.deps_installed" ]; then
     echo -e "${YELLOW}📥 Installing dependencies...${NC}"
-    pip install -r requirements.txt
+    pip install -r services/api/requirements.txt
     touch venv/.deps_installed
     echo -e "${GREEN}✅ Dependencies installed${NC}"
 fi
@@ -54,5 +54,6 @@ echo -e "${BLUE}📍 Server will be available at: http://localhost:8000${NC}"
 echo -e "${YELLOW}💡 Press Ctrl+C to stop the server${NC}"
 echo ""
 
-# Start the server
-python3 -m uvicorn festival_playlist_generator.main:app --reload --host 0.0.0.0 --port 8000
+# Change to API directory and start the server
+cd "$PROJECT_DIR/services/api"
+python -m uvicorn festival_playlist_generator.main:app --reload --host 0.0.0.0 --port 8000

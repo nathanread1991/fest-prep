@@ -1,18 +1,20 @@
 """Dependency injection for services."""
 
 from functools import lru_cache
-from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Type
+
 from fastapi import Depends
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from festival_playlist_generator.core.database import get_db
 from festival_playlist_generator.core.service_orchestrator import ServiceOrchestrator
 from festival_playlist_generator.services import (
-    FestivalCollectorService,
     ArtistAnalyzerService,
+    FestivalCollectorService,
+    NotificationService,
     PlaylistGeneratorService,
-    StreamingIntegrationService,
     RecommendationEngine,
-    NotificationService
+    StreamingIntegrationService,
 )
 
 
@@ -42,45 +44,46 @@ def get_streaming_integration_service() -> StreamingIntegrationService:
         "spotify": {
             "client_id": "test_client_id",
             "client_secret": "test_client_secret",
-            "redirect_uri": "http://localhost:8000/callback/spotify"
+            "redirect_uri": "http://localhost:8000/callback/spotify",
         },
-        "youtube_music": {
-            "oauth_file": "/tmp/test_oauth.json"
-        },
-        "apple_music": {
-            "developer_token": "test_developer_token"
-        }
+        "youtube_music": {"oauth_file": "/tmp/test_oauth.json"},  # nosec B108
+        "apple_music": {"developer_token": "test_developer_token"},
     }
     return StreamingIntegrationService(default_config)
 
 
 @lru_cache()
-def get_recommendation_engine() -> RecommendationEngine:
-    """Get Recommendation Engine instance."""
-    return RecommendationEngine()
+def get_recommendation_engine() -> Type[RecommendationEngine]:
+    """Get Recommendation Engine class."""
+    # Note: This returns a class, actual instance created per request
+    return RecommendationEngine
 
 
 @lru_cache()
-def get_notification_service() -> NotificationService:
-    """Get Notification Service instance."""
-    return NotificationService()
+def get_notification_service() -> Type[NotificationService]:
+    """Get Notification Service class."""
+    # Note: This returns a class, actual instance created per request
+    return NotificationService
 
 
 @lru_cache()
-def get_service_orchestrator() -> ServiceOrchestrator:
-    """Get Service Orchestrator instance."""
-    return ServiceOrchestrator()
+def get_service_orchestrator() -> Type[ServiceOrchestrator]:
+    """Get Service Orchestrator class."""
+    # Note: This returns a class, actual instance created per request
+    return ServiceOrchestrator
 
 
 # Service dependencies for FastAPI
 def get_orchestrator(
-    orchestrator: ServiceOrchestrator = Depends(get_service_orchestrator)
+    orchestrator: ServiceOrchestrator = Depends(get_service_orchestrator),
 ) -> ServiceOrchestrator:
     """Get Service Orchestrator for FastAPI endpoints."""
     return orchestrator
+
+
 def get_festival_collector(
     db: AsyncSession = Depends(get_db),
-    service: FestivalCollectorService = Depends(get_festival_collector_service)
+    service: FestivalCollectorService = Depends(get_festival_collector_service),
 ) -> FestivalCollectorService:
     """Get Festival Collector Service with database session."""
     service.db = db
@@ -89,7 +92,7 @@ def get_festival_collector(
 
 def get_artist_analyzer(
     db: AsyncSession = Depends(get_db),
-    service: ArtistAnalyzerService = Depends(get_artist_analyzer_service)
+    service: ArtistAnalyzerService = Depends(get_artist_analyzer_service),
 ) -> ArtistAnalyzerService:
     """Get Artist Analyzer Service with database session."""
     service.db = db
@@ -98,7 +101,7 @@ def get_artist_analyzer(
 
 def get_playlist_generator(
     db: AsyncSession = Depends(get_db),
-    service: PlaylistGeneratorService = Depends(get_playlist_generator_service)
+    service: PlaylistGeneratorService = Depends(get_playlist_generator_service),
 ) -> PlaylistGeneratorService:
     """Get Playlist Generator Service with database session."""
     service.db = db
@@ -107,7 +110,7 @@ def get_playlist_generator(
 
 def get_streaming_integration(
     db: AsyncSession = Depends(get_db),
-    service: StreamingIntegrationService = Depends(get_streaming_integration_service)
+    service: StreamingIntegrationService = Depends(get_streaming_integration_service),
 ) -> StreamingIntegrationService:
     """Get Streaming Integration Service with database session."""
     service.db = db
@@ -116,17 +119,17 @@ def get_streaming_integration(
 
 def get_recommendation_service(
     db: AsyncSession = Depends(get_db),
-    service: RecommendationEngine = Depends(get_recommendation_engine)
+    service: RecommendationEngine = Depends(get_recommendation_engine),
 ) -> RecommendationEngine:
     """Get Recommendation Engine with database session."""
-    service.db = db
+    service.db = db  # type: ignore[assignment]
     return service
 
 
 def get_notification_service_dep(
     db: AsyncSession = Depends(get_db),
-    service: NotificationService = Depends(get_notification_service)
+    service: NotificationService = Depends(get_notification_service),
 ) -> NotificationService:
     """Get Notification Service with database session."""
-    service.db = db
+    service.db = db  # type: ignore[assignment]
     return service

@@ -1,16 +1,23 @@
 """Pydantic schemas for data validation and serialization."""
 
-from .festival import Festival, FestivalCreate, FestivalUpdate
 from .artist import Artist, ArtistCreate, ArtistUpdate
+from .festival import Festival, FestivalCreate, FestivalUpdate
+from .playlist import Playlist, PlaylistCreate, PlaylistUpdate, StreamingPlatform
 from .setlist import Setlist, SetlistCreate, SetlistUpdate
 from .song import Song, SongCreate, SongUpdate
-from .playlist import Playlist, PlaylistCreate, PlaylistUpdate, StreamingPlatform
-from .user import User, UserCreate, UserUpdate, UserSongPreference, UserSongPreferenceCreate, UserSongPreferenceUpdate
+from .user import (
+    User,
+    UserCreate,
+    UserSongPreference,
+    UserSongPreferenceCreate,
+    UserSongPreferenceUpdate,
+    UserUpdate,
+)
 
 __all__ = [
     # Festival schemas
     "Festival",
-    "FestivalCreate", 
+    "FestivalCreate",
     "FestivalUpdate",
     # Artist schemas
     "Artist",

@@ -170,7 +170,7 @@
         {% if total_pages > 1 %}
         <div class="pagination-container">
             <div class="pagination-info">
-                Showing {{ ((page - 1) * per_page) + 1 }} - {{ min(page * per_page, total_count) }} of {{ total_count }} artists
+                Showing {{ ((page - 1) * per_page) + 1 }} - {{ [page * per_page, total_count] | min }} of {{ total_count }} artists
             </div>
             <div class="pagination-controls">
                 {% set query_params = '&search=' + search if search else '' %}

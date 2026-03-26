@@ -1,10 +1,10 @@
 """Pytest configuration and fixtures for repository tests."""
 
+from datetime import datetime, timedelta
+
 import pytest
 import pytest_asyncio
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from datetime import datetime, timedelta
-import uuid
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from festival_playlist_generator.core.database import Base
 from festival_playlist_generator.models.artist import Artist
@@ -12,17 +12,23 @@ from festival_playlist_generator.models.festival import Festival
 from festival_playlist_generator.models.playlist import Playlist, StreamingPlatform
 from festival_playlist_generator.models.setlist import Setlist
 from festival_playlist_generator.models.user import User
-from festival_playlist_generator.repositories.base_repository import BaseRepository
 from festival_playlist_generator.repositories.artist_repository import ArtistRepository
-from festival_playlist_generator.repositories.festival_repository import FestivalRepository
-from festival_playlist_generator.repositories.playlist_repository import PlaylistRepository
-from festival_playlist_generator.repositories.setlist_repository import SetlistRepository
+from festival_playlist_generator.repositories.festival_repository import (
+    FestivalRepository,
+)
+from festival_playlist_generator.repositories.playlist_repository import (
+    PlaylistRepository,
+)
+from festival_playlist_generator.repositories.setlist_repository import (
+    SetlistRepository,
+)
 from festival_playlist_generator.repositories.user_repository import UserRepository
 
 # Import testcontainers
 try:
     from testcontainers.postgres import PostgresContainer
     from testcontainers.redis import RedisContainer
+
     TESTCONTAINERS_AVAILABLE = True
 except ImportError:
     TESTCONTAINERS_AVAILABLE = False
@@ -32,29 +38,35 @@ except ImportError:
 
 @pytest.fixture(scope="session")
 def postgres_container():
-    """Create a PostgreSQL container for testing (session-scoped, reused across tests)."""
+    """Create a PostgreSQL container for testing (session-scoped, reused)."""
     if not TESTCONTAINERS_AVAILABLE:
-        pytest.skip("testcontainers not installed. Install with: pip install testcontainers[postgresql]")
-    
+        pytest.skip(
+            "testcontainers not installed. Install with: "
+            "pip install testcontainers[postgresql]"
+        )
+
     container = PostgresContainer("postgres:15-alpine")
     container.start()
-    
+
     yield container
-    
+
     container.stop()
 
 
 @pytest.fixture(scope="session")
 def redis_container():
-    """Create a Redis container for testing (session-scoped, reused across tests)."""
+    """Create a Redis container for testing (session-scoped, reused)."""
     if not TESTCONTAINERS_AVAILABLE:
-        pytest.skip("testcontainers not installed. Install with: pip install testcontainers[redis]")
-    
+        pytest.skip(
+            "testcontainers not installed. Install with: "
+            "pip install testcontainers[redis]"
+        )
+
     container = RedisContainer("redis:7-alpine")
     container.start()
-    
+
     yield container
-    
+
     container.stop()
 
 
@@ -62,13 +74,17 @@ def redis_container():
 def database_url(postgres_container):
     """Get the database URL from the container."""
     connection_url = postgres_container.get_connection_url()
-    
+
     # Replace psycopg2 driver with asyncpg
     if "postgresql://" in connection_url:
-        connection_url = connection_url.replace("postgresql://", "postgresql+asyncpg://")
+        connection_url = connection_url.replace(
+            "postgresql://", "postgresql+asyncpg://"
+        )
     elif "postgresql+psycopg2://" in connection_url:
-        connection_url = connection_url.replace("postgresql+psycopg2://", "postgresql+asyncpg://")
-    
+        connection_url = connection_url.replace(
+            "postgresql+psycopg2://", "postgresql+asyncpg://"
+        )
+
     return connection_url
 
 
@@ -83,19 +99,15 @@ def redis_url(redis_container):
 @pytest_asyncio.fixture(scope="function")
 async def async_engine(database_url):
     """Create a PostgreSQL async engine using testcontainer."""
-    engine = create_async_engine(
-        database_url,
-        echo=False,
-        pool_pre_ping=True
-    )
-    
+    engine = create_async_engine(database_url, echo=False, pool_pre_ping=True)
+
     # Create all tables once
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
-    
+
     yield engine
-    
+
     # Cleanup
     await engine.dispose()
 
@@ -104,11 +116,9 @@ async def async_engine(database_url):
 async def async_session(async_engine):
     """Create an async database session for testing."""
     async_session_maker = async_sessionmaker(
-        async_engine,
-        class_=AsyncSession,
-        expire_on_commit=False
+        async_engine, class_=AsyncSession, expire_on_commit=False
     )
-    
+
     async with async_session_maker() as session:
         yield session
         await session.rollback()
@@ -154,7 +164,7 @@ async def sample_artist(async_session):
         spotify_popularity=75.5,
         spotify_followers=10000.0,
         genres=["rock", "indie"],
-        popularity_score=0.80
+        popularity_score=0.80,
     )
     async_session.add(artist)
     await async_session.flush()
@@ -171,7 +181,7 @@ async def sample_festival(async_session):
         location="Test City",
         venue="Test Venue",
         genres=["rock", "pop"],
-        ticket_url="https://example.com/tickets"
+        ticket_url="https://example.com/tickets",
     )
     async_session.add(festival)
     await async_session.flush()
@@ -187,7 +197,7 @@ async def sample_user(async_session):
         oauth_provider="spotify",
         oauth_provider_id="test_oauth_id",
         display_name="Test User",
-        marketing_opt_in=True
+        marketing_opt_in=True,
     )
     async_session.add(user)
     await async_session.flush()
@@ -204,7 +214,7 @@ async def sample_playlist(async_session, sample_user, sample_festival):
         festival_id=sample_festival.id,
         user_id=sample_user.id,
         platform=StreamingPlatform.SPOTIFY,
-        external_id="test_external_id"
+        external_id="test_external_id",
     )
     async_session.add(playlist)
     await async_session.flush()
@@ -222,7 +232,7 @@ async def sample_setlist(async_session, sample_artist):
         songs=["Song 1", "Song 2", "Song 3"],
         tour_name="Test Tour",
         festival_name="Test Festival",
-        source="setlist.fm"
+        source="setlist.fm",
     )
     async_session.add(setlist)
     await async_session.flush()

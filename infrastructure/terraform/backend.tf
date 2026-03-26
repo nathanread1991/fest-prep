@@ -1,6 +1,6 @@
 # Terraform Backend Configuration
 # This file configures S3 backend for remote state storage with native S3 locking
-# 
+#
 # Terraform v1.10+ includes native S3 state locking - no DynamoDB table needed!
 # This is simpler, cheaper, and eliminates the need for a separate locking service.
 
@@ -11,12 +11,12 @@ terraform {
     region       = "eu-west-2"
     encrypt      = true
     profile      = "festival-playlist"
-    use_lockfile = true  # Native S3 locking (Terraform v1.10+)
+    use_lockfile = true # Native S3 locking (Terraform v1.10+)
   }
 }
 
 # Backend Resources:
-# 
+#
 # S3 Bucket: festival-playlist-terraform-state
 # - Versioning: Enabled (rollback capability)
 # - Encryption: AES256 (data at rest)
