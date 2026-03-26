@@ -87,7 +87,7 @@ variable "database_master_username" {
 variable "database_engine_version" {
   description = "PostgreSQL engine version"
   type        = string
-  default     = "15.3"
+  default     = "15.15"
 }
 
 variable "database_min_capacity" {
