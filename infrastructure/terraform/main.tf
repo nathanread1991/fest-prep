@@ -16,7 +16,7 @@ terraform {
 # Region: eu-west-2 (London) - primary region for all resources
 provider "aws" {
   region  = var.aws_region
-  profile = var.aws_profile
+  profile = var.aws_profile != "" ? var.aws_profile : null
 
   # Default tags applied to all resources for cost tracking and management
   default_tags {
@@ -35,7 +35,7 @@ provider "aws" {
 provider "aws" {
   alias   = "us_east_1"
   region  = "us-east-1"
-  profile = var.aws_profile
+  profile = var.aws_profile != "" ? var.aws_profile : null
 
   default_tags {
     tags = {

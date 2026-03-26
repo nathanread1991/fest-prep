@@ -176,7 +176,7 @@ jobs:
       - name: Terraform Plan
         run: |
           terraform plan \
-            -var="aws_profile=default" \
+            -var="aws_profile=" \
             -var="environment=prod" \
             -var="database_restore_from_snapshot=${{ github.event.inputs.restore_from_snapshot }}" \
             -out=tfplan

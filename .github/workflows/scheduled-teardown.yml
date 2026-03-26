@@ -114,7 +114,7 @@ jobs:
       - name: Terraform Destroy
         run: |
           terraform destroy \
-            -var="aws_profile=default" \
+            -var="aws_profile=" \
             -auto-approve
 
   cleanup:

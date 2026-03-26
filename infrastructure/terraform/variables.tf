@@ -7,9 +7,10 @@ variable "aws_region" {
 }
 
 variable "aws_profile" {
-  description = "AWS CLI profile to use for authentication"
+  description = "AWS CLI profile to use for authentication (set to null for env var auth)"
   type        = string
   default     = "festival-playlist"
+  nullable    = true
 }
 
 variable "project_name" {
