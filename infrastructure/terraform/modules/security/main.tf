@@ -250,7 +250,7 @@ resource "aws_wafv2_web_acl" "alb" {
 
 # Associate WAF with ALB
 resource "aws_wafv2_web_acl_association" "alb" {
-  count        = var.alb_arn != "" ? 1 : 0
+  count        = var.enable_waf_alb_association ? 1 : 0
   resource_arn = var.alb_arn
   web_acl_arn  = aws_wafv2_web_acl.alb.arn
 }
