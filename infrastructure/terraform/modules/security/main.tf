@@ -283,7 +283,7 @@ resource "aws_secretsmanager_secret" "spotify" {
   name        = "${var.project_name}-${var.environment}-spotify-credentials"
   description = "Spotify API credentials (client_id, client_secret)"
 
-  recovery_window_in_days = 7
+  recovery_window_in_days = 0
 
   tags = merge(
     var.common_tags,
@@ -315,7 +315,7 @@ resource "aws_secretsmanager_secret" "setlistfm" {
   name        = "${var.project_name}-${var.environment}-setlistfm-api-key"
   description = "Setlist.fm API key"
 
-  recovery_window_in_days = 7
+  recovery_window_in_days = 0
 
   tags = merge(
     var.common_tags,
@@ -346,7 +346,7 @@ resource "aws_secretsmanager_secret" "jwt" {
   name        = "${var.project_name}-${var.environment}-jwt-secret"
   description = "JWT signing key for authentication"
 
-  recovery_window_in_days = 7
+  recovery_window_in_days = 0
 
   tags = merge(
     var.common_tags,
