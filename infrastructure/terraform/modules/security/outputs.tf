@@ -30,17 +30,17 @@ output "cloudfront_certificate_status" {
 
 output "route53_zone_id" {
   description = "ID of the Route 53 hosted zone"
-  value       = aws_route53_zone.main.zone_id
+  value       = data.aws_route53_zone.main.zone_id
 }
 
 output "route53_zone_name" {
   description = "Name of the Route 53 hosted zone"
-  value       = aws_route53_zone.main.name
+  value       = data.aws_route53_zone.main.name
 }
 
 output "route53_name_servers" {
   description = "Name servers for the Route 53 hosted zone"
-  value       = aws_route53_zone.main.name_servers
+  value       = data.aws_route53_zone.main.name_servers
 }
 
 # ============================================================================

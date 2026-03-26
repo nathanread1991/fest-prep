@@ -61,16 +61,10 @@ resource "aws_acm_certificate" "cloudfront" {
 # Route 53 Hosted Zone and DNS Records
 # ============================================================================
 
-# Route 53 hosted zone for the domain
-resource "aws_route53_zone" "main" {
-  name = var.domain_name
-
-  tags = merge(
-    var.common_tags,
-    {
-      Name = "${var.project_name}-${var.environment}-zone"
-    }
-  )
+# Look up existing Route 53 hosted zone (created when domain was purchased)
+data "aws_route53_zone" "main" {
+  name         = var.domain_name
+  private_zone = false
 }
 
 # DNS validation records for ALB certificate
@@ -88,7 +82,7 @@ resource "aws_route53_record" "alb_cert_validation" {
   records         = [each.value.record]
   ttl             = 60
   type            = each.value.type
-  zone_id         = aws_route53_zone.main.zone_id
+  zone_id         = data.aws_route53_zone.main.zone_id
 }
 
 # DNS validation records for CloudFront certificate
@@ -106,7 +100,7 @@ resource "aws_route53_record" "cloudfront_cert_validation" {
   records         = [each.value.record]
   ttl             = 60
   type            = each.value.type
-  zone_id         = aws_route53_zone.main.zone_id
+  zone_id         = data.aws_route53_zone.main.zone_id
 }
 
 # Wait for ALB certificate validation

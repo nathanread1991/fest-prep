@@ -34,7 +34,7 @@ output "member_clusters" {
 # Connection String Output
 output "connection_string" {
   description = "Redis connection string"
-  value       = var.transit_encryption_enabled && var.auth_token_enabled ? "rediss://:${random_password.auth_token[0].result}@${aws_elasticache_replication_group.main.primary_endpoint_address}:${aws_elasticache_replication_group.main.port}" : "redis://${aws_elasticache_replication_group.main.primary_endpoint_address}:${aws_elasticache_replication_group.main.port}"
+  value       = try(var.transit_encryption_enabled && var.auth_token_enabled ? "rediss://:${random_password.auth_token[0].result}@${aws_elasticache_replication_group.main.primary_endpoint_address}:${aws_elasticache_replication_group.main.port}" : "redis://${aws_elasticache_replication_group.main.primary_endpoint_address}:${aws_elasticache_replication_group.main.port}", "")
   sensitive   = true
 }
 
