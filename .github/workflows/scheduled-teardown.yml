@@ -33,6 +33,7 @@ env:
   TF_WORKING_DIR: infrastructure/terraform
   SNAPSHOT_RETENTION_DAYS: 7
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  TF_VAR_aws_profile: ""
 
 jobs:
   snapshot:
@@ -114,7 +115,6 @@ jobs:
       - name: Terraform Destroy
         run: |
           terraform destroy \
-            -var="aws_profile=" \
             -auto-approve
 
   cleanup:

@@ -32,6 +32,7 @@ env:
   PROJECT_NAME: festival-playlist
   TF_WORKING_DIR: infrastructure/terraform
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  TF_VAR_aws_profile: ""
 
 jobs:
   find-snapshot:
@@ -108,7 +109,6 @@ jobs:
       - name: Terraform Plan
         run: |
           terraform plan \
-            -var="aws_profile=" \
             -var="database_restore_from_snapshot=${{ needs.find-snapshot.outputs.restore }}" \
             -out=tfplan
 
