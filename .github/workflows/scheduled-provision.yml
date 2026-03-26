@@ -31,6 +31,7 @@ env:
   ENVIRONMENT: ${{ github.event.inputs.environment || 'dev' }}
   PROJECT_NAME: festival-playlist
   TF_WORKING_DIR: infrastructure/terraform
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   find-snapshot:
