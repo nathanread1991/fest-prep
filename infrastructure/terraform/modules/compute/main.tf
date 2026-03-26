@@ -452,7 +452,7 @@ resource "aws_ecs_task_definition" "worker" {
       command = [
         "celery",
         "-A",
-        "festival_playlist_generator.celery_app",
+        "festival_playlist_generator.core.celery_app",
         "worker",
         "--loglevel=info",
         "--concurrency=2"
