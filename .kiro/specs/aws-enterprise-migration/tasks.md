@@ -522,7 +522,7 @@ This implementation plan guides the migration of the Festival Playlist Generator
     - Verify CloudWatch logs receiving data
     - _Requirements: US-1.7_
 
-- [ ] 19. Checkpoint - Week 2 Review
+- [x] 19. Checkpoint - Week 2 Review
   - Verify all Terraform modules complete and tested
   - Verify dev environment provisioned successfully
   - Verify teardown/provision scripts working
@@ -757,7 +757,7 @@ This implementation plan guides the migration of the Festival Playlist Generator
 ### Week 4: CI/CD & Production
 
 - [ ] 29. Create GitHub Actions deployment workflows
-  - [ ] 29.1 Create deploy-dev workflow
+  - [x] 29.1 Create deploy-dev workflow
     - Create .github/workflows/deploy-dev.yml
     - Trigger on push to main branch
     - Run all tests before deployment
@@ -768,7 +768,7 @@ This implementation plan guides the migration of the Festival Playlist Generator
     - Send deployment notifications
     - _Requirements: US-2.1, US-2.3, US-2.7_
 
-  - [ ] 29.2 Create deploy-prod workflow
+  - [x] 29.2 Create deploy-prod workflow
     - Create .github/workflows/deploy-prod.yml
     - Trigger on manual workflow dispatch
     - Add manual approval gate
@@ -781,7 +781,7 @@ This implementation plan guides the migration of the Festival Playlist Generator
     - Send deployment notifications
     - _Requirements: US-2.4, US-2.5, US-2.7_
 
-  - [ ] 29.3 Create scheduled teardown workflow
+  - [x] 29.3 Create scheduled teardown workflow
     - Create .github/workflows/scheduled-teardown.yml
     - Schedule for 6 PM EST on weekdays (cron: '0 23 * * 1-5')
     - Allow manual trigger
@@ -789,7 +789,7 @@ This implementation plan guides the migration of the Festival Playlist Generator
     - Send completion notification
     - _Requirements: US-3.1, US-3.2_
 
-  - [ ] 29.4 Create scheduled provision workflow
+  - [x] 29.4 Create scheduled provision workflow
     - Create .github/workflows/scheduled-provision.yml
     - Schedule for 9 AM EST on weekdays (cron: '0 14 * * 1-5')
     - Allow manual trigger

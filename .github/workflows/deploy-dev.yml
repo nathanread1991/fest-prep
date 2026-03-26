@@ -1,0 +1,240 @@
+name: Deploy to Dev
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'services/api/**'
+      - 'infrastructure/terraform/**'
+  workflow_dispatch:
+    inputs:
+      restore_from_snapshot:
+        description: 'Restore database from latest snapshot'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+
+concurrency:
+  group: deploy-dev
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: eu-west-2
+  ENVIRONMENT: dev
+  PROJECT_NAME: festival-playlist
+  TF_WORKING_DIR: infrastructure/terraform
+
+jobs:
+  # Run tests before deploying
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/api
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: services/api/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run tests
+        run: pytest tests/ -m "not integration" -v
+
+  # Build and push Docker image to ECR
+  build-push:
+    name: Build & Push Docker Image
+    runs-on: ubuntu-latest
+    needs: test
+    outputs:
+      image_tag: ${{ steps.meta.outputs.tags }}
+      image_uri: ${{ steps.build.outputs.image_uri }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set image metadata
+        id: meta
+        run: |
+          ECR_REGISTRY="${{ steps.ecr-login.outputs.registry }}"
+          ECR_REPO="${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-app"
+          IMAGE_TAG="${{ github.sha }}"
+          echo "registry=${ECR_REGISTRY}" >> "$GITHUB_OUTPUT"
+          echo "repository=${ECR_REPO}" >> "$GITHUB_OUTPUT"
+          echo "tags=${ECR_REGISTRY}/${ECR_REPO}:${IMAGE_TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push Docker image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: services/api
+          file: services/api/Dockerfile
+          push: true
+          tags: |
+            ${{ steps.meta.outputs.tags }}
+            ${{ steps.meta.outputs.registry }}/${{ steps.meta.outputs.repository }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Output image URI
+        run: echo "image_uri=${{ steps.meta.outputs.tags }}" >> "$GITHUB_OUTPUT"
+
+  # Deploy infrastructure with Terraform
+  deploy-infra:
+    name: Deploy Infrastructure
+    runs-on: ubuntu-latest
+    needs: build-push
+    defaults:
+      run:
+        working-directory: ${{ env.TF_WORKING_DIR }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~> 1.10"
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Plan
+        run: |
+          terraform plan \
+            -var="aws_profile=default" \
+            -var="database_restore_from_snapshot=${{ github.event.inputs.restore_from_snapshot || 'false' }}" \
+            -out=tfplan
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan
+
+  # Update ECS service with new image
+  deploy-app:
+    name: Deploy Application
+    runs-on: ubuntu-latest
+    needs: [build-push, deploy-infra]
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update ECS API service
+        run: |
+          CLUSTER="${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-cluster"
+          SERVICE="${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-api"
+          aws ecs update-service \
+            --cluster "$CLUSTER" \
+            --service "$SERVICE" \
+            --force-new-deployment \
+            --region "${{ env.AWS_REGION }}"
+
+      - name: Update ECS Worker service
+        run: |
+          CLUSTER="${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-cluster"
+          SERVICE="${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-worker"
+          aws ecs update-service \
+            --cluster "$CLUSTER" \
+            --service "$SERVICE" \
+            --force-new-deployment \
+            --region "${{ env.AWS_REGION }}" || true
+
+      - name: Wait for API service stability
+        run: |
+          CLUSTER="${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-cluster"
+          SERVICE="${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-api"
+          aws ecs wait services-stable \
+            --cluster "$CLUSTER" \
+            --services "$SERVICE" \
+            --region "${{ env.AWS_REGION }}"
+
+  # Run smoke tests
+  smoke-test:
+    name: Smoke Tests
+    runs-on: ubuntu-latest
+    needs: deploy-app
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Get ALB DNS name
+        id: alb
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: |
+          terraform init -backend=true > /dev/null 2>&1
+          ALB_DNS=$(terraform output -raw alb_dns_name 2>/dev/null || echo "")
+          echo "dns=${ALB_DNS}" >> "$GITHUB_OUTPUT"
+
+      - name: Run health check
+        if: steps.alb.outputs.dns != ''
+        run: |
+          MAX_RETRIES=10
+          RETRY=0
+          until curl -sf "http://${{ steps.alb.outputs.dns }}/health" || [ $RETRY -eq $MAX_RETRIES ]; do
+            echo "Waiting for health check... (attempt $((RETRY+1))/$MAX_RETRIES)"
+            sleep 15
+            RETRY=$((RETRY+1))
+          done
+          if [ $RETRY -eq $MAX_RETRIES ]; then
+            echo "Health check failed after $MAX_RETRIES attempts"
+            exit 1
+          fi
+          echo "Health check passed"
+
+  # Send notification
+  notify:
+    name: Deployment Notification
+    runs-on: ubuntu-latest
+    needs: [smoke-test]
+    if: always()
+    steps:
+      - name: Deployment status
+        run: |
+          if [ "${{ needs.smoke-test.result }}" == "success" ]; then
+            echo "✅ Dev deployment successful (commit: ${{ github.sha }})"
+          else
+            echo "❌ Dev deployment failed (commit: ${{ github.sha }})"
+            exit 1
+          fi
