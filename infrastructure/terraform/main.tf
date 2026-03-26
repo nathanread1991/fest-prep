@@ -15,8 +15,7 @@ terraform {
 # AWS Provider Configuration
 # Region: eu-west-2 (London) - primary region for all resources
 provider "aws" {
-  region  = var.aws_region
-  profile = var.aws_profile != "" ? var.aws_profile : null
+  region = var.aws_region
 
   # Default tags applied to all resources for cost tracking and management
   default_tags {
@@ -33,9 +32,8 @@ provider "aws" {
 
 # AWS Provider for us-east-1 (required for CloudWatch billing metrics and CloudFront ACM certificates)
 provider "aws" {
-  alias   = "us_east_1"
-  region  = "us-east-1"
-  profile = var.aws_profile != "" ? var.aws_profile : null
+  alias  = "us_east_1"
+  region = "us-east-1"
 
   default_tags {
     tags = {
