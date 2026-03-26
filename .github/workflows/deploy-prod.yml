@@ -25,6 +25,7 @@ env:
   ENVIRONMENT: prod
   PROJECT_NAME: festival-playlist
   TF_WORKING_DIR: infrastructure/terraform
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   # Validate confirmation
@@ -121,7 +122,7 @@ jobs:
         id: meta
         run: |
           ECR_REGISTRY="${{ steps.ecr-login.outputs.registry }}"
-          ECR_REPO="${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-app"
+          ECR_REPO="${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}"
           IMAGE_TAG="${{ github.sha }}"
           echo "registry=${ECR_REGISTRY}" >> "$GITHUB_OUTPUT"
           echo "repository=${ECR_REPO}" >> "$GITHUB_OUTPUT"
