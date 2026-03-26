@@ -251,7 +251,7 @@ resource "aws_wafv2_web_acl_association" "alb" {
 
 # CloudWatch Log Group for WAF logs
 resource "aws_cloudwatch_log_group" "waf" {
-  name              = "/aws/waf/${var.project_name}-${var.environment}"
+  name              = "aws-waf-logs-${var.project_name}-${var.environment}"
   retention_in_days = var.environment == "prod" ? 30 : 7
 
   tags = merge(
@@ -265,7 +265,7 @@ resource "aws_cloudwatch_log_group" "waf" {
 # WAF logging configuration
 resource "aws_wafv2_web_acl_logging_configuration" "alb" {
   resource_arn            = aws_wafv2_web_acl.alb.arn
-  log_destination_configs = ["${aws_cloudwatch_log_group.waf.arn}:*"]
+  log_destination_configs = [aws_cloudwatch_log_group.waf.arn]
 }
 
 # ============================================================================

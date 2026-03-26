@@ -472,14 +472,6 @@ resource "aws_ecs_task_definition" "worker" {
           {
             name  = "LOG_LEVEL"
             value = var.environment == "prod" ? "INFO" : "DEBUG"
-          },
-          {
-            name  = "CELERY_BROKER_URL"
-            value = "redis://placeholder" # Will be overridden by secret
-          },
-          {
-            name  = "CELERY_RESULT_BACKEND"
-            value = "redis://placeholder" # Will be overridden by secret
           }
         ],
         [
