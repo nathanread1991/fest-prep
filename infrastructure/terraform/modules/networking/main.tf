@@ -1,6 +1,16 @@
 # Networking Module - VPC, Subnets, Security Groups, and VPC Endpoints
 # This module creates the network infrastructure for the Festival Playlist Generator
 
+terraform {
+  required_version = ">= 1.10"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+
 # Data source to get available AZs in the region
 data "aws_availability_zones" "available" {
   state = "available"

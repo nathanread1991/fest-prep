@@ -1,6 +1,20 @@
 # Cache Module - ElastiCache Redis
 # This module creates the ElastiCache Redis cluster for caching and session management
 
+terraform {
+  required_version = ">= 1.10"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.5"
+    }
+  }
+}
+
 # ElastiCache Subnet Group - uses private subnets
 resource "aws_elasticache_subnet_group" "main" {
   name       = "${var.project_name}-${var.environment}-redis-subnet-group"

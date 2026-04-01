@@ -98,7 +98,6 @@ module "security" {
   project_name = var.project_name
   environment  = var.environment
   domain_name  = var.domain_name
-  vpc_id       = module.networking.vpc_id
   alb_arn      = module.compute.alb_arn
   common_tags  = var.common_tags
 
@@ -206,7 +205,6 @@ module "compute" {
   environment                 = var.environment
   vpc_id                      = module.networking.vpc_id
   public_subnet_ids           = module.networking.public_subnet_ids
-  private_subnet_ids          = module.networking.private_subnet_ids
   alb_security_group_id       = module.networking.alb_security_group_id
   ecs_tasks_security_group_id = module.networking.ecs_tasks_security_group_id
   ecr_repository_url          = local.ecr_repository_url
@@ -304,7 +302,6 @@ module "monitoring" {
   alb_arn_suffix          = module.compute.alb_arn_suffix
   target_group_arn_suffix = module.compute.api_target_group_arn_suffix
   db_cluster_id           = module.database.cluster_id
-  redis_cluster_id        = module.cache.replication_group_id
   alert_email             = var.alert_email_addresses[0]
   common_tags             = var.common_tags
 }

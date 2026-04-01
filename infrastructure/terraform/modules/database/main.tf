@@ -1,6 +1,20 @@
 # Database Module - Aurora Serverless v2 PostgreSQL
 # This module creates the RDS Aurora Serverless v2 cluster with snapshot/restore capability
 
+terraform {
+  required_version = ">= 1.10"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.5"
+    }
+  }
+}
+
 # Data source to get the latest snapshot (if exists)
 data "aws_db_cluster_snapshot" "latest" {
   count                 = var.restore_from_snapshot ? 1 : 0

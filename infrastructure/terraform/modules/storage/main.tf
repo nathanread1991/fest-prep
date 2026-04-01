@@ -1,6 +1,16 @@
 # Storage Module - S3 Buckets and ECR Repository
 # This module creates S3 buckets for application data and logs, plus ECR for container images
 
+terraform {
+  required_version = ">= 1.10"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+
 # Get the current AWS account's canonical user ID for S3 ACL grants
 data "aws_canonical_user_id" "current" {}
 

@@ -27,11 +27,6 @@ variable "enable_waf_alb_association" {
   default     = true
 }
 
-variable "vpc_id" {
-  description = "VPC ID for security resources"
-  type        = string
-}
-
 variable "common_tags" {
   description = "Common tags to apply to all resources"
   type        = map(string)

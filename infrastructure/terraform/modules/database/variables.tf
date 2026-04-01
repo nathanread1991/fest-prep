@@ -152,26 +152,6 @@ variable "auto_minor_version_upgrade" {
 }
 
 
-# Secrets Manager Configuration
-variable "enable_secret_rotation" {
-  description = "Enable automatic secret rotation (requires Lambda function)"
-  type        = bool
-  default     = false
-}
-
-variable "rotation_lambda_arn" {
-  description = "ARN of Lambda function for secret rotation"
-  type        = string
-  default     = null
-}
-
-variable "rotation_days" {
-  description = "Number of days between automatic rotations"
-  type        = number
-  default     = 30
-}
-
-
 # CloudWatch Alarms Configuration
 variable "enable_cloudwatch_alarms" {
   description = "Enable CloudWatch alarms for database monitoring"

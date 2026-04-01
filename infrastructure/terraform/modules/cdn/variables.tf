@@ -57,12 +57,6 @@ variable "log_prefix" {
   default     = "cloudfront-logs/"
 }
 
-variable "custom_header_value" {
-  description = "Value for custom header sent to ALB origin (for origin verification)"
-  type        = string
-  default     = "cloudfront-origin"
-}
-
 variable "common_tags" {
   description = "Common tags to apply to all resources"
   type        = map(string)

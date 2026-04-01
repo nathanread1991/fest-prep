@@ -6,13 +6,6 @@ variable "aws_region" {
   default     = "eu-west-2"
 }
 
-variable "aws_profile" {
-  description = "AWS CLI profile to use for authentication (set to null for env var auth)"
-  type        = string
-  default     = "festival-playlist"
-  nullable    = true
-}
-
 variable "project_name" {
   description = "Name of the project"
   type        = string
@@ -142,12 +135,6 @@ variable "redis_node_type" {
   default     = "cache.t4g.micro"
 }
 
-variable "redis_parameter_group_family" {
-  description = "Redis parameter group family"
-  type        = string
-  default     = "redis7"
-}
-
 variable "redis_engine_version" {
   description = "Redis engine version"
   type        = string
@@ -213,19 +200,6 @@ variable "worker_image_tag" {
   description = "Docker image tag for the worker service (e.g. git SHA or 'latest')"
   type        = string
   default     = "latest"
-}
-
-# WAF Configuration
-variable "enable_waf" {
-  description = "Enable AWS WAF for ALB protection"
-  type        = bool
-  default     = true
-}
-
-variable "waf_rate_limit" {
-  description = "Rate limit for WAF (requests per 5 minutes per IP)"
-  type        = number
-  default     = 1000
 }
 
 # CloudWatch Configuration

@@ -51,12 +51,6 @@ variable "db_max_connections" {
   default     = 100
 }
 
-# Cache Configuration
-variable "redis_cluster_id" {
-  description = "ID of the ElastiCache Redis cluster"
-  type        = string
-}
-
 # ALB Configuration
 variable "alb_arn_suffix" {
   description = "ARN suffix of the Application Load Balancer"
