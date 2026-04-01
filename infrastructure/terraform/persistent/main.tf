@@ -716,3 +716,246 @@ resource "aws_iam_role_policy" "rds_snapshots" {
   role   = aws_iam_role.github_actions.id
   policy = data.aws_iam_policy_document.rds_snapshots.json
 }
+
+# Terraform infrastructure management (EC2, VPC, RDS, ElastiCache, ELB, CloudWatch, etc.)
+data "aws_iam_policy_document" "terraform_infra" {
+  #checkov:skip=CKV_AWS_111:Terraform requires broad permissions to manage infrastructure
+  #checkov:skip=CKV_AWS_356:Terraform requires broad permissions to manage infrastructure
+
+  statement {
+    effect = "Allow"
+    actions = [
+      # EC2 / VPC
+      "ec2:Describe*",
+      "ec2:CreateVpc",
+      "ec2:DeleteVpc",
+      "ec2:ModifyVpcAttribute",
+      "ec2:CreateSubnet",
+      "ec2:DeleteSubnet",
+      "ec2:CreateInternetGateway",
+      "ec2:DeleteInternetGateway",
+      "ec2:AttachInternetGateway",
+      "ec2:DetachInternetGateway",
+      "ec2:CreateRouteTable",
+      "ec2:DeleteRouteTable",
+      "ec2:CreateRoute",
+      "ec2:DeleteRoute",
+      "ec2:AssociateRouteTable",
+      "ec2:DisassociateRouteTable",
+      "ec2:CreateSecurityGroup",
+      "ec2:DeleteSecurityGroup",
+      "ec2:AuthorizeSecurityGroupIngress",
+      "ec2:RevokeSecurityGroupIngress",
+      "ec2:AuthorizeSecurityGroupEgress",
+      "ec2:RevokeSecurityGroupEgress",
+      "ec2:CreateVpcEndpoint",
+      "ec2:DeleteVpcEndpoints",
+      "ec2:ModifyVpcEndpoint",
+      "ec2:CreateTags",
+      "ec2:DeleteTags",
+
+      # RDS
+      "rds:Create*",
+      "rds:Delete*",
+      "rds:Describe*",
+      "rds:Modify*",
+      "rds:AddTagsToResource",
+      "rds:RemoveTagsFromResource",
+      "rds:ListTagsForResource",
+
+      # ElastiCache
+      "elasticache:Create*",
+      "elasticache:Delete*",
+      "elasticache:Describe*",
+      "elasticache:Modify*",
+      "elasticache:AddTagsToResource",
+      "elasticache:RemoveTagsFromResource",
+      "elasticache:ListTagsForResource",
+
+      # ELB
+      "elasticloadbalancing:Create*",
+      "elasticloadbalancing:Delete*",
+      "elasticloadbalancing:Describe*",
+      "elasticloadbalancing:Modify*",
+      "elasticloadbalancing:AddTags",
+      "elasticloadbalancing:RemoveTags",
+      "elasticloadbalancing:SetSecurityGroups",
+      "elasticloadbalancing:SetSubnets",
+      "elasticloadbalancing:RegisterTargets",
+      "elasticloadbalancing:DeregisterTargets",
+
+      # CloudWatch
+      "cloudwatch:PutMetricAlarm",
+      "cloudwatch:DeleteAlarms",
+      "cloudwatch:DescribeAlarms",
+      "cloudwatch:PutDashboard",
+      "cloudwatch:DeleteDashboards",
+      "cloudwatch:GetDashboard",
+      "cloudwatch:ListDashboards",
+      "cloudwatch:TagResource",
+      "cloudwatch:UntagResource",
+      "cloudwatch:ListTagsForResource",
+      "logs:CreateLogGroup",
+      "logs:DeleteLogGroup",
+      "logs:DescribeLogGroups",
+      "logs:PutRetentionPolicy",
+      "logs:TagLogGroup",
+      "logs:UntagLogGroup",
+      "logs:TagResource",
+      "logs:UntagResource",
+      "logs:ListTagsForResource",
+      "logs:ListTagsLogGroup",
+      "logs:PutQueryDefinition",
+      "logs:DeleteQueryDefinition",
+      "logs:DescribeQueryDefinitions",
+
+      # IAM (for ECS roles)
+      "iam:CreateRole",
+      "iam:DeleteRole",
+      "iam:GetRole",
+      "iam:PutRolePolicy",
+      "iam:DeleteRolePolicy",
+      "iam:GetRolePolicy",
+      "iam:AttachRolePolicy",
+      "iam:DetachRolePolicy",
+      "iam:ListAttachedRolePolicies",
+      "iam:ListRolePolicies",
+      "iam:ListInstanceProfilesForRole",
+      "iam:TagRole",
+      "iam:UntagRole",
+
+      # KMS
+      "kms:Create*",
+      "kms:Describe*",
+      "kms:Enable*",
+      "kms:List*",
+      "kms:Put*",
+      "kms:Update*",
+      "kms:Get*",
+      "kms:Tag*",
+      "kms:Untag*",
+      "kms:ScheduleKeyDeletion",
+      "kms:CreateAlias",
+      "kms:DeleteAlias",
+      "kms:UpdateAlias",
+
+      # SNS
+      "sns:CreateTopic",
+      "sns:DeleteTopic",
+      "sns:GetTopicAttributes",
+      "sns:SetTopicAttributes",
+      "sns:Subscribe",
+      "sns:Unsubscribe",
+      "sns:ListSubscriptionsByTopic",
+      "sns:TagResource",
+      "sns:UntagResource",
+      "sns:ListTagsForResource",
+
+      # Secrets Manager
+      "secretsmanager:CreateSecret",
+      "secretsmanager:DeleteSecret",
+      "secretsmanager:UpdateSecret",
+      "secretsmanager:PutSecretValue",
+      "secretsmanager:TagResource",
+      "secretsmanager:UntagResource",
+
+      # WAF
+      "wafv2:Create*",
+      "wafv2:Delete*",
+      "wafv2:Get*",
+      "wafv2:List*",
+      "wafv2:Update*",
+      "wafv2:Associate*",
+      "wafv2:Disassociate*",
+      "wafv2:TagResource",
+      "wafv2:UntagResource",
+      "wafv2:PutLoggingConfiguration",
+      "wafv2:DeleteLoggingConfiguration",
+
+      # ACM
+      "acm:RequestCertificate",
+      "acm:DeleteCertificate",
+      "acm:DescribeCertificate",
+      "acm:ListCertificates",
+      "acm:ListTagsForCertificate",
+      "acm:AddTagsToCertificate",
+      "acm:RemoveTagsFromCertificate",
+      "acm:GetCertificate",
+
+      # Route 53
+      "route53:GetHostedZone",
+      "route53:ListHostedZones",
+      "route53:ChangeResourceRecordSets",
+      "route53:GetChange",
+      "route53:ListResourceRecordSets",
+      "route53:ListTagsForResource",
+
+      # CloudFront
+      "cloudfront:Create*",
+      "cloudfront:Delete*",
+      "cloudfront:Get*",
+      "cloudfront:List*",
+      "cloudfront:Update*",
+      "cloudfront:TagResource",
+      "cloudfront:UntagResource",
+
+      # X-Ray
+      "xray:CreateSamplingRule",
+      "xray:DeleteSamplingRule",
+      "xray:GetSamplingRules",
+      "xray:UpdateSamplingRule",
+      "xray:TagResource",
+      "xray:UntagResource",
+      "xray:ListTagsForResource",
+
+      # Application Auto Scaling
+      "application-autoscaling:RegisterScalableTarget",
+      "application-autoscaling:DeregisterScalableTarget",
+      "application-autoscaling:DescribeScalableTargets",
+      "application-autoscaling:PutScalingPolicy",
+      "application-autoscaling:DeleteScalingPolicy",
+      "application-autoscaling:DescribeScalingPolicies",
+      "application-autoscaling:TagResource",
+
+      # Budgets / Cost Explorer
+      "budgets:*",
+      "ce:*",
+
+      # S3 (for bucket management in ephemeral module)
+      "s3:CreateBucket",
+      "s3:DeleteBucket",
+      "s3:PutBucketPolicy",
+      "s3:DeleteBucketPolicy",
+      "s3:GetBucketPolicy",
+      "s3:PutBucketVersioning",
+      "s3:GetBucketVersioning",
+      "s3:PutEncryptionConfiguration",
+      "s3:GetEncryptionConfiguration",
+      "s3:PutBucketPublicAccessBlock",
+      "s3:GetBucketPublicAccessBlock",
+      "s3:PutBucketAcl",
+      "s3:GetBucketAcl",
+      "s3:PutBucketLogging",
+      "s3:GetBucketLogging",
+      "s3:PutLifecycleConfiguration",
+      "s3:GetLifecycleConfiguration",
+      "s3:PutBucketTagging",
+      "s3:GetBucketTagging",
+      "s3:PutBucketOwnershipControls",
+      "s3:GetBucketOwnershipControls",
+      "s3:PutIntelligentTieringConfiguration",
+      "s3:GetIntelligentTieringConfiguration",
+      "s3:ListBucket",
+      "s3:GetBucketLocation",
+    ]
+    resources = ["*"]
+  }
+}
+
+resource "aws_iam_role_policy" "terraform_infra" {
+  #checkov:skip=CKV_AWS_111:Terraform requires broad permissions to manage infrastructure
+  #checkov:skip=CKV_AWS_356:Terraform requires broad permissions to manage infrastructure
+  name   = "terraform-infra"
+  role   = aws_iam_role.github_actions.id
+  policy = data.aws_iam_policy_document.terraform_infra.json
+}
