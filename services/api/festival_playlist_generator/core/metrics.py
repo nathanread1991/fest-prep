@@ -13,7 +13,6 @@ import time
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Sequence
 
-from festival_playlist_generator.core.aws_config import is_aws_environment
 from festival_playlist_generator.core.config import settings
 
 logger = logging.getLogger(__name__)

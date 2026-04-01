@@ -8,7 +8,7 @@ Requirements: US-5.2
 
 import logging
 import time
-from typing import Any, Optional, Sequence, Tuple
+from typing import Any, Optional, Sequence
 
 from sqlalchemy import event
 from sqlalchemy.engine import Connection, Engine

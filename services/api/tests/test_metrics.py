@@ -3,18 +3,14 @@
 Requirements: US-5.2, US-5.8
 """
 
-import asyncio
-from typing import Any, Dict, List, Optional
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-import pytest_asyncio
 
 from festival_playlist_generator.core.metrics import (
     MetricDatum,
     MetricsClient,
     elapsed_ms,
-    metrics_client,
 )
 
 # ---------------------------------------------------------------------------
