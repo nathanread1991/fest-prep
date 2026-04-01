@@ -13,6 +13,44 @@ terraform {
 
 # Get the current AWS account's canonical user ID for S3 ACL grants
 data "aws_canonical_user_id" "current" {}
+data "aws_caller_identity" "current" {}
+
+# ============================================================================
+# KMS Key for S3 Bucket Encryption
+# ============================================================================
+
+resource "aws_kms_key" "s3" {
+  description             = "KMS key for S3 bucket encryption - ${var.project_name}-${var.environment}"
+  deletion_window_in_days = 10
+  enable_key_rotation     = true
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "Enable IAM User Permissions"
+        Effect = "Allow"
+        Principal = {
+          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+        }
+        Action   = "kms:*"
+        Resource = "*"
+      }
+    ]
+  })
+
+  tags = merge(
+    var.common_tags,
+    {
+      Name = "${var.project_name}-${var.environment}-s3-kms"
+    }
+  )
+}
+
+resource "aws_kms_alias" "s3" {
+  name          = "alias/${var.project_name}-${var.environment}-s3"
+  target_key_id = aws_kms_key.s3.key_id
+}
 
 # ============================================================================
 # S3 Bucket - Application Data
@@ -22,7 +60,6 @@ data "aws_canonical_user_id" "current" {}
 resource "aws_s3_bucket" "app_data" {
   #checkov:skip=CKV2_AWS_62:Event notifications not required for this bucket
   #checkov:skip=CKV_AWS_144:Cross-region replication not required for dev
-  #checkov:skip=CKV_AWS_145:AES256 server-side encryption is configured
   #checkov:skip=CKV_AWS_18:Access logging configured via aws_s3_bucket_logging resource
   bucket        = "${var.project_name}-${var.environment}-app-data"
   force_destroy = true
@@ -52,13 +89,14 @@ resource "aws_s3_bucket_versioning" "app_data" {
   }
 }
 
-# Enable server-side encryption (AES256) on app-data bucket
+# Enable server-side encryption (KMS) on app-data bucket
 resource "aws_s3_bucket_server_side_encryption_configuration" "app_data" {
   bucket = aws_s3_bucket.app_data.id
 
   rule {
     apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"
+      sse_algorithm     = "aws:kms"
+      kms_master_key_id = aws_kms_key.s3.arn
     }
     bucket_key_enabled = true
   }
@@ -132,7 +170,6 @@ resource "aws_s3_bucket_lifecycle_configuration" "app_data" {
 resource "aws_s3_bucket" "cloudfront_logs" {
   #checkov:skip=CKV2_AWS_62:Event notifications not required for this bucket
   #checkov:skip=CKV_AWS_144:Cross-region replication not required for dev
-  #checkov:skip=CKV_AWS_145:AES256 server-side encryption is configured
   #checkov:skip=CKV_AWS_18:This is the logging destination bucket
   bucket        = "${var.project_name}-${var.environment}-cloudfront-logs"
   force_destroy = true
@@ -152,13 +189,14 @@ resource "aws_s3_bucket" "cloudfront_logs" {
   }
 }
 
-# Enable server-side encryption (AES256) on logs bucket
+# Enable server-side encryption (KMS) on logs bucket
 resource "aws_s3_bucket_server_side_encryption_configuration" "cloudfront_logs" {
   bucket = aws_s3_bucket.cloudfront_logs.id
 
   rule {
     apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"
+      sse_algorithm     = "aws:kms"
+      kms_master_key_id = aws_kms_key.s3.arn
     }
     bucket_key_enabled = true
   }
@@ -376,7 +414,7 @@ resource "aws_s3_bucket_policy" "app_data" {
           Resource  = "${aws_s3_bucket.app_data.arn}/*"
           Condition = {
             StringNotEquals = {
-              "s3:x-amz-server-side-encryption" = "AES256"
+              "s3:x-amz-server-side-encryption" = "aws:kms"
             }
           }
         }
