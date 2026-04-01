@@ -962,6 +962,8 @@ data "aws_iam_policy_document" "terraform_infra" {
       "application-autoscaling:DeleteScalingPolicy",
       "application-autoscaling:DescribeScalingPolicies",
       "application-autoscaling:TagResource",
+      "application-autoscaling:UntagResource",
+      "application-autoscaling:ListTagsForResource",
 
       # Budgets / Cost Explorer
       "budgets:*",
