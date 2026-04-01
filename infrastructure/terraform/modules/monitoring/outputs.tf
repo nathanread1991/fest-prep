@@ -58,6 +58,21 @@ output "ecs_task_count_alarm_arn" {
   value       = var.enable_alarms ? aws_cloudwatch_metric_alarm.ecs_task_count[0].arn : null
 }
 
+output "ecs_api_cpu_high_alarm_arn" {
+  description = "ARN of the ECS API high-CPU alarm"
+  value       = var.enable_alarms ? aws_cloudwatch_metric_alarm.ecs_api_cpu_high[0].arn : null
+}
+
+output "ecs_api_memory_high_alarm_arn" {
+  description = "ARN of the ECS API high-memory alarm"
+  value       = var.enable_alarms ? aws_cloudwatch_metric_alarm.ecs_api_memory_high[0].arn : null
+}
+
+output "ecs_worker_task_count_alarm_arn" {
+  description = "ARN of the ECS worker task count alarm"
+  value       = var.enable_alarms && var.worker_service_name != "" ? aws_cloudwatch_metric_alarm.ecs_worker_task_count[0].arn : null
+}
+
 # CloudWatch Dashboard
 output "dashboard_name" {
   description = "Name of the CloudWatch dashboard"
@@ -89,4 +104,15 @@ output "kms_key_id" {
 output "kms_key_arn" {
   description = "ARN of the KMS key for SNS encryption"
   value       = aws_kms_key.sns.arn
+}
+
+# CloudWatch Logs Insights Queries
+output "slow_queries_query_id" {
+  description = "ID of the CloudWatch Logs Insights saved query for slow DB queries"
+  value       = aws_cloudwatch_query_definition.slow_queries.query_definition_id
+}
+
+output "query_performance_query_id" {
+  description = "ID of the CloudWatch Logs Insights saved query for DB query performance"
+  value       = aws_cloudwatch_query_definition.query_performance.query_definition_id
 }

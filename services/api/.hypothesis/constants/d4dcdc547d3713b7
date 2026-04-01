@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/core/xray_sampling.py
+# hypothesis_version: 6.150.2
+
+[1.0, '*', 'daemon_address', 'default', 'description', 'error_sampling_rate', 'fixed_target', 'host', 'http_method', 'rate', 'rules', 'service_name', 'url_path', 'version', 'xray_enabled']

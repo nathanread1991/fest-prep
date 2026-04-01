@@ -20,9 +20,14 @@ variable "project_name" {
 }
 
 variable "environment" {
-  description = "Environment name (dev, staging, prod)"
+  description = "Environment name (dev or prod)"
   type        = string
   default     = "dev"
+
+  validation {
+    condition     = contains(["dev", "prod"], var.environment)
+    error_message = "Environment must be 'dev' or 'prod'."
+  }
 }
 
 variable "monthly_budget_limit" {
@@ -114,6 +119,22 @@ variable "database_restore_from_snapshot" {
   default     = false
 }
 
+# ============================================================================
+# Snapshot Restore Variables (used by provision.yml workflow)
+# ============================================================================
+
+variable "restore_from_snapshot" {
+  description = "Whether to restore the database from a snapshot during provisioning"
+  type        = bool
+  default     = false
+}
+
+variable "snapshot_identifier" {
+  description = "RDS snapshot identifier to restore from (empty string means use latest or skip)"
+  type        = string
+  default     = ""
+}
+
 # Redis Configuration
 variable "redis_node_type" {
   description = "ElastiCache Redis node type"
@@ -180,6 +201,18 @@ variable "ecs_worker_desired_count" {
   description = "Desired number of worker tasks"
   type        = number
   default     = 1
+}
+
+variable "api_image_tag" {
+  description = "Docker image tag for the API service (e.g. git SHA or 'latest')"
+  type        = string
+  default     = "latest"
+}
+
+variable "worker_image_tag" {
+  description = "Docker image tag for the worker service (e.g. git SHA or 'latest')"
+  type        = string
+  default     = "latest"
 }
 
 # WAF Configuration

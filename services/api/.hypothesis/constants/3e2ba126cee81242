@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/api/cache_middleware.py
+# hypothesis_version: 6.150.2
+
+[300, 304, 600, 1800, 3600, '"', '/api/', '/artists', '/auth', '/festivals', '/health', '/notifications', '/playlists', '/setlists', '/static/', '/users', 'GET', 'body', 'cache-control', 'content-type', 'etag', 'expires', 'if-none-match', 'private, max-age=300', 'public, max-age=3600', 'public, max-age=600', 'text/html']

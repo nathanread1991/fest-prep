@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/services/user_preferences.py
+# hypothesis_version: 6.150.2
+
+[3600, 'Song not found', 'User not found']

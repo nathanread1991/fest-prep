@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/api/endpoints/users.py
+# hypothesis_version: 6.150.2
+
+['/login', '/logout', '/me', '/me/api-keys', '/me/filter-toggle', '/me/known-songs', '/me/song-preferences', '/me/songs/filter', '/me/songs/summary', '/me/unknown-songs', '/register', 'Default', 'Hide all songs', 'Invalid session', 'Login successful', 'Logout successful', 'Not authenticated', 'Show all songs', 'User not found', 'description', 'message', 'options', 'session_id', 'show_known', 'show_unknown', 'user']

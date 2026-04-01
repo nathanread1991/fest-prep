@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/api/endpoints/festivals.py
+# hypothesis_version: 6.150.2
+
+[100, 201, 204, 400, 404, 500, 1000, '%Y-%m-%d', '/', '/scrape', '/scrape/import', '/search/', '/test', '/{festival_id}', '1.0', '2026-01-13', 'Festival not found', 'Filter by genre', 'Filter by location', 'Import failed', 'Scraping failed', 'Search query', 'accent_colors', 'artists', 'created_at', 'data', 'dates', 'error', 'errors', 'festival', 'festivals', 'genres', 'id', 'imported', 'location', 'logo_source', 'logo_url', 'message', 'name', 'primary_color', 'scraped', 'secondary_color', 'skipped', 'source_url', 'success', 'ticket_url', 'timestamp', 'updated', 'updated_at', 'venue', 'version']

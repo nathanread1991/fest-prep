@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/core/dependencies.py
+# hypothesis_version: 6.150.2
+
+['/tmp/test_oauth.json', 'apple_music', 'client_id', 'client_secret', 'developer_token', 'oauth_file', 'redirect_uri', 'spotify', 'test_client_id', 'test_client_secret', 'test_developer_token', 'youtube_music']

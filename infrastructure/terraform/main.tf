@@ -1,5 +1,7 @@
 # Main Terraform Configuration for Festival Playlist Generator
-# This file sets up the AWS provider and manages infrastructure modules
+# This is the EPHEMERAL root — resources here are created/destroyed daily.
+# Persistent resources (ECR, S3, Secrets Manager) live in ./persistent/ and
+# are referenced via terraform_remote_state.
 
 terraform {
   required_version = ">= 1.10"
@@ -9,6 +11,19 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+  }
+}
+
+# ============================================================================
+# Remote State — Persistent Resources
+# ============================================================================
+
+data "terraform_remote_state" "persistent" {
+  backend = "s3"
+  config = {
+    bucket = "festival-playlist-terraform-state"
+    key    = "persistent/terraform.tfstate"
+    region = "eu-west-2"
   }
 }
 
@@ -93,14 +108,25 @@ module "security" {
   }
 }
 
-# Storage Module
-# Manages S3 buckets and ECR repository
-module "storage" {
-  source = "./modules/storage"
+# ============================================================================
+# Persistent Resource References (via remote state)
+# ============================================================================
+# ECR, S3, and Secrets Manager resources are managed by the persistent module.
+# We read their outputs here so downstream modules can consume them.
 
-  project_name = var.project_name
-  environment  = var.environment
-  common_tags  = var.common_tags
+locals {
+  # ECR
+  ecr_repository_url = data.terraform_remote_state.persistent.outputs.ecr_repository_url
+
+  # S3
+  app_data_bucket_arn                  = data.terraform_remote_state.persistent.outputs.app_data_bucket_arn
+  app_data_bucket_regional_domain_name = data.terraform_remote_state.persistent.outputs.app_data_bucket_regional_domain_name
+  cloudfront_logs_bucket_name          = data.terraform_remote_state.persistent.outputs.cloudfront_logs_bucket_name
+
+  # Secrets Manager
+  spotify_secret_arn   = data.terraform_remote_state.persistent.outputs.spotify_secret_arn
+  setlistfm_secret_arn = data.terraform_remote_state.persistent.outputs.setlistfm_secret_arn
+  jwt_secret_arn       = data.terraform_remote_state.persistent.outputs.jwt_secret_arn
 }
 
 # Database Module
@@ -118,18 +144,19 @@ module "database" {
   master_username = var.database_master_username
   engine_version  = var.database_engine_version
 
-  # Serverless v2 Scaling
-  min_capacity = var.database_min_capacity
-  max_capacity = var.database_max_capacity
+  # Serverless v2 Scaling — prod gets higher capacity
+  min_capacity = var.environment == "prod" ? 1 : var.database_min_capacity
+  max_capacity = var.environment == "prod" ? 4 : var.database_max_capacity
 
-  # Instance Configuration
-  instance_count = var.environment == "prod" ? 2 : 1 # Multi-AZ for prod
+  # Instance Configuration — multi-AZ for prod
+  instance_count = var.environment == "prod" ? 2 : 1
 
   # Backup Configuration
   backup_retention_period = var.database_backup_retention_period
 
-  # Snapshot Configuration
-  restore_from_snapshot = var.database_restore_from_snapshot
+  # Snapshot Configuration — provision.yml passes these when restoring
+  restore_from_snapshot = var.restore_from_snapshot || var.database_restore_from_snapshot
+  snapshot_identifier   = var.snapshot_identifier != "" ? var.snapshot_identifier : null
   skip_final_snapshot   = var.environment == "dev" ? true : false
 
   # CloudWatch Logs
@@ -142,10 +169,10 @@ module "database" {
   # Enhanced Monitoring
   monitoring_interval = 60
 
-  # Deletion Protection
+  # Deletion Protection — enabled for prod
   deletion_protection = var.environment == "prod" ? true : false
 
-  # Apply Changes
+  # Apply Changes — immediate for dev, maintenance window for prod
   apply_immediately = var.environment == "dev" ? true : false
 
   # CloudWatch Alarms
@@ -164,7 +191,7 @@ module "cache" {
   environment             = var.environment
   private_subnet_ids      = module.networking.private_subnet_ids
   redis_security_group_id = module.networking.redis_security_group_id
-  node_type               = var.redis_node_type
+  node_type               = var.environment == "prod" ? "cache.t4g.small" : var.redis_node_type
   num_cache_nodes         = var.environment == "prod" ? 2 : 1
   engine_version          = var.redis_engine_version
   common_tags             = var.common_tags
@@ -182,30 +209,33 @@ module "compute" {
   private_subnet_ids          = module.networking.private_subnet_ids
   alb_security_group_id       = module.networking.alb_security_group_id
   ecs_tasks_security_group_id = module.networking.ecs_tasks_security_group_id
-  ecr_repository_url          = module.storage.ecr_repository_url
-  app_data_bucket_arn         = module.storage.app_data_bucket_arn
+  ecr_repository_url          = local.ecr_repository_url
+  app_data_bucket_arn         = local.app_data_bucket_arn
   db_secret_arn               = module.database.secret_arn
   redis_secret_arn            = module.cache.secret_arn
-  spotify_secret_arn          = module.security.spotify_secret_arn
-  setlistfm_secret_arn        = module.security.setlistfm_secret_arn
-  jwt_secret_arn              = module.security.jwt_secret_arn
+  spotify_secret_arn          = local.spotify_secret_arn
+  setlistfm_secret_arn        = local.setlistfm_secret_arn
+  jwt_secret_arn              = local.jwt_secret_arn
   secrets_arns = [
     module.database.secret_arn,
     module.cache.secret_arn,
-    module.security.spotify_secret_arn,
-    module.security.setlistfm_secret_arn,
-    module.security.jwt_secret_arn
+    local.spotify_secret_arn,
+    local.setlistfm_secret_arn,
+    local.jwt_secret_arn
   ]
-  acm_certificate_arn = module.security.alb_certificate_arn
-  api_cpu             = var.ecs_api_cpu
-  api_memory          = var.ecs_api_memory
-  api_desired_count   = var.ecs_api_desired_count
-  api_min_capacity    = var.ecs_api_min_capacity
-  api_max_capacity    = var.ecs_api_max_capacity
-  worker_cpu          = var.ecs_worker_cpu
-  worker_memory       = var.ecs_worker_memory
-  worker_desired_count = var.ecs_worker_desired_count
-  common_tags         = var.common_tags
+  acm_certificate_arn   = module.security.alb_certificate_arn
+  enable_https_listener = true
+  api_cpu               = var.ecs_api_cpu
+  api_memory            = var.ecs_api_memory
+  api_desired_count     = var.ecs_api_desired_count
+  api_min_capacity      = var.ecs_api_min_capacity
+  api_max_capacity      = var.ecs_api_max_capacity
+  api_image_tag         = var.api_image_tag
+  worker_image_tag      = var.worker_image_tag
+  worker_cpu            = var.ecs_worker_cpu
+  worker_memory         = var.ecs_worker_memory
+  worker_desired_count  = var.ecs_worker_desired_count
+  common_tags           = var.common_tags
 }
 
 # CDN Module
@@ -213,18 +243,50 @@ module "compute" {
 module "cdn" {
   source = "./modules/cdn"
 
-  project_name                                = var.project_name
-  environment                                 = var.environment
-  domain_name                                 = var.domain_name
-  alb_dns_name                                = module.compute.alb_dns_name
-  static_assets_bucket_regional_domain_name   = module.storage.app_data_bucket_regional_domain_name
-  logs_bucket_name                            = module.storage.cloudfront_logs_bucket_name
-  acm_certificate_arn                         = module.security.cloudfront_certificate_arn
-  common_tags                                 = var.common_tags
+  project_name                              = var.project_name
+  environment                               = var.environment
+  domain_name                               = var.domain_name
+  alb_dns_name                              = module.compute.alb_dns_name
+  static_assets_bucket_regional_domain_name = local.app_data_bucket_regional_domain_name
+  logs_bucket_name                          = local.cloudfront_logs_bucket_name
+  acm_certificate_arn                       = module.security.cloudfront_certificate_arn
+  common_tags                               = var.common_tags
 
   providers = {
     aws           = aws
     aws.us_east_1 = aws.us_east_1
+  }
+}
+
+# ============================================================================
+# Route 53 DNS Records for Custom Domain
+# Created at root level to avoid circular dependency between security and CDN modules
+# ============================================================================
+
+# A record for root domain (gig-prep.co.uk) → CloudFront distribution
+resource "aws_route53_record" "root_domain" {
+  zone_id = module.security.route53_zone_id
+  name    = var.domain_name
+  type    = "A"
+
+  alias {
+    name                   = module.cdn.distribution_domain_name
+    zone_id                = module.cdn.distribution_hosted_zone_id
+    evaluate_target_health = false
+  }
+}
+
+# A record for API subdomain — environment-specific
+# dev: api.gig-prep.co.uk, prod: api-prod.gig-prep.co.uk
+resource "aws_route53_record" "api_subdomain" {
+  zone_id = module.security.route53_zone_id
+  name    = var.environment == "prod" ? "api-prod.${var.domain_name}" : "api.${var.domain_name}"
+  type    = "A"
+
+  alias {
+    name                   = module.compute.alb_dns_name
+    zone_id                = module.compute.alb_zone_id
+    evaluate_target_health = true
   }
 }
 

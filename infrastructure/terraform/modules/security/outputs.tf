@@ -65,71 +65,8 @@ output "waf_web_acl_capacity" {
 # ============================================================================
 # Secrets Manager Outputs
 # ============================================================================
-
-output "spotify_secret_arn" {
-  description = "ARN of the Spotify credentials secret"
-  value       = aws_secretsmanager_secret.spotify.arn
-}
-
-output "spotify_secret_name" {
-  description = "Name of the Spotify credentials secret"
-  value       = aws_secretsmanager_secret.spotify.name
-}
-
-output "setlistfm_secret_arn" {
-  description = "ARN of the Setlist.fm API key secret"
-  value       = aws_secretsmanager_secret.setlistfm.arn
-}
-
-output "setlistfm_secret_name" {
-  description = "Name of the Setlist.fm API key secret"
-  value       = aws_secretsmanager_secret.setlistfm.name
-}
-
-output "jwt_secret_arn" {
-  description = "ARN of the JWT signing key secret"
-  value       = aws_secretsmanager_secret.jwt.arn
-}
-
-output "jwt_secret_name" {
-  description = "Name of the JWT signing key secret"
-  value       = aws_secretsmanager_secret.jwt.name
-}
-
-# ============================================================================
-# Summary Outputs
-# ============================================================================
-
-output "secrets_summary" {
-  description = "Summary of all secrets created"
-  value = {
-    spotify = {
-      arn  = aws_secretsmanager_secret.spotify.arn
-      name = aws_secretsmanager_secret.spotify.name
-    }
-    setlistfm = {
-      arn  = aws_secretsmanager_secret.setlistfm.arn
-      name = aws_secretsmanager_secret.setlistfm.name
-    }
-    jwt = {
-      arn  = aws_secretsmanager_secret.jwt.arn
-      name = aws_secretsmanager_secret.jwt.name
-    }
-  }
-}
-
-output "certificates_summary" {
-  description = "Summary of all certificates created"
-  value = {
-    alb = {
-      arn    = aws_acm_certificate.alb.arn
-      status = aws_acm_certificate.alb.status
-      region = "eu-west-2"
-    }
-    cloudfront = {
-      arn    = aws_acm_certificate.cloudfront.arn
-      status = aws_acm_certificate.cloudfront.status
-      region = "us-east-1"
-    }
-  }
-}
+# NOTE: Secrets Manager secrets have been moved to the persistent module.
+# The ephemeral root reads their ARNs via terraform_remote_state.
+# These outputs are kept as pass-through for backward compatibility with
+# any code that references module.security.* secret outputs.
+# They are no longer populated from this module.

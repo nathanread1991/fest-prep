@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/repositories/artist_repository.py
+# hypothesis_version: 6.150.2
+
+[100, ',', 'created_at', 'is_orphaned']

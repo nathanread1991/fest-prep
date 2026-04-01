@@ -31,6 +31,7 @@ from festival_playlist_generator.api.exception_handlers import (
     sqlalchemy_error_handler,
     validation_exception_handler,
 )
+from festival_playlist_generator.api.metrics_middleware import MetricsMiddleware
 from festival_playlist_generator.api.middleware import (
     APILoggingMiddleware,
     RateLimitMiddleware,
@@ -38,10 +39,14 @@ from festival_playlist_generator.api.middleware import (
 )
 from festival_playlist_generator.api.routes import api_router
 from festival_playlist_generator.api.versioning import APIVersioningMiddleware
+from festival_playlist_generator.api.xray_middleware import XRayMiddleware
 from festival_playlist_generator.core.config import settings
 from festival_playlist_generator.core.database import init_db
 from festival_playlist_generator.core.logging_config import get_logger, setup_logging
+from festival_playlist_generator.core.metrics import metrics_client
 from festival_playlist_generator.core.redis import init_redis
+from festival_playlist_generator.core.xray import configure_xray
+from festival_playlist_generator.core.xray_sampling import apply_sampling_rules
 from festival_playlist_generator.web.admin import admin_router
 from festival_playlist_generator.web.auth_routes import auth_router
 from festival_playlist_generator.web.routes import web_router
@@ -56,8 +61,26 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan events."""
     # Startup
     logger.info("Starting Festival Playlist Generator...")
+
+    # Validate AWS environment variables if running in ECS
+    from festival_playlist_generator.core.aws_config import validate_aws_environment
+
+    try:
+        validate_aws_environment()
+    except Exception as e:
+        logger.error(f"AWS environment validation failed: {e}")
+
     await init_db()
     await init_redis()
+    await metrics_client.start()
+    configure_xray()
+    apply_sampling_rules()
+
+    # Register database query metrics on the engine
+    from festival_playlist_generator.core.database import engine as db_engine
+    from festival_playlist_generator.core.db_metrics import register_db_metrics
+
+    register_db_metrics(db_engine)
 
     # Optionally warm image cache on startup
     if settings.IMAGE_CACHE_ENABLED and getattr(
@@ -80,6 +103,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     yield
     # Shutdown
     logger.info("Shutting down Festival Playlist Generator...")
+    await metrics_client.stop()
 
 
 def create_app() -> FastAPI:
@@ -96,6 +120,8 @@ def create_app() -> FastAPI:
 
     # Add custom middleware (order matters - last added is executed first)
     app.add_middleware(APILoggingMiddleware)
+    app.add_middleware(MetricsMiddleware)
+    app.add_middleware(XRayMiddleware)  # X-Ray tracing (outermost)
     app.add_middleware(RequestIDMiddleware)  # Add request ID middleware
     app.add_middleware(RateLimitMiddleware)
     app.add_middleware(APIVersioningMiddleware)

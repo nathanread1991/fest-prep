@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/api/compression.py
+# hypothesis_version: 6.150.2
+
+[200, 300, 500, '.css', '.eot', '.gif', '.html', '.ico', '.jpeg', '.jpg', '.js', '.json', '.png', '.svg', '.ttf', '.woff', '.woff2', '.xml', '/static/', ';', 'Accept-Encoding', 'accept-encoding', 'application/atom+xml', 'application/json', 'application/rss+xml', 'application/xml', 'body', 'br', 'cache-control', 'content-encoding', 'content-length', 'content-range', 'content-type', 'etag', 'expires', 'gzip', 'image/svg+xml', 'public, max-age=3600', 'text/css', 'text/html', 'text/javascript', 'text/plain', 'text/xml', 'vary']

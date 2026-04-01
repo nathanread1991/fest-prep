@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/api/endpoints/notifications.py
+# hypothesis_version: 6.150.2
+
+[500, 503, '/generate-vapid-keys', '/send-test', '/stats', '/subscribe', '/subscription-status', '/unsubscribe', '/vapid-public-key', 'anonymous', 'endpoint', 'keys', 'public_key', 'sent', 'subscribed', 'subscription', 'unsubscribed', 'user_id']

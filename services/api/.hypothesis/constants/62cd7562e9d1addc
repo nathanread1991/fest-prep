@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/services/notification_service.py
+# hypothesis_version: 6.150.2
+
+[100, 587, '/recommendations', 'FROM_EMAIL', 'From', 'SMTP_PASSWORD', 'SMTP_PORT', 'SMTP_SERVER', 'SMTP_USERNAME', 'Subject', 'To', 'action_url', 'artist_lineup_update', 'artists', 'body', 'daily', 'data', 'dates', 'email_enabled', 'festival_id', 'festival_name', 'frequency', 'html', 'immediate', 'localhost', 'location', 'monthly', 'new_artists', 'notifications', 'playlist_id', 'playlist_ready', 'push_enabled', 'recommendation', 'recommendations', 'timestamp', 'title', 'total_artists', 'weekly']

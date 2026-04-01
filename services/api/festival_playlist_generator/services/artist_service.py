@@ -4,6 +4,7 @@ import logging
 from typing import List, Optional, Tuple
 from uuid import UUID
 
+from festival_playlist_generator.core.cache_config import CachePrefix, CacheTTL
 from festival_playlist_generator.models.artist import Artist
 from festival_playlist_generator.repositories.artist_repository import ArtistRepository
 from festival_playlist_generator.services.cache_service import CacheService
@@ -64,10 +65,10 @@ class ArtistService:
         # Fetch from database
         artist = await self.artist_repo.get_by_id(artist_id, load_relationships)
 
-        # Cache result (1 hour TTL)
+        # Cache result
         if artist and not load_relationships:
             # Only cache simple artist data without relationships
-            await self.cache.set(cache_key, artist, ttl=3600)
+            await self.cache.set(cache_key, artist, ttl=CacheTTL.ARTIST_BY_ID)
             logger.debug(f"Cached artist {artist_id}")
 
         return artist
@@ -83,7 +84,7 @@ class ArtistService:
             Artist or None if not found
         """
         # Check cache
-        cache_key = f"artist:name:{name}"
+        cache_key = f"{CachePrefix.ARTIST}name:{name}"
         cached = await self.cache.get(cache_key)
         if cached is not None:
             logger.debug(f"Cache hit for artist name {name}")
@@ -92,9 +93,9 @@ class ArtistService:
         # Fetch from database
         artist = await self.artist_repo.get_by_name(name)
 
-        # Cache result (1 hour TTL)
+        # Cache result
         if artist:
-            await self.cache.set(cache_key, artist, ttl=3600)
+            await self.cache.set(cache_key, artist, ttl=CacheTTL.ARTIST_BY_NAME)
 
         return artist
 
@@ -109,7 +110,7 @@ class ArtistService:
             Artist or None if not found
         """
         # Check cache
-        cache_key = f"artist:spotify:{spotify_id}"
+        cache_key = f"{CachePrefix.ARTIST}spotify:{spotify_id}"
         cached = await self.cache.get(cache_key)
         if cached is not None:
             logger.debug(f"Cache hit for Spotify ID {spotify_id}")
@@ -118,9 +119,9 @@ class ArtistService:
         # Fetch from database
         artist = await self.artist_repo.get_by_spotify_id(spotify_id)
 
-        # Cache result (1 hour TTL)
+        # Cache result
         if artist:
-            await self.cache.set(cache_key, artist, ttl=3600)
+            await self.cache.set(cache_key, artist, ttl=CacheTTL.ARTIST_BY_SPOTIFY_ID)
 
         return artist
 
@@ -273,7 +274,7 @@ class ArtistService:
             Total number of artists
         """
         # Check cache
-        cache_key = "artists:count:total"
+        cache_key = f"{CachePrefix.ARTISTS}count:total"
         cached = await self.cache.get(cache_key)
         if cached is not None:
             return cached  # type: ignore[no-any-return]
@@ -281,8 +282,8 @@ class ArtistService:
         # Fetch from database
         count = await self.artist_repo.count_total()
 
-        # Cache result (5 minute TTL)
-        await self.cache.set(cache_key, count, ttl=300)
+        # Cache result
+        await self.cache.set(cache_key, count, ttl=CacheTTL.ARTIST_COUNT)
 
         return count
 
@@ -294,7 +295,7 @@ class ArtistService:
             Number of orphaned artists
         """
         # Check cache
-        cache_key = "artists:count:orphaned"
+        cache_key = f"{CachePrefix.ARTISTS}count:orphaned"
         cached = await self.cache.get(cache_key)
         if cached is not None:
             return cached  # type: ignore[no-any-return]
@@ -302,8 +303,8 @@ class ArtistService:
         # Fetch from database
         count = await self.artist_repo.count_orphaned()
 
-        # Cache result (5 minute TTL)
-        await self.cache.set(cache_key, count, ttl=300)
+        # Cache result
+        await self.cache.set(cache_key, count, ttl=CacheTTL.ARTIST_COUNT)
 
         return count
 
@@ -323,10 +324,10 @@ class ArtistService:
     async def _invalidate_search_caches(self) -> None:
         """Invalidate all artist search and count caches."""
         # Delete all search result caches
-        await self.cache.delete_pattern("artists:search:*")
+        await self.cache.delete_pattern(f"{CachePrefix.ARTISTS}search:*")
 
         # Delete count caches
-        await self.cache.delete("artists:count:total")
-        await self.cache.delete("artists:count:orphaned")
+        await self.cache.delete(f"{CachePrefix.ARTISTS}count:total")
+        await self.cache.delete(f"{CachePrefix.ARTISTS}count:orphaned")
 
         logger.debug("Invalidated artist search caches")

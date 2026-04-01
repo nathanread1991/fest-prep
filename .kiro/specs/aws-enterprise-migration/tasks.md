@@ -533,90 +533,90 @@ This implementation plan guides the migration of the Festival Playlist Generator
 
 ### Week 3: Application Migration
 
-- [ ] 20. Update application configuration for AWS
-  - [ ] 20.1 Create AWS-specific configuration module
+- [x] 20. Update application configuration for AWS
+  - [x] 20.1 Create AWS-specific configuration module
     - Create config/aws.py for AWS service configuration
     - Add functions to load secrets from Secrets Manager
     - Add functions to get RDS and Redis connection strings
     - Add environment variable validation
     - _Requirements: US-6.2_
 
-  - [ ] 20.2 Update database connection configuration
+  - [x] 20.2 Update database connection configuration
     - Replace local PostgreSQL connection with RDS endpoint
     - Load database credentials from Secrets Manager
     - Configure connection pooling for Aurora Serverless
     - Add SSL/TLS configuration for RDS connection
     - _Requirements: US-6.6, US-6.8_
 
-  - [ ] 20.3 Update Redis connection configuration
+  - [x] 20.3 Update Redis connection configuration
     - Replace local Redis connection with ElastiCache endpoint
     - Load Redis URL from Secrets Manager
     - Configure connection pooling
     - Add retry logic for connection failures
     - _Requirements: US-6.2_
 
-  - [ ] 20.4 Update external API configuration
+  - [x] 20.4 Update external API configuration
     - Load Spotify credentials from Secrets Manager
     - Load Setlist.fm API key from Secrets Manager
     - Load JWT secret from Secrets Manager
     - Remove all hardcoded credentials from code
     - _Requirements: US-6.2_
 
-- [ ] 21. Implement CloudWatch metrics publishing
-  - [ ] 21.1 Create MetricsClient for CloudWatch
+- [x] 21. Implement CloudWatch metrics publishing
+  - [x] 21.1 Create MetricsClient for CloudWatch
     - Implement put_metric and put_metrics_batch methods
     - Configure namespace (FestivalApp)
     - Add dimension support for metrics
     - _Requirements: US-5.2_
 
-  - [ ] 21.2 Add request tracking middleware
+  - [x] 21.2 Add request tracking middleware
     - Track API request count by endpoint and method
     - Track API latency by endpoint
     - Track API errors by status code
     - Publish metrics to CloudWatch
     - _Requirements: US-5.2, US-5.8_
 
-  - [ ] 21.3 Add database query metrics
+  - [x] 21.3 Add database query metrics
     - Track database query count
     - Track database query latency
     - Publish metrics to CloudWatch
     - _Requirements: US-5.2_
 
-  - [ ] 21.4 Add cache metrics
+  - [x] 21.4 Add cache metrics
     - Track cache hits and misses
     - Track cache operation latency
     - Publish metrics to CloudWatch
     - _Requirements: US-5.2_
 
-  - [ ] 21.5 Add business metrics
+  - [x] 21.5 Add business metrics
     - Track festival creation count
     - Track playlist creation count
     - Track user registration count
     - Track Spotify sync count
     - _Requirements: US-5.2_
 
-- [ ] 22. Integrate AWS X-Ray tracing
-  - [ ] 22.1 Install and configure X-Ray SDK
+- [x] 22. Integrate AWS X-Ray tracing
+  - [x] 22.1 Install and configure X-Ray SDK
     - Install aws-xray-sdk package
     - Configure X-Ray middleware for FastAPI
     - Add X-Ray recorder configuration
     - _Requirements: US-5.5_
 
-  - [ ] 22.2 Add X-Ray instrumentation
+  - [x] 22.2 Add X-Ray instrumentation
     - Instrument database queries with X-Ray
     - Instrument Redis operations with X-Ray
     - Instrument external API calls with X-Ray
     - Add custom subsegments for business logic
     - _Requirements: US-5.5_
 
-  - [ ] 22.3 Configure X-Ray sampling rules
+  - [x] 22.3 Configure X-Ray sampling rules
     - Create sampling rule for all requests (10% sample rate)
     - Create sampling rule for errors (100% sample rate)
     - Create sampling rule for slow requests (100% sample rate)
     - _Requirements: US-5.5_
 
-- [ ] 23. Build and test Docker image
-  - [ ] 23.1 Update Dockerfile for production
+- [x] 23. Build and test Docker image
+  - [x] 23.1 Update Dockerfile for production
     - Use multi-stage build for smaller image size
     - Install production dependencies only
     - Configure non-root user for security
@@ -624,14 +624,14 @@ This implementation plan guides the migration of the Festival Playlist Generator
     - Optimize layer caching
     - _Requirements: US-6.3_
 
-  - [ ] 23.2 Create docker-compose for local AWS testing
+  - [x] 23.2 Create docker-compose for local AWS testing
     - Create docker-compose.aws.yml
     - Use LocalStack for AWS service mocking
     - Configure environment variables for AWS services
     - Test application with mocked AWS services
     - _Requirements: US-8.1_
 
-  - [ ] 23.3 Build and push Docker image to ECR
+  - [x] 23.3 Build and push Docker image to ECR
     - Authenticate Docker with ECR
     - Build Docker image with proper tags
     - Push image to ECR repository
@@ -639,34 +639,34 @@ This implementation plan guides the migration of the Festival Playlist Generator
     - _Requirements: US-2.6_
 
 
-- [ ] 24. Deploy application to ECS and test
-  - [ ] 24.1 Update ECS task definitions with new image
+- [x] 24. Deploy application to ECS and test
+  - [x] 24.1 Update ECS task definitions with new image
     - Update Terraform with new ECR image tag
     - Run terraform apply to update task definitions
     - Verify new task definitions created
     - _Requirements: US-2.7_
 
-  - [ ] 24.2 Deploy API service to ECS
+  - [x] 24.2 Deploy API service to ECS
     - Update ECS service to use new task definition
     - Wait for service to reach stable state
     - Verify tasks running and healthy
     - Check CloudWatch logs for startup errors
     - _Requirements: US-2.7_
 
-  - [ ] 24.3 Deploy worker service to ECS
+  - [x] 24.3 Deploy worker service to ECS
     - Update ECS worker service to use new task definition
     - Wait for service to reach stable state
     - Verify Celery workers running
     - Check CloudWatch logs for worker activity
     - _Requirements: US-2.7_
 
-  - [ ] 24.4 Test ALB health checks
+  - [x] 24.4 Test ALB health checks
     - Verify ALB target group shows healthy targets
     - Test /health endpoint through ALB
     - Verify ALB routing to ECS tasks
     - _Requirements: US-7.5_
 
-  - [ ] 24.5 Test application functionality
+  - [x] 24.5 Test application functionality
     - Test user registration and login
     - Test festival search and creation
     - Test playlist creation
@@ -675,48 +675,48 @@ This implementation plan guides the migration of the Festival Playlist Generator
     - Verify all features working in AWS environment
     - _Requirements: US-7.1_
 
-- [ ] 25. Run database migrations in AWS
-  - [ ] 25.1 Create database migration Lambda function
+- [x] 25. Run database migrations in AWS
+  - [x] 25.1 Create database migration Lambda function
     - Create Lambda function to run Alembic migrations
     - Package Alembic and application code
     - Configure Lambda to access RDS via VPC
     - Add IAM role with RDS and Secrets Manager access
     - _Requirements: US-8.1_
 
-  - [ ] 25.2 Run initial database migrations
+  - [x] 25.2 Run initial database migrations
     - Invoke Lambda function to run migrations
     - Verify all tables created in RDS
     - Verify indexes created
     - Check CloudWatch logs for migration output
     - _Requirements: US-8.1_
 
-  - [ ] 25.3 Create migration workflow for future updates
+  - [x] 25.3 Create migration workflow for future updates
     - Document migration process
     - Create script to invoke migration Lambda
     - Add migration step to deployment workflow
     - _Requirements: US-8.1_
 
-- [ ] 26. Configure CloudFront and custom domain
-  - [ ] 26.1 Update CloudFront distribution with custom domain
+- [x] 26. Configure CloudFront and custom domain
+  - [x] 26.1 Update CloudFront distribution with custom domain
     - Add gig-prep.co.uk as alternate domain name
     - Associate ACM certificate with distribution
     - Update origin to use ALB DNS name
     - _Requirements: US-7.3, US-7.4_
 
-  - [ ] 26.2 Update Route 53 DNS records
+  - [x] 26.2 Update Route 53 DNS records
     - Create A record for gig-prep.co.uk pointing to CloudFront
     - Create A record for api.gig-prep.co.uk pointing to ALB
     - Wait for DNS propagation
     - _Requirements: US-7.3_
 
-  - [ ] 26.3 Test custom domain access
+  - [x] 26.3 Test custom domain access
     - Test https://gig-prep.co.uk (should serve via CloudFront)
     - Test https://api.gig-prep.co.uk/health (should serve via ALB)
     - Verify SSL certificates valid
     - Verify HTTP redirects to HTTPS
     - _Requirements: US-7.1, US-7.2, US-7.3_
 
-- [ ] 27. Performance testing and optimization
+- [x] 27. Performance testing and optimization
   - [ ]* 27.1 Run load tests with Locust
     - Create Locust test scenarios (search, create playlist, etc.)
     - Run load test with 100 concurrent users
@@ -724,28 +724,28 @@ This implementation plan guides the migration of the Festival Playlist Generator
     - Identify bottlenecks
     - _Requirements: US-7.4_
 
-  - [ ] 27.2 Optimize database queries
+  - [x] 27.2 Optimize database queries
     - Review slow query logs in CloudWatch
     - Add missing indexes
     - Optimize N+1 query problems
     - Verify query performance improvements
     - _Requirements: US-7.4_
 
-  - [ ] 27.3 Optimize caching strategy
+  - [x] 27.3 Optimize caching strategy
     - Review cache hit/miss ratios
     - Adjust cache TTLs based on usage patterns
     - Add caching for frequently accessed data
     - Verify cache performance improvements
     - _Requirements: US-7.4_
 
-  - [ ] 27.4 Configure ECS auto-scaling
+  - [x] 27.4 Configure ECS auto-scaling
     - Verify auto-scaling policies working
     - Test scale-out under load
     - Test scale-in after load decreases
     - Adjust scaling thresholds if needed
     - _Requirements: US-7.5_
 
-- [ ] 28. Checkpoint - Week 3 Review
+- [x] 28. Checkpoint - Week 3 Review
   - Verify application deployed to ECS successfully
   - Verify all features working in AWS environment
   - Verify custom domain configured and accessible
@@ -797,12 +797,12 @@ This implementation plan guides the migration of the Festival Playlist Generator
     - Send completion notification with API URL
     - _Requirements: US-3.1, US-3.2_
 
-  - [ ] 29.5 Configure GitHub Actions secrets
+  - [x] 29.5 Configure GitHub Actions secrets
     - Add AWS_ACCESS_KEY_ID secret
     - Add AWS_SECRET_ACCESS_KEY secret
     - Add AWS_REGION secret
     - Add SLACK_WEBHOOK secret (optional)
-    - Add INFRACOST_API_KEY secret (optional)
+    - ~~Add INFRACOST_API_KEY secret~~ (not yet configured)
     - _Requirements: US-2.1_
 
 - [ ] 30. Test CI/CD pipeline end-to-end
@@ -833,65 +833,40 @@ This implementation plan guides the migration of the Festival Playlist Generator
     - Verify application accessible
     - _Requirements: US-3.1, US-3.2_
 
-- [ ] 31. Create production environment
-  - [ ] 31.1 Create prod Terraform workspace
-    - Create new Terraform workspace for prod
-    - Copy terraform.tfvars to terraform.prod.tfvars
-    - Update variables for production (multi-AZ, larger instances)
+- [ ] 31. ~~Create production environment~~ → Configure prod deployment on shared infrastructure
+  - [ ] 31.1 Create prod ECS service and task definition
+    - Create separate ECS task definition for prod (different image tag, env vars)
+    - Create prod ECS service on the same cluster
+    - Configure prod-specific environment variables (ENVIRONMENT=prod)
+    - Use same RDS/Redis but with separate database schema or prefix
     - _Requirements: US-8.7_
 
-  - [ ] 31.2 Provision production infrastructure
-    - Run terraform plan for prod workspace
-    - Review plan carefully
-    - Run terraform apply for prod workspace
-    - Verify all resources created
-    - _Requirements: US-8.7_
+  - [ ] 31.2 Configure prod routing
+    - Add ALB listener rule for prod subdomain (e.g. app.gig-prep.co.uk)
+    - Create separate target group for prod ECS service
+    - Add Route 53 record for prod subdomain
+    - _Requirements: US-7.3_
 
-  - [ ] 31.3 Configure production-specific settings
-    - Enable multi-AZ for RDS (2 instances)
-    - Disable auto-pause for RDS
-    - Increase ECS task count (2 API tasks)
-    - Enable ALB deletion protection
-    - Increase CloudWatch log retention (30 days)
-    - _Requirements: US-8.7_
+  - [ ] 31.3 Deploy and verify prod service
+    - Deploy prod container image to ECR
+    - Update prod ECS service with new task definition
+    - Verify prod service healthy via ALB target group
+    - Test prod URL responds correctly
+    - _Requirements: US-2.7_
 
-  - [ ] 31.4 Run database migrations in production
-    - Invoke migration Lambda for prod database
-    - Verify all tables created
-    - _Requirements: US-8.1_
-
-
-- [ ] 32. Deploy to production
-  - [ ] 32.1 Run production deployment workflow
-    - Trigger deploy-prod workflow manually
-    - Approve deployment in GitHub Actions
-    - Monitor deployment progress
-    - Verify ECS tasks healthy
-    - _Requirements: US-2.4, US-2.7_
-
-  - [ ] 32.2 Run production smoke tests
-    - Test /health endpoint
-    - Test user registration and login
+- [ ] 32. Validate prod deployment
+  - [ ] 32.1 Run smoke tests against prod URL
+    - Test /health endpoint on prod subdomain
     - Test festival search
     - Test playlist creation
-    - Test Spotify integration
     - Verify all features working
     - _Requirements: US-7.1_
 
-  - [ ] 32.3 Verify production monitoring
-    - Check CloudWatch logs for errors
-    - Verify metrics being published
-    - Verify alarms configured correctly
-    - Check X-Ray traces
-    - Review CloudWatch dashboard
-    - _Requirements: US-5.1, US-5.2, US-5.3, US-5.4, US-5.5_
-
-  - [ ] 32.4 Test production custom domain
-    - Test https://gig-prep.co.uk
-    - Test https://api.gig-prep.co.uk
-    - Verify SSL certificates valid
-    - Verify CloudFront caching working
-    - _Requirements: US-7.1, US-7.2, US-7.3_
+  - [ ] 32.2 Verify monitoring covers both services
+    - Check CloudWatch logs for prod service
+    - Verify metrics published with Environment=prod dimension
+    - Verify alarms cover prod ECS service
+    - _Requirements: US-5.1, US-5.2, US-5.3_
 
 - [ ] 33. Validate security and compliance
   - [ ] 33.1 Review security group configurations
@@ -1039,24 +1014,23 @@ This implementation plan guides the migration of the Festival Playlist Generator
     - _Requirements: US-3.4_
 
   - [ ] 36.6 Go-live checklist
-    - Verify production environment stable
+    - Verify dev environment stable and serving live traffic
     - Verify custom domain accessible
     - Verify all features working
     - Verify monitoring and alerting active
     - Verify backup procedures in place
     - Verify documentation complete
-    - Announce go-live to stakeholders
     - _Requirements: US-7.1, US-8.1_
 
 - [ ] 37. Post-migration tasks
-  - [ ] 37.1 Monitor production for first week
+  - [ ] 37.1 Monitor environment for first week
     - Check CloudWatch logs daily for errors
     - Review performance metrics
     - Review cost metrics
     - Address any issues promptly
     - _Requirements: US-5.1, US-5.2, US-3.4_
 
-  - [ ] 37.2 Optimize based on production data
+  - [ ] 37.2 Optimize based on live data
     - Adjust cache TTLs based on usage patterns
     - Adjust auto-scaling thresholds based on load
     - Optimize database queries based on slow query logs
@@ -1079,7 +1053,7 @@ This implementation plan guides the migration of the Festival Playlist Generator
 
 - [ ] 38. Final Checkpoint - Migration Complete
   - Verify all infrastructure provisioned and working
-  - Verify application deployed to production
+  - Verify application deployed and serving traffic
   - Verify CI/CD pipeline operational
   - Verify monitoring and alerting configured
   - Verify cost optimization measures in place

@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/services/push_notifications.py
+# hypothesis_version: 6.150.2
+
+[b'\x04', 410, 413, 86400, 'Create Playlist', 'View Festival', 'View Playlist', 'action', 'actions', 'active_subscriptions', 'badge', 'big', 'body', 'create_playlist', 'data', 'festival_id', 'icon', 'open_streaming', 'playlist_id', 'playlist_ready', 'private_key', 'public_key', 'requireInteraction', 'silent', 'sub', 'success_rate', 'tag', 'title', 'total_sent_today', 'type', 'url', 'utf-8', 'view_festival', 'view_playlist']

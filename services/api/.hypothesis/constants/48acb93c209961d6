@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/api/rate_limiting.py
+# hypothesis_version: 6.150.2
+
+[429, 500, 1000, 3600, ',', '0', 'Rate limit exceeded', 'Retry-After', 'X-Forwarded-For', 'X-RateLimit-Limit', 'X-RateLimit-Reset', 'current', 'error', 'hour', 'hour_limit', 'hour_remaining', 'limit', 'limit_type', 'minute', 'minute_limit', 'minute_remaining', 'reset_time', 'unknown']

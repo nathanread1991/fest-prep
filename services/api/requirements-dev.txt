@@ -10,6 +10,7 @@ black>=23.0.0
 isort>=5.10.0
 flake8>=6.0.0
 mypy>=1.5.0
+PyYAML>=6.0
 
 # Type stubs for mypy (dev-only)
 boto3-stubs[cloudwatch]

@@ -113,6 +113,18 @@ variable "ecs_min_task_count" {
   default     = 1
 }
 
+variable "ecs_api_cpu_alarm_threshold" {
+  description = "CPU utilization percentage that triggers the ECS API high-CPU alarm"
+  type        = number
+  default     = 85
+}
+
+variable "ecs_api_memory_alarm_threshold" {
+  description = "Memory utilization percentage that triggers the ECS API high-memory alarm"
+  type        = number
+  default     = 90
+}
+
 # X-Ray Configuration
 variable "enable_xray" {
   description = "Enable AWS X-Ray tracing"

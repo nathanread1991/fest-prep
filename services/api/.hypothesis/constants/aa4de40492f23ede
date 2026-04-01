@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/schemas/festival.py
+# hypothesis_version: 6.150.2
+
+[255, 'Festival dates', 'Festival genres', 'Festival location', 'Festival logo URL', 'Festival name', 'Festival venue', 'Ticket purchase URL']

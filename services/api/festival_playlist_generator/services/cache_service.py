@@ -2,11 +2,13 @@
 
 import json
 import logging
+import time
 from typing import TYPE_CHECKING, Any, List, Optional
 
 import redis.asyncio as redis
 
 from festival_playlist_generator.core.config import settings
+from festival_playlist_generator.core.metrics import metrics_client
 
 if TYPE_CHECKING:
     from redis.asyncio.connection import Connection
@@ -66,12 +68,33 @@ class CacheService:
         Returns:
             Deserialized value or None if not found
         """
+        start = time.monotonic()
         try:
             client = await self._get_client()
             value = await client.get(key)
+            latency_ms = (time.monotonic() - start) * 1000.0
 
             if value is None:
+                await metrics_client.put_metric(
+                    "CacheMiss", 1.0, "Count", {"Operation": "get"}
+                )
+                await metrics_client.put_metric(
+                    "CacheLatency",
+                    latency_ms,
+                    "Milliseconds",
+                    {"Operation": "get"},
+                )
                 return None
+
+            await metrics_client.put_metric(
+                "CacheHit", 1.0, "Count", {"Operation": "get"}
+            )
+            await metrics_client.put_metric(
+                "CacheLatency",
+                latency_ms,
+                "Milliseconds",
+                {"Operation": "get"},
+            )
 
             # Deserialize JSON
             return json.loads(value)
@@ -94,6 +117,7 @@ class CacheService:
         Returns:
             True if successful, False otherwise
         """
+        start = time.monotonic()
         try:
             client = await self._get_client()
 
@@ -102,6 +126,14 @@ class CacheService:
 
             # Set with expiration
             await client.setex(key, ttl, serialized)
+
+            latency_ms = (time.monotonic() - start) * 1000.0
+            await metrics_client.put_metric(
+                "CacheLatency",
+                latency_ms,
+                "Milliseconds",
+                {"Operation": "set"},
+            )
             return True
         except (TypeError, ValueError) as e:
             logger.error(f"Failed to serialize value for key {key}: {e}")
@@ -120,9 +152,18 @@ class CacheService:
         Returns:
             True if key was deleted, False otherwise
         """
+        start = time.monotonic()
         try:
             client = await self._get_client()
             result = await client.delete(key)
+
+            latency_ms = (time.monotonic() - start) * 1000.0
+            await metrics_client.put_metric(
+                "CacheLatency",
+                latency_ms,
+                "Milliseconds",
+                {"Operation": "delete"},
+            )
             return bool(result > 0)
         except Exception as e:
             logger.error(f"Error deleting cache key {key}: {e}")
@@ -275,3 +316,56 @@ class CacheService:
         if self._pool is not None:
             await self._pool.disconnect()
             logger.info("Redis connection pool closed")
+
+    async def get_stats(self) -> dict[str, object]:
+        """Collect cache statistics from Redis.
+
+        Returns a dictionary with key counts per prefix, total keys,
+        and memory usage when available.
+
+        Returns:
+            Dictionary with cache statistics.
+        """
+        stats: dict[str, object] = {
+            "total_keys": 0,
+            "key_counts": {},
+            "memory_usage_bytes": None,
+        }
+        try:
+            client = await self._get_client()
+
+            # Count keys per well-known prefix
+            prefixes = [
+                "artist:",
+                "artists:",
+                "festival:",
+                "festivals:",
+                "playlist:",
+                "playlists:",
+                "setlist:",
+                "setlists:",
+            ]
+            key_counts: dict[str, int] = {}
+            total = 0
+            for prefix in prefixes:
+                count = 0
+                async for _ in client.scan_iter(match=f"{prefix}*"):
+                    count += 1
+                key_counts[prefix.rstrip(":")] = count
+                total += count
+
+            stats["key_counts"] = key_counts
+            stats["total_keys"] = total
+
+            # Try to get memory info
+            try:
+                info = await client.info("memory")
+                if isinstance(info, dict):
+                    stats["memory_usage_bytes"] = info.get("used_memory", None)
+            except Exception:
+                pass
+
+        except Exception as e:
+            logger.error(f"Error collecting cache stats: {e}")
+
+        return stats

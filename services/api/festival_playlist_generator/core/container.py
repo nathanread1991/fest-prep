@@ -130,3 +130,9 @@ def get_user_service(db: AsyncSession = Depends(get_db)) -> UserService:
     user_repo = UserRepository(db)
     cache_service = container.cache_service()
     return UserService(user_repository=user_repo, cache_service=cache_service)
+
+
+def get_cache_service() -> CacheService:
+    """Get CacheService singleton instance."""
+    service: CacheService = container.cache_service()
+    return service

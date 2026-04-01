@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/core/caching.py
+# hypothesis_version: 6.150.2
+
+[300, 1800, 3600, 7200, 86400, 31536000, '"', '&', ',', ', ', '.', '.hash.', '.min.', '.v', ':', 'Cache-Control', 'ETag', 'Expires', 'Vary', '__await__', 'api', 'css', 'data', 'default', 'festivals', 'fpg:', 'gif', 'htm', 'html', 'id', 'if-none-match', 'jpeg', 'jpg', 'js', 'must-revalidate', 'playlists', 'png', 'posters', 'private', 'public', 'setlists', 'svg', 'timestamp', 'ttl', 'users', 'utf-8', 'webp', '|']

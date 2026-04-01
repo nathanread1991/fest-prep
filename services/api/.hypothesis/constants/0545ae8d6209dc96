@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/api/versioning.py
+# hypothesis_version: 6.150.2
+
+[400, ',', '1.1', 'API-Latest-Version', 'API-Version', 'Accept-Version', 'api_version', 'error', 'latest_version', 'message', 'success', 'supported_versions']

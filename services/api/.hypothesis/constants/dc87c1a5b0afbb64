@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/models/audit_log.py
+# hypothesis_version: 6.150.2
+
+[100, 255, 'audit_logs']

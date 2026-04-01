@@ -60,11 +60,11 @@ output "oai_cloudfront_access_identity_path" {
 output "cloudfront_summary" {
   description = "Summary of CloudFront distribution configuration"
   value = {
-    distribution_id   = aws_cloudfront_distribution.main.id
-    domain_name       = aws_cloudfront_distribution.main.domain_name
-    custom_domain     = var.domain_name
-    status            = aws_cloudfront_distribution.main.status
-    price_class       = var.price_class
-    oai_id            = aws_cloudfront_origin_access_identity.s3_oai.id
+    distribution_id = aws_cloudfront_distribution.main.id
+    domain_name     = aws_cloudfront_distribution.main.domain_name
+    custom_domain   = var.domain_name
+    status          = aws_cloudfront_distribution.main.status
+    price_class     = var.price_class
+    oai_id          = aws_cloudfront_origin_access_identity.s3_oai.id
   }
 }

@@ -1,0 +1,4 @@
+# file: /Users/nathan/gigprep/services/api/festival_playlist_generator/core/aws_config.py
+# hypothesis_version: 6.150.1
+
+[5432, 6379, 'AWS_EXECUTION_ENV', 'AWS_REGION', 'DATABASE_URL', 'ENVIRONMENT', 'REDIS_URL', 'SecretString', 'dbname', 'eu-west-2', 'host', 'local', 'password', 'port', 'redis', 'rediss', 'secretsmanager', 'ssl', 'url', 'username']

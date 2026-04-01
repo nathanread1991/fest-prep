@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/schemas/setlist.py
+# hypothesis_version: 6.150.2
+
+[255, 'Artist UUID', 'Data source', 'Festival name', 'Performance date', 'Tour name', 'Venue name', 'setlist.fm']

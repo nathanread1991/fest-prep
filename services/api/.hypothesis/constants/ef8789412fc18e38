@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/services/cache_service.py
+# hypothesis_version: 6.150.2
+
+[1.0, 1000.0, 3600, ':', 'CacheHit', 'CacheLatency', 'CacheMiss', 'Count', 'Milliseconds', 'Operation', 'artist:', 'artists:', 'delete', 'festival:', 'festivals:', 'get', 'key_counts', 'memory', 'memory_usage_bytes', 'playlist:', 'playlists:', 'redis.Redis[bytes]', 'set', 'setlist:', 'setlists:', 'total_keys', 'used_memory']

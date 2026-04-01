@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/api/endpoints/playlist_generation.py
+# hypothesis_version: 6.150.2
+
+[404, 500, '/collect/festivals', 'Artist', 'Collection failed', 'Festival', 'User', 'artist', 'artist_id', 'artists_analyzed', 'created_at', 'dates', 'description', 'external_id', 'festival_id', 'festival_name', 'id', 'is_cover', 'location', 'matching_artists', 'name', 'performance_count', 'platform', 'setlists_analyzed', 'similarity_score', 'song_count', 'songs', 'started', 'status', 'title', 'user_id']

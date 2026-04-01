@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/api/auth.py
+# hypothesis_version: 6.150.2
+
+[401, '/api/auth', '/me', '/status', 'API_KEY', 'Not authenticated', 'api-authentication', 'authenticated', 'connected_platforms', 'created_at', 'display_name', 'email', 'id', 'last_login', 'marketing_opt_in', 'oauth_provider', 'preferences', 'profile_picture_url', 'session_id', 'user_id']

@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/schemas/user.py
+# hypothesis_version: 6.150.2
+
+['Last login timestamp', 'Profile picture URL', 'Song ID', 'User ID', 'User display name', 'User email address', 'User preferences', 'apple_music', 'connected_platforms', 'spotify', 'youtube', 'youtube_music']

@@ -1,0 +1,4 @@
+# file: /Users/nathan/gigprep/services/api/festival_playlist_generator/models/__init__.py
+# hypothesis_version: 6.150.1
+
+['artist', 'audit_log', 'festival', 'playlist', 'setlist', 'song', 'user']

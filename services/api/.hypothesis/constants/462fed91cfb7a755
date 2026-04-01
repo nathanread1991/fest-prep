@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/core/cache_config.py
+# hypothesis_version: 6.150.2
+
+[300, 900, 1800, 3600, 86400, 'artist:', 'artists:', 'cache:stats:', 'festival:', 'festivals:', 'playlist:', 'playlists:', 'setlist:', 'setlists:']

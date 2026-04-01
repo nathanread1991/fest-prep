@@ -1,0 +1,4 @@
+# file: /Users/nathan/gigprep/services/api/festival_playlist_generator/models/song.py
+# hypothesis_version: 6.150.1
+
+[255, 'Playlist', 'UserSongPreference', 'order_index', 'playlist_id', 'playlist_songs', 'playlists.id', 'song', 'song_id', 'songs', 'songs.id']

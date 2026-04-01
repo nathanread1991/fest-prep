@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/core/metrics.py
+# hypothesis_version: 6.150.2
+
+[1000.0, 1000, 'Dimensions', 'Environment', 'MetricName', 'Name', 'None', 'Service', 'Timestamp', 'Unit', 'Value', 'cloudwatch', 'dimensions', 'festival-api', 'name', 'timestamp', 'unit', 'value']

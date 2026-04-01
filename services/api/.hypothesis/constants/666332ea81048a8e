@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/api/endpoints/recommendations.py
+# hypothesis_version: 6.150.2
+
+[200, 404, 500, 'artist_id', 'artist_name', 'created_at', 'dates', 'discovery_rate', 'festival_id', 'festival_name', 'genres', 'id', 'known_songs_count', 'location', 'matching_artists', 'popularity_score', 'preferred_artists', 'preferred_genres', 'recommendations', 'recommended_artists', 'similarity_score', 'similarity_scores', 'total_count', 'total_songs_count', 'user_id']

@@ -1,151 +1,120 @@
 # GitHub Actions CI/CD Workflows
 
-This directory contains GitHub Actions workflows for the Festival Playlist Generator AWS migration project.
+This directory contains six focused GitHub Actions workflows for the Festival Playlist Generator project. Each workflow handles a single concern — app CI, infra CI, Docker builds, ECS deployments, nightly teardown, and morning provisioning.
 
-## Workflows
+## Workflow Overview
 
-### 1. Pull Request Validation (`pr.yml`)
+| Workflow | File | Trigger | Purpose |
+|---|---|---|---|
+| App CI | `ci-app.yml` | PR / push to `main` on `services/api/**` | Lint, type-check, security scan, unit + integration tests, gitleaks |
+| Infra CI | `ci-infra.yml` | PR / push to `main` on `infrastructure/terraform/**` | fmt, validate, tflint, checkov, plan (PR comment), apply (main push) |
+| Build & Push | `build.yml` | Push to `main` on `services/api/**`, `workflow_dispatch` | hadolint, Docker build, Trivy scan, ECR push |
+| Deploy | `deploy.yml` | Called by `build.yml` (dev) or `workflow_dispatch` (prod) | ECS task def update, migration, smoke-test, rollback |
+| Teardown | `teardown.yml` | Schedule 18:00 GMT Mon–Fri, `workflow_dispatch` | DB snapshot, destroy ephemeral infra, verify persistent resources |
+| Provision | `provision.yml` | Schedule 09:00 GMT Mon–Fri, `workflow_dispatch` | Find snapshot, terraform apply ephemeral, health-check |
 
-**Trigger**: Pull requests to `main` or `develop` branches
+## Pipeline Architecture
 
-**Purpose**: Validates code quality, runs tests, and builds Docker images for all pull requests.
+```
+Push to main (services/api/**)
+  ├── ci-app.yml  →  quality gate (lint, types, security, tests)
+  └── build.yml   →  Docker build + ECR push
+                        └── deploy.yml (env=dev, automatic)
 
-**Jobs**:
+Push to main (infrastructure/terraform/**)
+  └── ci-infra.yml  →  static analysis → terraform apply (dev)
 
-1. **Code Quality (Linting & Formatting)**
-   - Runs `black` to check code formatting
-   - Runs `isort` to check import sorting
-   - Runs `flake8` for linting
+Pull Request
+  ├── ci-app.yml   (if services/api/** changed)
+  └── ci-infra.yml (if infrastructure/terraform/** changed)
+                        └── terraform plan → PR comment
 
-2. **Type Checking**
-   - Runs `mypy` for static type checking
-   - Ensures type safety across the codebase
+Manual (workflow_dispatch)
+  └── deploy.yml (env=prod)  →  GitHub Environment approval → deploy → smoke-test → rollback on failure
 
-3. **Security Scanning**
-   - Runs `bandit` for security vulnerability detection
-   - Runs `safety` for dependency vulnerability checking
-   - Uploads security reports as artifacts
-
-4. **Unit Tests**
-   - Runs unit tests (non-integration tests)
-   - Generates coverage reports
-   - Enforces 80% minimum coverage threshold
-
-5. **Integration Tests**
-   - Spins up PostgreSQL and Redis services
-   - Runs integration tests against real services
-   - Generates coverage reports
-
-6. **Upload Coverage to Codecov**
-   - Uploads coverage reports to Codecov
-   - Provides coverage visualization and tracking
-
-7. **Docker Build & Validation**
-   - Validates Dockerfile with hadolint
-   - Builds Docker image with layer caching
-   - Tests the built image
-   - Scans for vulnerabilities with Trivy
-
-8. **Quality Gate Summary**
-   - Aggregates results from all jobs
-   - Fails if any job fails
-   - Provides clear summary of what passed/failed
-
-**Required Secrets**:
-- `CODECOV_TOKEN` (optional): For uploading coverage to Codecov
-
-**Caching**:
-- Python dependencies cached via `setup-python` action
-- Docker layers cached via GitHub Actions cache
-
-## Configuration
-
-### Python Version
-All jobs use Python 3.11 to match the production environment.
-
-### Coverage Threshold
-The minimum coverage threshold is set to 80%. PRs with lower coverage will fail.
-
-### Service Versions
-- PostgreSQL: 15-alpine
-- Redis: 7-alpine
-
-### Test Environment Variables
-Integration tests use the following environment variables:
-- `DATABASE_URL`: postgresql+asyncpg://test_user:test_password@localhost:5432/test_db
-- `REDIS_URL`: redis://localhost:6379/0
-- `ENVIRONMENT`: test
-
-## Local Testing
-
-To run the same checks locally before pushing:
-
-```bash
-# Navigate to the API directory
-cd services/api
-
-# Install dependencies
-pip install -r requirements.txt
-pip install black isort flake8 mypy bandit safety pytest-cov
-
-# Run linting
-black --check .
-isort --check-only .
-flake8 .
-
-# Run type checking
-mypy festival_playlist_generator --ignore-missing-imports
-
-# Run security scanning
-bandit -r festival_playlist_generator
-safety check
-
-# Run tests with coverage
-pytest tests/ --cov=festival_playlist_generator --cov-report=term
-
-# Build Docker image
-cd ../..
-docker build -t festival-api:local services/api/
+Schedule
+  ├── teardown.yml  (18:00 GMT Mon–Fri)  →  snapshot → destroy ephemeral → verify persistent
+  └── provision.yml (09:00 GMT Mon–Fri)  →  find snapshot → apply ephemeral → health-check
 ```
 
-## Troubleshooting
+## Workflow Details
 
-### Coverage Below Threshold
-If your PR fails due to coverage below 80%, add tests for uncovered code:
-```bash
-# Generate HTML coverage report to see what's missing
-pytest tests/ --cov=festival_playlist_generator --cov-report=html
-open htmlcov/index.html
+### ci-app.yml — App CI
+
+Runs six parallel jobs gated by a `quality-gate` summary job:
+
+- **gitleaks** — secret scanning via `gitleaks/gitleaks-action`
+- **lint** — black, isort, flake8
+- **type-check** — mypy strict mode
+- **security** — bandit, pip-audit
+- **unit-tests** — pytest (non-integration) with coverage
+- **integration-tests** — pytest with PostgreSQL 15 + Redis 7 service containers
+
+Concurrency: `cancel-in-progress: true` per branch.
+
+### ci-infra.yml — Infra CI
+
+- **static-analysis** — terraform fmt, validate, tflint, checkov
+- **plan** (PR only) — terraform plan with output posted as PR comment
+- **apply** (push to main only) — terraform apply against dev
+
+Concurrency: `infra-dev` with `cancel-in-progress: false` (Terraform state safety).
+
+### build.yml — Build & Push
+
+- **build-push** — hadolint, Docker Buildx with GHA cache, Trivy SARIF scan, ECR push (tags: `{sha}` + `latest`)
+- **trigger-deploy** — calls `deploy.yml` with `environment: dev` and the built image tag
+
+Supports `workflow_dispatch` with an optional custom `image_tag` input.
+
+### deploy.yml — Deploy to ECS
+
+Reusable workflow (`workflow_call`) and manual trigger (`workflow_dispatch`).
+
+- **deploy** — updates ECS task definitions (API + worker) via targeted Terraform apply, waits for service stability, verifies ALB target group health. Uses GitHub Environment protection rules (`production` for prod).
+- **migrate** — runs `alembic upgrade head` via ECS run-task
+- **smoke-test** — `GET /health`, `/docs`, `/api/v1/festivals`, `/nonexistent-route`
+- **rollback** — reverts to previous task definition (prod only, on failure)
+
+Concurrency: `deploy-{environment}` with `cancel-in-progress: false`.
+
+### teardown.yml — Teardown Ephemeral Infrastructure
+
+- **snapshot** — creates RDS cluster snapshot, waits for availability
+- **destroy** — `terraform destroy` on the ephemeral root module
+- **verify** — asserts ECR, S3, Secrets Manager, Route 53 still exist
+- **cleanup** — deletes snapshots older than 7 days
+
+### provision.yml — Provision Ephemeral Infrastructure
+
+- **find-snapshot** — queries RDS for latest available snapshot
+- **apply** — `terraform apply` with `restore_from_snapshot` and `snapshot_identifier` variables
+- **wait-services** — `aws ecs wait services-stable`
+- **health-check** — polls `/health` endpoint
+
+## Authentication
+
+All workflows use OIDC-based AWS authentication via `aws-actions/configure-aws-credentials@v4` with `role-to-assume`. No long-lived AWS access keys are stored as secrets.
+
+Required permissions on every workflow:
+```yaml
+permissions:
+  id-token: write
+  contents: read
 ```
 
-### Linting Failures
-Auto-fix formatting issues:
-```bash
-black .
-isort .
-```
+## Legacy Workflows (to be removed)
 
-### Type Checking Failures
-Add type hints to functions and variables. Use `# type: ignore` sparingly for third-party libraries.
+The following files are from the old monolithic pipeline and will be deleted once the new workflows are validated:
 
-### Docker Build Failures
-Test Docker build locally:
-```bash
-docker build -t festival-api:test services/api/
-docker run --rm festival-api:test python -c "import festival_playlist_generator; print('OK')"
-```
+- `pr.yml`
+- `deploy-app.yml`
+- `deploy-infra.yml`
+- `deploy-prod.yml`
+- `scheduled-teardown.yml`
+- `scheduled-provision.yml`
 
-## Future Enhancements
+## Further Reading
 
-The following workflows will be added in later tasks:
-- `deploy-dev.yml`: Automated deployment to dev environment
-- `deploy-prod.yml`: Manual deployment to production
-- `scheduled-teardown.yml`: Daily infrastructure teardown
-- `scheduled-provision.yml`: Daily infrastructure provisioning
-
-## References
-
+- [docs/cicd.md](../../docs/cicd.md) — full CI/CD documentation including local dev setup, deployment procedures, and resource architecture
 - [GitHub Actions Documentation](https://docs.github.com/en/actions)
-- [Python setup-python action](https://github.com/actions/setup-python)
-- [Docker build-push-action](https://github.com/docker/build-push-action)
-- [Codecov GitHub Action](https://github.com/codecov/codecov-action)

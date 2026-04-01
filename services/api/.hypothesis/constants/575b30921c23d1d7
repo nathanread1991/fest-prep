@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/services/setlistfm_service.py
+# hypothesis_version: 6.150.2
+
+[1.0, 2.0, 15.0, 400, 500, 'Accept', 'SETLISTFM_API_KEY', 'application/json', 'artistMbid', 'artistName', 'cityName', 'p', 'relevance', 'sort', 'venueName', 'x-api-key', 'year']

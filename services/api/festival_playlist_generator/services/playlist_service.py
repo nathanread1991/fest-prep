@@ -4,6 +4,8 @@ import logging
 from typing import TYPE_CHECKING, List, Optional
 from uuid import UUID
 
+from festival_playlist_generator.core.cache_config import CachePrefix, CacheTTL
+from festival_playlist_generator.core.metrics import metrics_client
 from festival_playlist_generator.models.playlist import Playlist
 from festival_playlist_generator.repositories.festival_repository import (
     FestivalRepository,
@@ -78,9 +80,9 @@ class PlaylistService:
         # Fetch from database
         playlist = await self.playlist_repo.get_by_id(playlist_id, load_relationships)
 
-        # Cache result (1 hour TTL) - only simple data without relationships
+        # Cache result - only simple data without relationships
         if playlist and not load_relationships:
-            await self.cache.set(cache_key, playlist, ttl=3600)
+            await self.cache.set(cache_key, playlist, ttl=CacheTTL.PLAYLIST_BY_ID)
             logger.debug(f"Cached playlist {playlist_id}")
 
         return playlist
@@ -96,7 +98,7 @@ class PlaylistService:
             Playlist or None if not found
         """
         # Check cache
-        cache_key = f"playlist:spotify:{spotify_id}"
+        cache_key = f"{CachePrefix.PLAYLIST}spotify:{spotify_id}"
         cached = await self.cache.get(cache_key)
         if cached is not None:
             logger.debug(f"Cache hit for Spotify playlist {spotify_id}")
@@ -105,9 +107,11 @@ class PlaylistService:
         # Fetch from database
         playlist = await self.playlist_repo.get_by_spotify_id(spotify_id)
 
-        # Cache result (1 hour TTL)
+        # Cache result
         if playlist:
-            await self.cache.set(cache_key, playlist, ttl=3600)
+            await self.cache.set(
+                cache_key, playlist, ttl=CacheTTL.PLAYLIST_BY_SPOTIFY_ID
+            )
 
         return playlist
 
@@ -126,7 +130,7 @@ class PlaylistService:
             List of playlists
         """
         # Check cache
-        cache_key = f"playlists:user:{user_id}:{skip}:{limit}"
+        cache_key = f"{CachePrefix.PLAYLISTS}user:{user_id}:{skip}:{limit}"
         cached = await self.cache.get(cache_key)
         if cached is not None:
             logger.debug(f"Cache hit for user {user_id} playlists")
@@ -135,8 +139,8 @@ class PlaylistService:
         # Fetch from database
         playlists = await self.playlist_repo.get_by_user(user_id, skip, limit)
 
-        # Cache result (5 minute TTL)
-        await self.cache.set(cache_key, playlists, ttl=300)
+        # Cache result
+        await self.cache.set(cache_key, playlists, ttl=CacheTTL.PLAYLIST_USER)
 
         return playlists
 
@@ -155,7 +159,7 @@ class PlaylistService:
             List of playlists
         """
         # Check cache
-        cache_key = f"playlists:festival:{festival_id}:{skip}:{limit}"
+        cache_key = f"{CachePrefix.PLAYLISTS}festival:{festival_id}:{skip}:{limit}"
         cached = await self.cache.get(cache_key)
         if cached is not None:
             logger.debug(f"Cache hit for festival {festival_id} playlists")
@@ -164,8 +168,8 @@ class PlaylistService:
         # Fetch from database
         playlists = await self.playlist_repo.get_by_festival(festival_id, skip, limit)
 
-        # Cache result (5 minute TTL)
-        await self.cache.set(cache_key, playlists, ttl=300)
+        # Cache result
+        await self.cache.set(cache_key, playlists, ttl=CacheTTL.PLAYLIST_FESTIVAL)
 
         return playlists
 
@@ -197,11 +201,19 @@ class PlaylistService:
 
         # Invalidate user and festival playlist caches
         if playlist.user_id:
-            await self.cache.delete_pattern(f"playlists:user:{playlist.user_id}:*")
+            await self.cache.delete_pattern(
+                f"{CachePrefix.PLAYLISTS}user:{playlist.user_id}:*"
+            )
         if festival_id:
-            await self.cache.delete_pattern(f"playlists:festival:{festival_id}:*")
+            await self.cache.delete_pattern(
+                f"{CachePrefix.PLAYLISTS}festival:{festival_id}:*"
+            )
 
         logger.info(f"Created playlist {created_playlist.id}: {created_playlist.name}")
+
+        # Publish business metric
+        await metrics_client.put_metric("PlaylistCreated", 1.0, "Count")
+
         return created_playlist
 
     async def update_playlist(self, playlist: Playlist) -> Playlist:
@@ -222,10 +234,12 @@ class PlaylistService:
 
         # Invalidate user and festival playlist caches
         if playlist.user_id:
-            await self.cache.delete_pattern(f"playlists:user:{playlist.user_id}:*")
+            await self.cache.delete_pattern(
+                f"{CachePrefix.PLAYLISTS}user:{playlist.user_id}:*"
+            )
         if playlist.festival_id:
             await self.cache.delete_pattern(
-                f"playlists:festival:{playlist.festival_id}:*"
+                f"{CachePrefix.PLAYLISTS}festival:{playlist.festival_id}:*"
             )
 
         logger.info(f"Updated playlist {playlist.id}: {playlist.name}")
@@ -253,10 +267,12 @@ class PlaylistService:
 
             # Invalidate user and festival playlist caches
             if playlist.user_id:
-                await self.cache.delete_pattern(f"playlists:user:{playlist.user_id}:*")
+                await self.cache.delete_pattern(
+                    f"{CachePrefix.PLAYLISTS}user:{playlist.user_id}:*"
+                )
             if playlist.festival_id:
                 await self.cache.delete_pattern(
-                    f"playlists:festival:{playlist.festival_id}:*"
+                    f"{CachePrefix.PLAYLISTS}festival:{playlist.festival_id}:*"
                 )
 
             logger.info(f"Deleted playlist {playlist_id}")
@@ -321,6 +337,10 @@ class PlaylistService:
             logger.info(
                 f"Synced playlist {playlist_id} to Spotify: {spotify_playlist_id}"
             )
+
+            # Publish business metric
+            await metrics_client.put_metric("SpotifySyncCompleted", 1.0, "Count")
+
             return spotify_playlist_id
 
         except Exception as e:

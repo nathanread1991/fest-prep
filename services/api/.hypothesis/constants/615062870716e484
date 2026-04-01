@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/main.py
+# hypothesis_version: 6.150.2
+
+[8000, '*', '/admin', '/api', '/api/v1', '/api/v1.1', '/health', '/static', '0.0.0.0', '0.1.0', '__main__', 'app', 'healthy', 'host', 'main', 'message', 'port', 'reload', 'ssl_certfile', 'ssl_keyfile', 'static', 'status', 'version', 'web']

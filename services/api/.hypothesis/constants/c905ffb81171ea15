@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/services/song_filtering.py
+# hypothesis_version: 6.150.2
+
+[100, 'Hiding all songs', 'Showing all songs', 'filter_description', 'known_percentage', 'known_songs', 'no_preference', 'show_known', 'show_unknown', 'total_songs', 'unknown_percentage', 'unknown_songs']

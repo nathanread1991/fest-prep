@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/models/user.py
+# hypothesis_version: 6.150.2
+
+[255, 'Playlist', 'Song', 'User', 'UserSongPreference', 'song_preferences', 'songs.id', 'user', 'user_preferences', 'users', 'users.id']

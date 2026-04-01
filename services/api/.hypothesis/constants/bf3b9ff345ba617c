@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/services/oauth_service.py
+# hypothesis_version: 6.150.2
+
+[200, 600, 1800, 3600, 'Apple User', 'Authorization', 'Content-Type', 'User-Agent', 'access_token', 'apple', 'authorization_code', 'authorization_url', 'challenge', 'client_id', 'client_secret', 'code', 'code_challenge', 'consent_token', 'created_at', 'display_name', 'email', 'expires_at', 'form_post', 'google', 'grant_type', 'id', 'images', 'is_new_user', 'name', 'openid', 'picture', 'plain', 'profile', 'profile_image_url', 'provider', 'provider_id', 'redirect_uri', 'response_mode', 'response_type', 'scope', 'session_id', 'spotify', 'state', 'tweet.read', 'url', 'user', 'user-read-email', 'user-read-private', 'user_id', 'users.read', 'x', 'youtube']

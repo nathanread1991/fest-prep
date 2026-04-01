@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/web/auth_routes.py
+# hypothesis_version: 6.150.2
+
+[302, 401, 404, 500, 3600, '/', '/?deleted=true', '/?welcome=true', '/auth', '/auth/login', '/callback', '/delete-account', '/export-data', '/login', '/login/{provider}', '/logout', '/privacy-consent', '/privacy-preferences', '/profile', '/settings', 'Content-Disposition', 'Delete My Account', 'ENVIRONMENT', 'Export My Data', 'User not found', 'analytics_opt_in', 'application/json', 'application/xml', 'application/zip', 'asset_url', 'auth/login.html', 'auth/profile.html', 'authentication', 'authorization_url', 'consent_token', 'content-type', 'css_url', 'csv', 'delete my account', 'development', 'error', 'is_new_user', 'js_url', 'json', 'lax', 'message', 'privacy_consent_date', 'production', 'providers', 'request', 'return_url', 'session_id', 'session_token', 'success', 'title', 'user', 'user_id', 'w', 'xml']

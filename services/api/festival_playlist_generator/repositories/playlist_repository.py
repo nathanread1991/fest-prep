@@ -55,6 +55,8 @@ class PlaylistRepository(BaseRepository[Playlist]):
         """
         Get all playlists for a specific user.
 
+        Eager-loads festival and artist to avoid N+1 queries.
+
         Args:
             user_id: User UUID
             skip: Number of records to skip
@@ -65,6 +67,10 @@ class PlaylistRepository(BaseRepository[Playlist]):
         """
         result = await self.db.execute(
             select(Playlist)
+            .options(
+                selectinload(Playlist.festival),
+                selectinload(Playlist.artist),
+            )
             .where(Playlist.user_id == user_id)
             .order_by(Playlist.created_at.desc())
             .offset(skip)
@@ -79,6 +85,8 @@ class PlaylistRepository(BaseRepository[Playlist]):
         """
         Get all playlists for a specific festival.
 
+        Eager-loads festival and artist to avoid N+1 queries.
+
         Args:
             festival_id: Festival UUID
             skip: Number of records to skip
@@ -89,6 +97,10 @@ class PlaylistRepository(BaseRepository[Playlist]):
         """
         result = await self.db.execute(
             select(Playlist)
+            .options(
+                selectinload(Playlist.festival),
+                selectinload(Playlist.artist),
+            )
             .where(Playlist.festival_id == festival_id)
             .order_by(Playlist.created_at.desc())
             .offset(skip)
@@ -103,6 +115,8 @@ class PlaylistRepository(BaseRepository[Playlist]):
         """
         Get all playlists for a specific artist.
 
+        Eager-loads festival and artist to avoid N+1 queries.
+
         Args:
             artist_id: Artist UUID
             skip: Number of records to skip
@@ -113,6 +127,10 @@ class PlaylistRepository(BaseRepository[Playlist]):
         """
         result = await self.db.execute(
             select(Playlist)
+            .options(
+                selectinload(Playlist.festival),
+                selectinload(Playlist.artist),
+            )
             .where(Playlist.artist_id == artist_id)
             .order_by(Playlist.created_at.desc())
             .offset(skip)

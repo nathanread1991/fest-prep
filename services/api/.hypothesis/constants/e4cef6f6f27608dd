@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/services/spotify_service.py
+# hypothesis_version: 6.150.2
+
+[10.0, 100, 'Authorization', 'Content-Type', 'SPOTIFY_CLIENT_ID', 'SPOTIFY_REDIRECT_URI', 'application/json', 'artist', 'artists', 'closed', 'description', 'grant_type', 'half_open', 'id', 'items', 'limit', 'name', 'open', 'public', 'q', 'refresh_token', 'track', 'tracks', 'type', 'uris']
