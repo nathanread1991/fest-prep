@@ -721,6 +721,9 @@ resource "aws_iam_role_policy" "rds_snapshots" {
 data "aws_iam_policy_document" "terraform_infra" {
   #checkov:skip=CKV_AWS_111:Terraform requires broad permissions to manage infrastructure
   #checkov:skip=CKV_AWS_356:Terraform requires broad permissions to manage infrastructure
+  #checkov:skip=CKV_AWS_109:Terraform needs IAM permissions management for ECS roles
+  #checkov:skip=CKV_AWS_110:Terraform needs IAM role creation which Checkov flags as privilege escalation
+  #checkov:skip=CKV_AWS_108:Terraform needs broad read permissions across services
 
   statement {
     effect = "Allow"
