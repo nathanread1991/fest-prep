@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/api/middleware.py
+# hypothesis_version: 6.150.2
+
+[429, '/api/', '/docs', '/health', '/openapi.json', '/redoc', 'Authorization', 'Bearer ', 'Rate limit exceeded', 'X-Process-Time', 'X-Request-ID', 'detail', 'extra_fields', 'headers', 'method', 'path', 'process_time', 'status_code']

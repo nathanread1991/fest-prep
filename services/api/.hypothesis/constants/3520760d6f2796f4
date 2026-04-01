@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/models/artist.py
+# hypothesis_version: 6.150.2
+
+[255, 500, 'Festival', 'Playlist', 'Setlist', 'artist', 'artists']

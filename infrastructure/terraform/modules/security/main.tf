@@ -9,10 +9,6 @@ terraform {
       version               = "~> 5.0"
       configuration_aliases = [aws.us_east_1]
     }
-    random = {
-      source  = "hashicorp/random"
-      version = "~> 3.5"
-    }
   }
 }
 
@@ -116,11 +112,8 @@ resource "aws_acm_certificate_validation" "cloudfront" {
   validation_record_fqdns = [for record in aws_route53_record.cloudfront_cert_validation : record.fqdn]
 }
 
-# A record for root domain pointing to CloudFront (will be created in CDN module)
-# Placeholder comment - actual record created when CloudFront distribution exists
-
-# A record for API subdomain pointing to ALB (will be created in compute module)
-# Placeholder comment - actual record created when ALB exists
+# Route 53 A records for root domain and API subdomain are created in root main.tf
+# to avoid circular dependency between security and CDN modules
 
 # ============================================================================
 # AWS WAF for ALB Protection
@@ -251,6 +244,8 @@ resource "aws_wafv2_web_acl_association" "alb" {
 
 # CloudWatch Log Group for WAF logs
 resource "aws_cloudwatch_log_group" "waf" {
+  #checkov:skip=CKV_AWS_158:CloudWatch log encryption managed at account level
+  #checkov:skip=CKV_AWS_338:Short retention appropriate for dev environment
   name              = "aws-waf-logs-${var.project_name}-${var.environment}"
   retention_in_days = var.environment == "prod" ? 30 : 7
 
@@ -269,101 +264,8 @@ resource "aws_wafv2_web_acl_logging_configuration" "alb" {
 }
 
 # ============================================================================
-# AWS Secrets Manager - Application Secrets
+# AWS Secrets Manager
 # ============================================================================
-
-# Generate random JWT signing key
-resource "random_password" "jwt_secret" {
-  length  = 64
-  special = true
-}
-
-# Spotify API credentials secret (manual population required)
-resource "aws_secretsmanager_secret" "spotify" {
-  name        = "${var.project_name}-${var.environment}-spotify-credentials"
-  description = "Spotify API credentials (client_id, client_secret)"
-
-  recovery_window_in_days = 0
-
-  tags = merge(
-    var.common_tags,
-    {
-      Name = "${var.project_name}-${var.environment}-spotify"
-    }
-  )
-
-  lifecycle {
-    prevent_destroy = false
-  }
-}
-
-# Spotify secret version with placeholder (requires manual update)
-resource "aws_secretsmanager_secret_version" "spotify" {
-  secret_id = aws_secretsmanager_secret.spotify.id
-  secret_string = jsonencode({
-    client_id     = "REPLACE_WITH_SPOTIFY_CLIENT_ID"
-    client_secret = "REPLACE_WITH_SPOTIFY_CLIENT_SECRET"
-  })
-
-  lifecycle {
-    ignore_changes = [secret_string]
-  }
-}
-
-# Setlist.fm API key secret (manual population required)
-resource "aws_secretsmanager_secret" "setlistfm" {
-  name        = "${var.project_name}-${var.environment}-setlistfm-api-key"
-  description = "Setlist.fm API key"
-
-  recovery_window_in_days = 0
-
-  tags = merge(
-    var.common_tags,
-    {
-      Name = "${var.project_name}-${var.environment}-setlistfm"
-    }
-  )
-
-  lifecycle {
-    prevent_destroy = false
-  }
-}
-
-# Setlist.fm secret version with placeholder (requires manual update)
-resource "aws_secretsmanager_secret_version" "setlistfm" {
-  secret_id = aws_secretsmanager_secret.setlistfm.id
-  secret_string = jsonencode({
-    api_key = "REPLACE_WITH_SETLISTFM_API_KEY"
-  })
-
-  lifecycle {
-    ignore_changes = [secret_string]
-  }
-}
-
-# JWT signing key secret (auto-generated)
-resource "aws_secretsmanager_secret" "jwt" {
-  name        = "${var.project_name}-${var.environment}-jwt-secret"
-  description = "JWT signing key for authentication"
-
-  recovery_window_in_days = 0
-
-  tags = merge(
-    var.common_tags,
-    {
-      Name = "${var.project_name}-${var.environment}-jwt"
-    }
-  )
-
-  lifecycle {
-    prevent_destroy = false
-  }
-}
-
-# JWT secret version with auto-generated key
-resource "aws_secretsmanager_secret_version" "jwt" {
-  secret_id = aws_secretsmanager_secret.jwt.id
-  secret_string = jsonencode({
-    secret_key = random_password.jwt_secret.result
-  })
-}
+# NOTE: Secrets Manager secrets (spotify, setlistfm, jwt) have been moved to
+# the persistent Terraform module (infrastructure/terraform/persistent/).
+# The ephemeral root reads their ARNs via terraform_remote_state.

@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/web/utils.py
+# hypothesis_version: 6.150.2
+
+['ENVIRONMENT', 'development', 'manifest-assets.json', 'production', 'r', 'static']

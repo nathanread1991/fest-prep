@@ -48,7 +48,7 @@ variable "domain_name" {
 variable "price_class" {
   description = "CloudFront price class (PriceClass_All, PriceClass_200, PriceClass_100)"
   type        = string
-  default     = "PriceClass_100"  # Use only North America and Europe edge locations (cheapest)
+  default     = "PriceClass_100" # Use only North America and Europe edge locations (cheapest)
 }
 
 variable "log_prefix" {
@@ -57,14 +57,14 @@ variable "log_prefix" {
   default     = "cloudfront-logs/"
 }
 
-variable "custom_header_value" {
-  description = "Value for custom header sent to ALB origin (for origin verification)"
-  type        = string
-  default     = "cloudfront-origin"
-}
-
 variable "common_tags" {
   description = "Common tags to apply to all resources"
   type        = map(string)
   default     = {}
+}
+
+variable "waf_web_acl_arn" {
+  description = "ARN of the WAF Web ACL to associate with CloudFront distribution"
+  type        = string
+  default     = null
 }

@@ -4,6 +4,7 @@ import logging
 from typing import Optional
 from uuid import UUID
 
+from festival_playlist_generator.core.metrics import metrics_client
 from festival_playlist_generator.models.user import User
 from festival_playlist_generator.repositories.user_repository import UserRepository
 from festival_playlist_generator.services.cache_service import CacheService
@@ -155,6 +156,9 @@ class UserService:
         """
         # Create in database
         created_user = await self.user_repo.create(user)
+
+        # Publish business metric
+        await metrics_client.put_metric("UserRegistered", 1.0, "Count")
 
         logger.info(f"Created user {created_user.id}: {created_user.email}")
         return created_user

@@ -212,3 +212,44 @@ output "api_memory_autoscaling_policy_arn" {
   description = "ARN of the API memory auto-scaling policy"
   value       = var.api_enable_auto_scaling ? aws_appautoscaling_policy.api_memory[0].arn : null
 }
+
+output "api_request_count_autoscaling_policy_arn" {
+  description = "ARN of the API request count auto-scaling policy"
+  value       = var.api_enable_auto_scaling ? aws_appautoscaling_policy.api_request_count[0].arn : null
+}
+
+# Worker Auto-Scaling Outputs
+
+output "worker_autoscaling_target_id" {
+  description = "ID of the worker auto-scaling target"
+  value       = var.worker_enable_auto_scaling ? aws_appautoscaling_target.worker[0].id : null
+}
+
+output "worker_cpu_autoscaling_policy_arn" {
+  description = "ARN of the worker CPU auto-scaling policy"
+  value       = var.worker_enable_auto_scaling ? aws_appautoscaling_policy.worker_cpu[0].arn : null
+}
+
+output "worker_memory_autoscaling_policy_arn" {
+  description = "ARN of the worker memory auto-scaling policy"
+  value       = var.worker_enable_auto_scaling ? aws_appautoscaling_policy.worker_memory[0].arn : null
+}
+
+# ============================================================================
+# Migration Task Outputs
+# ============================================================================
+
+output "migration_task_definition_arn" {
+  description = "ARN of the migration task definition"
+  value       = aws_ecs_task_definition.migration.arn
+}
+
+output "migration_task_definition_family" {
+  description = "Family of the migration task definition"
+  value       = aws_ecs_task_definition.migration.family
+}
+
+output "migration_log_group_name" {
+  description = "Name of the CloudWatch log group for migration tasks"
+  value       = aws_cloudwatch_log_group.migration.name
+}

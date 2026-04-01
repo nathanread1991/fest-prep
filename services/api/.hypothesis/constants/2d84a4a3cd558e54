@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/services/playlist_generator.py
+# hypothesis_version: 6.150.2
+
+['artists', 'db', 'frequency', 'original_title', 'primary_artist']

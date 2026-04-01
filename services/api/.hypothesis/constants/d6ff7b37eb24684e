@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/api/xray_middleware.py
+# hypothesis_version: 6.150.2
+
+[400, 429, 500, 1000, ',', '/docs', '/health', '/openapi.json', '/redoc', 'client_ip', 'environment', 'latency_ms', 'method', 'status', 'unknown', 'url', 'x-forwarded-for']

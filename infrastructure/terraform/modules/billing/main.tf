@@ -12,6 +12,8 @@ terraform {
   }
 }
 
+data "aws_caller_identity" "current" {}
+
 # SNS Topic for Budget Notifications
 resource "aws_sns_topic" "budget_alerts" {
   name              = "${var.project_name}-${var.environment}-budget-alerts"
@@ -35,6 +37,21 @@ resource "aws_kms_key" "sns" {
   description             = "KMS key for SNS topic encryption"
   deletion_window_in_days = 7
   enable_key_rotation     = true
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "Enable IAM User Permissions"
+        Effect = "Allow"
+        Principal = {
+          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+        }
+        Action   = "kms:*"
+        Resource = "*"
+      }
+    ]
+  })
 
   tags = merge(
     var.common_tags,

@@ -40,11 +40,11 @@ enable_cloudwatch_alarms = true
 alarm_email_addresses    = ["dev@example.com"]
 
 # Alarm Thresholds
-cpu_alarm_threshold              = 75
-memory_alarm_threshold           = 90
-evictions_alarm_threshold        = 1000
-connections_alarm_threshold      = 65000
-replication_lag_alarm_threshold  = 30
+cpu_alarm_threshold             = 75
+memory_alarm_threshold          = 90
+evictions_alarm_threshold       = 1000
+connections_alarm_threshold     = 65000
+replication_lag_alarm_threshold = 30
 
 # Common Tags
 common_tags = {

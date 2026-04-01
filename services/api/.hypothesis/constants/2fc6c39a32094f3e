@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/api/exception_handlers.py
+# hypothesis_version: 6.150.2
+
+[401, ' -> ', '/admin', '; ', 'Database error', 'Duplicate resource', 'Invalid reference', 'Service unavailable', 'Validation failed', 'WWW-Authenticate', 'detail', 'details', 'duplicate key', 'error', 'error_count', 'error_type', 'extra_fields', 'loc', 'message', 'method', 'path', 'request_id', 'service_name', 'status_code', 'timestamp']

@@ -13,7 +13,7 @@ terraform {
 }
 
 provider "aws" {
-  region = "eu-west-2"  # London region
+  region = "eu-west-2" # London region
 }
 
 # Example: Networking module (prerequisite)
@@ -30,12 +30,12 @@ module "networking" {
 
 # Example: Cache module usage
 module "cache" {
-  source = "../"  # Points to the cache module
+  source = "../" # Points to the cache module
 
   # Required variables
-  project_name           = "festival-playlist"
-  environment            = "dev"
-  private_subnet_ids     = module.networking.private_subnet_ids
+  project_name            = "festival-playlist"
+  environment             = "dev"
+  private_subnet_ids      = module.networking.private_subnet_ids
   redis_security_group_id = module.networking.redis_security_group_id
 
   # Redis configuration

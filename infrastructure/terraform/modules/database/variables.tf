@@ -134,7 +134,7 @@ variable "monitoring_interval" {
 variable "deletion_protection" {
   description = "Enable deletion protection (recommended for prod)"
   type        = bool
-  default     = false
+  default     = true
 }
 
 # Apply Changes
@@ -149,26 +149,6 @@ variable "auto_minor_version_upgrade" {
   description = "Enable automatic minor version upgrades"
   type        = bool
   default     = true
-}
-
-
-# Secrets Manager Configuration
-variable "enable_secret_rotation" {
-  description = "Enable automatic secret rotation (requires Lambda function)"
-  type        = bool
-  default     = false
-}
-
-variable "rotation_lambda_arn" {
-  description = "ARN of Lambda function for secret rotation"
-  type        = string
-  default     = null
-}
-
-variable "rotation_days" {
-  description = "Number of days between automatic rotations"
-  type        = number
-  default     = 30
 }
 
 

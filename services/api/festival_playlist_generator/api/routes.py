@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 from festival_playlist_generator.api.endpoints import (
     artists,
     auth,
+    cache,
     data_export,
     festivals,
     notifications,
@@ -55,3 +56,4 @@ api_router.include_router(
 api_router.include_router(
     notifications.router, prefix="/notifications", tags=["notifications"]
 )
+api_router.include_router(cache.router, prefix="/cache", tags=["cache"])

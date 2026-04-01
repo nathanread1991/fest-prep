@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/services/recommendation_engine.py
+# hypothesis_version: 6.150.2
+
+[0.0, 0.1, 0.3, 0.5, 0.7, 1.0, 365, 'genres']

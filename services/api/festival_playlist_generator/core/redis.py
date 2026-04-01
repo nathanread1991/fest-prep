@@ -1,11 +1,25 @@
-"""Redis connection and cache management."""
+"""Redis connection and cache management.
+
+Supports both local Redis and AWS ElastiCache for Redis.
+In AWS, the REDIS_URL is injected by ECS from Secrets Manager.
+
+ElastiCache specifics:
+- SSL/TLS support (rediss:// scheme) when transit encryption is enabled
+- Connection retry logic with exponential backoff for failover scenarios
+- Tuned connection pooling for ElastiCache single-node (dev) or cluster
+"""
 
 import json
 import logging
-from typing import TYPE_CHECKING, Any, Optional
+import ssl as ssl_module
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 import redis.asyncio as redis
+from redis.backoff import ExponentialBackoff
+from redis.exceptions import ConnectionError as RedisConnectionError
+from redis.retry import Retry
 
+from festival_playlist_generator.core.aws_config import is_aws_environment
 from festival_playlist_generator.core.config import settings
 
 if TYPE_CHECKING:
@@ -17,13 +31,59 @@ logger = logging.getLogger(__name__)
 redis_pool: Optional["redis.ConnectionPool[Connection]"] = None
 
 
+def _build_pool_kwargs() -> Dict[str, Any]:
+    """Build Redis connection pool kwargs based on environment.
+
+    Returns:
+        Dictionary of connection pool configuration.
+    """
+    kwargs: Dict[str, Any] = {
+        "decode_responses": True,
+    }
+
+    if is_aws_environment():
+        # ElastiCache connection pooling settings
+        kwargs["max_connections"] = 20
+        kwargs["socket_timeout"] = 5.0
+        kwargs["socket_connect_timeout"] = 5.0
+        kwargs["socket_keepalive"] = True
+
+        # Retry configuration for ElastiCache failover/reconnection
+        kwargs["retry"] = Retry(
+            ExponentialBackoff(cap=10, base=0.5),
+            retries=3,
+        )
+        kwargs["retry_on_error"] = [
+            RedisConnectionError,
+            ConnectionResetError,
+            TimeoutError,
+        ]
+
+        # SSL for ElastiCache with transit encryption
+        if settings.REDIS_URL.startswith("rediss://"):
+            ssl_context = ssl_module.create_default_context()
+            ssl_context.check_hostname = False
+            ssl_context.verify_mode = ssl_module.CERT_NONE
+            kwargs["ssl"] = True
+            kwargs["ssl_ca_certs"] = None
+
+        logger.info(
+            "Redis pool configured for AWS ElastiCache "
+            "(max_connections=20, retry=3, keepalive=True)"
+        )
+    else:
+        # Local Docker development settings
+        kwargs["max_connections"] = 50
+
+    return kwargs
+
+
 async def init_redis() -> None:
     """Initialize Redis connection pool."""
     global redis_pool
     try:
-        redis_pool = redis.ConnectionPool.from_url(
-            settings.REDIS_URL, decode_responses=True
-        )
+        pool_kwargs = _build_pool_kwargs()
+        redis_pool = redis.ConnectionPool.from_url(settings.REDIS_URL, **pool_kwargs)
         logger.info("Redis connection pool initialized")
     except Exception as e:
         logger.error(f"Error initializing Redis: {e}")

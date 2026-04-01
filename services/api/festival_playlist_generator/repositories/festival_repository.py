@@ -66,6 +66,8 @@ class FestivalRepository(BaseRepository[Festival]):
         """
         Get upcoming festivals ordered by start date.
 
+        Eager-loads artists to avoid N+1 queries when iterating results.
+
         Args:
             limit: Maximum number of festivals to return
             from_date: Only return festivals after this date (defaults to now)
@@ -80,6 +82,7 @@ class FestivalRepository(BaseRepository[Festival]):
         # Note: This uses PostgreSQL array operations
         result = await self.db.execute(
             select(Festival)
+            .options(selectinload(Festival.artists))
             .where(func.array_length(Festival.dates, 1) > 0)
             .order_by(Festival.dates[1].asc())  # Order by first date
             .limit(limit)
@@ -97,6 +100,8 @@ class FestivalRepository(BaseRepository[Festival]):
         """
         Full-text search for festivals by name, location, or venue.
 
+        Eager-loads artists to avoid N+1 queries when iterating results.
+
         Args:
             query: Search term
             skip: Number of records to skip
@@ -109,6 +114,7 @@ class FestivalRepository(BaseRepository[Festival]):
 
         result = await self.db.execute(
             select(Festival)
+            .options(selectinload(Festival.artists))
             .where(
                 or_(
                     func.lower(Festival.name).like(search_term),
@@ -150,8 +156,8 @@ class FestivalRepository(BaseRepository[Festival]):
         Returns:
             Tuple of (festivals list, total count)
         """
-        # Build base query
-        base_query = select(Festival)
+        # Build base query with eager loading to avoid N+1
+        base_query = select(Festival).options(selectinload(Festival.artists))
 
         # Apply search filter
         if search:

@@ -93,7 +93,7 @@ variable "at_rest_encryption_enabled" {
 variable "transit_encryption_enabled" {
   description = "Enable encryption in transit (TLS)"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "auth_token_enabled" {

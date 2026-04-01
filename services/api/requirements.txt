@@ -5,10 +5,9 @@ pydantic[email]>=2.0.0
 pydantic-settings>=2.0.0
 jinja2>=3.1.0
 
-# Type stubs for mypy
-types-python-dateutil
-types-redis
-types-requests
+# AWS SDK
+boto3>=1.28.0
+aws-xray-sdk>=2.12.0
 
 # Compression middleware
 python-multipart>=0.0.5
@@ -36,12 +35,10 @@ lxml>=4.9.0
 python-dateutil>=2.8.0
 
 # External API clients
-# setlist-fm-client==1.0.0  # Will implement custom client
 spotipy>=2.20.0
 ytmusicapi>=1.0.0
 
 # Utilities
-python-multipart>=0.0.5
 PyJWT[crypto]>=2.8.0
 passlib[bcrypt]>=1.7.0
 python-dotenv>=1.0.0
@@ -49,14 +46,3 @@ python-json-logger>=2.0.0
 pywebpush>=1.14.0
 cryptography>=41.0.0
 dependency-injector>=4.41.0
-
-# Development dependencies
-pytest>=7.0.0
-pytest-asyncio>=0.21.0
-pytest-mock>=3.10.0
-hypothesis>=6.80.0
-testcontainers[postgresql]>=3.7.0
-black>=23.0.0
-isort>=5.10.0
-flake8>=6.0.0
-mypy>=1.5.0

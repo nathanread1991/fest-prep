@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/api/endpoints/auth.py
+# hypothesis_version: 6.150.2
+
+[401, '/me', '/providers', '/session', 'Invalid session', 'Not authenticated', 'authenticated', 'created_at', 'expires_at', 'providers', 'session', 'session_id']

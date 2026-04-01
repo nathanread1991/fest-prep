@@ -1,0 +1,4 @@
+# file: /Users/nathan/gigprep/services/api/festival_playlist_generator/models/setlist.py
+# hypothesis_version: 6.150.1
+
+[255, 'Artist', 'Unknown', 'artists.id', 'setlist.fm', 'setlists']

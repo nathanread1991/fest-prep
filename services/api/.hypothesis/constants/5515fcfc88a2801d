@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/repositories/festival_repository.py
+# hypothesis_version: 6.150.2
+
+['created_at']

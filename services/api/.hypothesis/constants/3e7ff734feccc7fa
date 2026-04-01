@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/services/streaming_integration.py
+# hypothesis_version: 6.150.2
+
+[100, 1000, ', ', 'access_token', 'album', 'apple_music', 'apple_music_user', 'artists', 'authorization_code', 'client_id', 'client_secret', 'concert', 'developer_token', 'duration_ms', 'duration_seconds', 'expires_in', 'external_urls', 'id', 'items', 'live', 'name', 'oauth_file', 'playlistId', 'redirect_uri', 'refresh_token', 'songs', 'spotify', 'title', 'tour', 'track', 'tracks', 'videoId', 'youtube_music', 'ytmusic_user']

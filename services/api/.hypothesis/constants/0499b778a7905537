@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/api/metrics_middleware.py
+# hypothesis_version: 6.150.2
+
+[1.0, 1000.0, 400, '-', '/', '/docs', '/health', '/openapi.json', '/redoc', 'Count', 'Endpoint', 'ErrorCount', 'Method', 'Milliseconds', 'RequestCount', 'RequestLatency', 'StatusCode', '{id}']

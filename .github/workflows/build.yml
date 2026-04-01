@@ -1,0 +1,111 @@
+name: Build & Push Docker Image
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'services/api/**'
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Custom image tag (defaults to git SHA)'
+        required: false
+        type: string
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  id-token: write
+  contents: read
+  security-events: write
+
+env:
+  AWS_REGION: eu-west-2
+  PROJECT_NAME: festival-playlist
+  ENVIRONMENT: dev
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  build-push:
+    name: Build, Scan & Push
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.resolve-tag.outputs.image_tag }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Resolve image tag
+        id: resolve-tag
+        run: |
+          if [ -n "${{ github.event.inputs.image_tag }}" ]; then
+            IMAGE_TAG="${{ github.event.inputs.image_tag }}"
+          else
+            IMAGE_TAG="${{ github.sha }}"
+          fi
+          echo "image_tag=${IMAGE_TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Lint Dockerfile with hadolint
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: services/api/Dockerfile
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set image metadata
+        id: meta
+        run: |
+          ECR_REGISTRY="${{ steps.ecr-login.outputs.registry }}"
+          ECR_REPO="${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}"
+          IMAGE_TAG="${{ steps.resolve-tag.outputs.image_tag }}"
+          echo "registry=${ECR_REGISTRY}" >> "$GITHUB_OUTPUT"
+          echo "repository=${ECR_REPO}" >> "$GITHUB_OUTPUT"
+          echo "full_image=${ECR_REGISTRY}/${ECR_REPO}:${IMAGE_TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: services/api
+          file: services/api/Dockerfile
+          push: true
+          tags: |
+            ${{ steps.meta.outputs.full_image }}
+            ${{ steps.meta.outputs.registry }}/${{ steps.meta.outputs.repository }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run Trivy vulnerability scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.meta.outputs.full_image }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy scan results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  trigger-deploy:
+    name: Trigger Dev Deployment
+    needs: build-push
+    uses: ./.github/workflows/deploy.yml
+    with:
+      environment: dev
+      image_tag: ${{ needs.build-push.outputs.image_tag }}
+    secrets: inherit

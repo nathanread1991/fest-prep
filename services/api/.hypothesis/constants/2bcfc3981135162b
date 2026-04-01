@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/core/config.py
+# hypothesis_version: 6.150.2
+
+[0.1, '*', '.env', '127.0.0.1:2000', 'FestivalApp', 'INFO', 'JWT_SECRET_KEY', 'SECRET_KEY', 'SETLISTFM_API_KEY', 'SETLIST_FM_API_KEY', 'admin', 'admin123', 'before', 'eu-west-2', 'http://localhost:80', 'local', 'ssl/localhost.crt', 'ssl/localhost.key']

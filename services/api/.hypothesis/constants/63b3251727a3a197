@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/core/logging_config.py
+# hypothesis_version: 6.150.2
+
+[10485760, '%Y-%m-%d %H:%M:%S', '()', 'DEBUG', 'ENVIRONMENT', 'ERROR', 'INFO', 'WARNING', 'api.requests', 'app.log', 'backupCount', 'celery', 'class', 'console', 'datefmt', 'default', 'detailed', 'development', 'error.log', 'error_file', 'exception', 'extra_fields', 'file', 'filename', 'format', 'formatter', 'formatters', 'function', 'handlers', 'json', 'level', 'line', 'logger', 'loggers', 'logs', 'maxBytes', 'message', 'module', 'production', 'propagate', 'request_id', 'root', 'service_name', 'services', 'sqlalchemy.engine', 'stacktrace', 'stream', 'timestamp', 'type', 'uvicorn', 'version']

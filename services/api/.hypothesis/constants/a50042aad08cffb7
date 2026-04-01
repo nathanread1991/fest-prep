@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/schemas/playlist.py
+# hypothesis_version: 6.150.2
+
+[255, 'Associated artist ID', 'List of song IDs', 'Owner user ID', 'Playlist description', 'Playlist name', 'Streaming platform', 'apple_music', 'artist_id', 'created_at', 'festival_id', 'id', 'spotify', 'updated_at', 'user_id', 'youtube', 'youtube_music']

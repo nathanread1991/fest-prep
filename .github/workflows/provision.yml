@@ -1,0 +1,185 @@
+name: Provision Ephemeral Infrastructure
+
+on:
+  schedule:
+    # 9 AM GMT weekdays
+    - cron: '0 9 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to provision'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+
+concurrency:
+  group: infra-${{ github.event.inputs.environment || 'dev' }}
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: eu-west-2
+  ENVIRONMENT: ${{ github.event.inputs.environment || 'dev' }}
+  PROJECT_NAME: festival-playlist
+  TF_WORKING_DIR: infrastructure/terraform
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  find-snapshot:
+    name: Find Latest RDS Snapshot
+    runs-on: ubuntu-latest
+    outputs:
+      snapshot_id: ${{ steps.find.outputs.snapshot_id }}
+      restore_from_snapshot: ${{ steps.find.outputs.restore_from_snapshot }}
+    steps:
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Find latest available snapshot
+        id: find
+        run: |
+          SNAPSHOT_ID=$(aws rds describe-db-cluster-snapshots \
+            --query "sort_by(DBClusterSnapshots[?starts_with(DBClusterSnapshotIdentifier, '${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-snapshot-') && Status == 'available'], &SnapshotCreateTime)[-1].DBClusterSnapshotIdentifier" \
+            --output text 2>/dev/null || echo "None")
+
+          if [ "$SNAPSHOT_ID" = "None" ] || [ -z "$SNAPSHOT_ID" ]; then
+            echo "No snapshot found — will create fresh database"
+            echo "snapshot_id=" >> "$GITHUB_OUTPUT"
+            echo "restore_from_snapshot=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Found snapshot: $SNAPSHOT_ID"
+            echo "snapshot_id=${SNAPSHOT_ID}" >> "$GITHUB_OUTPUT"
+            echo "restore_from_snapshot=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  apply:
+    name: Terraform Apply (Ephemeral)
+    runs-on: ubuntu-latest
+    needs: find-snapshot
+    defaults:
+      run:
+        working-directory: ${{ env.TF_WORKING_DIR }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~> 1.10"
+          terraform_wrapper: false
+
+      - name: Terraform Init
+        run: terraform init -backend=true
+
+      - name: Terraform Apply
+        run: |
+          RESTORE="${{ needs.find-snapshot.outputs.restore_from_snapshot }}"
+          SNAPSHOT_ID="${{ needs.find-snapshot.outputs.snapshot_id }}"
+
+          echo "Provisioning ephemeral resources for ${{ env.ENVIRONMENT }}..."
+          echo "Restore from snapshot: ${RESTORE}"
+          if [ -n "$SNAPSHOT_ID" ]; then
+            echo "Snapshot: ${SNAPSHOT_ID}"
+          fi
+
+          terraform apply -auto-approve \
+            -var="environment=${{ env.ENVIRONMENT }}" \
+            -var="restore_from_snapshot=${RESTORE}" \
+            -var="snapshot_identifier=${SNAPSHOT_ID}"
+
+          echo "Ephemeral resources provisioned"
+
+  wait-services:
+    name: Wait for ECS Services
+    runs-on: ubuntu-latest
+    needs: apply
+    steps:
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Wait for API service stability
+        run: |
+          CLUSTER="${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-cluster"
+          SERVICE="${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-api"
+          echo "Waiting for API service to stabilize..."
+          aws ecs wait services-stable --cluster "$CLUSTER" --services "$SERVICE"
+          echo "API service is stable"
+
+      - name: Wait for worker service stability
+        run: |
+          CLUSTER="${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-cluster"
+          SERVICE="${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-worker"
+          DESIRED=$(aws ecs describe-services \
+            --cluster "$CLUSTER" --services "$SERVICE" \
+            --query 'services[0].desiredCount' --output text 2>/dev/null || echo "0")
+
+          if [ "$DESIRED" -eq 0 ]; then
+            echo "Worker desired count is 0 — skipping stability wait"
+          else
+            echo "Waiting for worker service to stabilize..."
+            if aws ecs wait services-stable --cluster "$CLUSTER" --services "$SERVICE" 2>/dev/null; then
+              echo "Worker service is stable"
+            else
+              echo "::warning::Worker service did not stabilize within timeout"
+            fi
+          fi
+
+  health-check:
+    name: Health Check
+    runs-on: ubuntu-latest
+    needs: wait-services
+    timeout-minutes: 10
+    steps:
+      - name: Resolve application URL
+        id: url
+        run: |
+          if [ "${{ env.ENVIRONMENT }}" = "prod" ]; then
+            echo "base_url=https://api-prod.gig-prep.co.uk" >> "$GITHUB_OUTPUT"
+          else
+            echo "base_url=https://api.gig-prep.co.uk" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Poll /health endpoint
+        run: |
+          BASE_URL="${{ steps.url.outputs.base_url }}"
+          MAX_RETRIES=20
+          RETRY=0
+
+          echo "Polling ${BASE_URL}/health..."
+          until curl -sf "${BASE_URL}/health" > /dev/null 2>&1 || [ $RETRY -eq $MAX_RETRIES ]; do
+            echo "Waiting for application... (attempt $((RETRY+1))/$MAX_RETRIES)"
+            sleep 15
+            RETRY=$((RETRY+1))
+          done
+
+          if [ $RETRY -eq $MAX_RETRIES ]; then
+            echo "::error::Health check failed after $MAX_RETRIES attempts (5 minutes)"
+            exit 1
+          fi
+
+          BODY=$(curl -s "${BASE_URL}/health")
+          echo "Health response: ${BODY}"
+          STATUS=$(echo "${BODY}" | python3 -c "import sys,json; print(json.load(sys.stdin).get('status',''))" 2>/dev/null || echo "")
+          if [ "${STATUS}" != "healthy" ]; then
+            echo "::error::Expected status=healthy, got: ${STATUS}"
+            exit 1
+          fi
+          echo "Provisioning complete — application is healthy"

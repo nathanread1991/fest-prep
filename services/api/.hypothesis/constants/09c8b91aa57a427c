@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/models/__init__.py
+# hypothesis_version: 6.150.2
+
+['artist', 'audit_log', 'festival', 'playlist', 'setlist', 'song', 'user']

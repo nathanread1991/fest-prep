@@ -106,12 +106,82 @@ output "redis_security_group_id" {
 # }
 
 # Compute Module
-# output "alb_dns_name" {
-#   description = "DNS name of the Application Load Balancer"
-#   value       = module.compute.alb_dns_name
-# }
+output "alb_dns_name" {
+  description = "DNS name of the Application Load Balancer"
+  value       = module.compute.alb_dns_name
+}
 
-# output "api_url" {
-#   description = "URL of the API endpoint"
-#   value       = "https://${module.compute.alb_dns_name}"
-# }
+output "api_task_definition_arn" {
+  description = "ARN of the current API task definition"
+  value       = module.compute.api_task_definition_arn
+}
+
+output "worker_task_definition_arn" {
+  description = "ARN of the current worker task definition"
+  value       = module.compute.worker_task_definition_arn
+}
+
+output "api_task_definition_revision" {
+  description = "Current revision of the API task definition"
+  value       = module.compute.api_task_definition_revision
+}
+
+output "worker_task_definition_revision" {
+  description = "Current revision of the worker task definition"
+  value       = module.compute.worker_task_definition_revision
+}
+
+
+# Migration Task
+output "migration_task_definition_arn" {
+  description = "ARN of the migration task definition"
+  value       = module.compute.migration_task_definition_arn
+}
+
+output "migration_task_definition_family" {
+  description = "Family of the migration task definition"
+  value       = module.compute.migration_task_definition_family
+}
+
+# ============================================================================
+# CDN Module Outputs
+# ============================================================================
+
+output "cloudfront_distribution_id" {
+  description = "ID of the CloudFront distribution"
+  value       = module.cdn.distribution_id
+}
+
+output "cloudfront_distribution_domain_name" {
+  description = "Domain name of the CloudFront distribution"
+  value       = module.cdn.distribution_domain_name
+}
+
+output "cloudfront_distribution_status" {
+  description = "Current status of the CloudFront distribution"
+  value       = module.cdn.distribution_status
+}
+
+# ============================================================================
+# DNS / Custom Domain Outputs
+# ============================================================================
+
+output "root_domain_fqdn" {
+  description = "FQDN of the root domain A record (gig-prep.co.uk → CloudFront)"
+  value       = aws_route53_record.root_domain.fqdn
+}
+
+output "api_domain_fqdn" {
+  description = "FQDN of the API subdomain A record (api.gig-prep.co.uk → ALB)"
+  value       = aws_route53_record.api_subdomain.fqdn
+}
+
+output "application_url" {
+  description = "Primary application URL"
+  value       = "https://${var.domain_name}"
+}
+
+output "api_url" {
+  description = "API endpoint URL"
+  value       = var.environment == "prod" ? "https://api-prod.${var.domain_name}" : "https://api.${var.domain_name}"
+}

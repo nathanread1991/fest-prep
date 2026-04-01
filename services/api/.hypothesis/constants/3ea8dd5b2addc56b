@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/api/endpoints/workflows.py
+# hypothesis_version: 6.150.2
+
+[500, '/health/services', '/maintenance/daily', '2024-01-01T00:00:00Z', 'Health check failed', 'Workflow failed', 'api.workflows', 'artist_analyzer', 'background_task', 'checked_at', 'completed', 'connected', 'database', 'error', 'festival_collector', 'healthy', 'notification_service', 'overall_status', 'playlist_generator', 'redis', 'services', 'started', 'status']

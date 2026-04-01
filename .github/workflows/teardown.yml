@@ -1,0 +1,217 @@
+name: Teardown Ephemeral Infrastructure
+
+on:
+  schedule:
+    # 6 PM GMT weekdays
+    - cron: '0 18 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to tear down'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+      skip_snapshot:
+        description: 'Skip database snapshot before teardown'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+
+concurrency:
+  group: infra-${{ github.event.inputs.environment || 'dev' }}
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: eu-west-2
+  ENVIRONMENT: ${{ github.event.inputs.environment || 'dev' }}
+  PROJECT_NAME: festival-playlist
+  TF_WORKING_DIR: infrastructure/terraform
+  SNAPSHOT_RETENTION_DAYS: 7
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  snapshot:
+    name: Create Database Snapshot
+    runs-on: ubuntu-latest
+    if: github.event.inputs.skip_snapshot != 'true'
+    outputs:
+      snapshot_id: ${{ steps.snapshot.outputs.snapshot_id }}
+    steps:
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Find RDS cluster
+        id: cluster
+        run: |
+          CLUSTER_ID=$(aws rds describe-db-clusters \
+            --query "DBClusters[?starts_with(DBClusterIdentifier, '${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}')].DBClusterIdentifier | [0]" \
+            --output text 2>/dev/null || echo "None")
+          echo "cluster_id=${CLUSTER_ID}" >> "$GITHUB_OUTPUT"
+          if [ "$CLUSTER_ID" = "None" ] || [ -z "$CLUSTER_ID" ]; then
+            echo "No RDS cluster found — skipping snapshot"
+          else
+            echo "Found cluster: $CLUSTER_ID"
+          fi
+
+      - name: Create snapshot
+        id: snapshot
+        if: steps.cluster.outputs.cluster_id != 'None' && steps.cluster.outputs.cluster_id != ''
+        run: |
+          SNAPSHOT_ID="${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-snapshot-$(date +%Y%m%d-%H%M%S)"
+          aws rds create-db-cluster-snapshot \
+            --db-cluster-identifier "${{ steps.cluster.outputs.cluster_id }}" \
+            --db-cluster-snapshot-identifier "$SNAPSHOT_ID" \
+            --tags Key=Project,Value=${{ env.PROJECT_NAME }} \
+                   Key=Environment,Value=${{ env.ENVIRONMENT }} \
+                   Key=ManagedBy,Value=github-actions
+          echo "snapshot_id=${SNAPSHOT_ID}" >> "$GITHUB_OUTPUT"
+          echo "Created snapshot: $SNAPSHOT_ID"
+
+      - name: Wait for snapshot completion
+        if: steps.snapshot.outputs.snapshot_id != ''
+        run: |
+          echo "Waiting for snapshot to become available..."
+          aws rds wait db-cluster-snapshot-available \
+            --db-cluster-snapshot-identifier "${{ steps.snapshot.outputs.snapshot_id }}"
+          echo "Snapshot ready: ${{ steps.snapshot.outputs.snapshot_id }}"
+
+  destroy:
+    name: Terraform Destroy (Ephemeral Only)
+    runs-on: ubuntu-latest
+    needs: snapshot
+    if: always() && (needs.snapshot.result == 'success' || needs.snapshot.result == 'skipped')
+    defaults:
+      run:
+        working-directory: ${{ env.TF_WORKING_DIR }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~> 1.10"
+          terraform_wrapper: false
+
+      - name: Terraform Init
+        run: terraform init -backend=true
+
+      - name: Terraform Destroy (ephemeral root)
+        run: |
+          echo "Destroying ephemeral resources for ${{ env.ENVIRONMENT }}..."
+          terraform destroy \
+            -auto-approve \
+            -var="environment=${{ env.ENVIRONMENT }}"
+          echo "Ephemeral resources destroyed"
+
+  verify:
+    name: Verify Persistent Resources Intact
+    runs-on: ubuntu-latest
+    needs: destroy
+    steps:
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Verify ECR repository exists
+        run: |
+          REPO="${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}"
+          if aws ecr describe-repositories --repository-names "$REPO" > /dev/null 2>&1; then
+            echo "ECR repository '$REPO' exists"
+          else
+            echo "::error::ECR repository '$REPO' is missing after teardown"
+            exit 1
+          fi
+
+      - name: Verify S3 buckets exist
+        run: |
+          FAILED=0
+          for BUCKET in "${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-app-data" "${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-cloudfront-logs"; do
+            if aws s3api head-bucket --bucket "$BUCKET" 2>/dev/null; then
+              echo "S3 bucket '$BUCKET' exists"
+            else
+              echo "::error::S3 bucket '$BUCKET' is missing after teardown"
+              FAILED=1
+            fi
+          done
+          if [ "$FAILED" -eq 1 ]; then exit 1; fi
+
+      - name: Verify Secrets Manager secrets exist
+        run: |
+          FAILED=0
+          for SECRET in \
+            "${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-spotify-credentials" \
+            "${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-setlistfm-api-key" \
+            "${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-jwt-secret"; do
+            if aws secretsmanager describe-secret --secret-id "$SECRET" > /dev/null 2>&1; then
+              echo "Secret '$SECRET' exists"
+            else
+              echo "::error::Secret '$SECRET' is missing after teardown"
+              FAILED=1
+            fi
+          done
+          if [ "$FAILED" -eq 1 ]; then exit 1; fi
+
+      - name: Verify Route 53 hosted zone exists
+        run: |
+          ZONE=$(aws route53 list-hosted-zones-by-name \
+            --dns-name "gig-prep.co.uk" \
+            --query "HostedZones[?Name=='gig-prep.co.uk.'].Id | [0]" \
+            --output text 2>/dev/null || echo "None")
+          if [ "$ZONE" = "None" ] || [ -z "$ZONE" ]; then
+            echo "::warning::Route 53 hosted zone for gig-prep.co.uk not found (may be externally managed)"
+          else
+            echo "Route 53 hosted zone exists: $ZONE"
+          fi
+
+      - name: Verification summary
+        run: echo "All persistent resources verified intact after teardown"
+
+  cleanup:
+    name: Cleanup Old Snapshots
+    runs-on: ubuntu-latest
+    needs: destroy
+    steps:
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Delete snapshots older than retention period
+        run: |
+          CUTOFF=$(date -u -d "${{ env.SNAPSHOT_RETENTION_DAYS }} days ago" +%Y-%m-%dT%H:%M:%S 2>/dev/null \
+            || date -u -v-${{ env.SNAPSHOT_RETENTION_DAYS }}d +%Y-%m-%dT%H:%M:%S)
+          SNAPSHOTS=$(aws rds describe-db-cluster-snapshots \
+            --query "DBClusterSnapshots[?starts_with(DBClusterSnapshotIdentifier, '${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-snapshot-') && SnapshotCreateTime < '${CUTOFF}'].DBClusterSnapshotIdentifier" \
+            --output text 2>/dev/null || echo "")
+          if [ -z "$SNAPSHOTS" ]; then
+            echo "No old snapshots to clean up"
+            exit 0
+          fi
+          for SNAP in $SNAPSHOTS; do
+            echo "Deleting old snapshot: $SNAP"
+            aws rds delete-db-cluster-snapshot \
+              --db-cluster-snapshot-identifier "$SNAP" 2>/dev/null || true
+          done
+          echo "Snapshot cleanup complete"

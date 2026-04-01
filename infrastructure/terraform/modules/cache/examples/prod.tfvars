@@ -30,7 +30,7 @@ auth_token_enabled         = true
 
 # Operational Settings
 auto_minor_version_upgrade = true
-apply_immediately          = false  # Apply during maintenance window
+apply_immediately          = false # Apply during maintenance window
 
 # CloudWatch Logs
 log_retention_days = 30
@@ -40,11 +40,11 @@ enable_cloudwatch_alarms = true
 # alarm_sns_topic_arn = "arn:aws:sns:us-east-1:123456789012:prod-alarms"
 
 # Alarm Thresholds (more conservative for prod)
-cpu_alarm_threshold              = 70
-memory_alarm_threshold           = 85
-evictions_alarm_threshold        = 500
-connections_alarm_threshold      = 60000
-replication_lag_alarm_threshold  = 15
+cpu_alarm_threshold             = 70
+memory_alarm_threshold          = 85
+evictions_alarm_threshold       = 500
+connections_alarm_threshold     = 60000
+replication_lag_alarm_threshold = 15
 
 # Common Tags
 common_tags = {

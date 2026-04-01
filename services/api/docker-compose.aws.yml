@@ -1,0 +1,131 @@
+# docker-compose.aws.yml
+# Local AWS testing environment using LocalStack
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.aws.yml up -d
+#
+# This extends the base docker-compose.yml and adds:
+#   - LocalStack for mocking AWS services (S3, Secrets Manager, CloudWatch, X-Ray, SQS)
+#   - AWS environment variables for the app and worker containers
+
+services:
+  # LocalStack - AWS service emulator
+  localstack:
+    image: localstack/localstack:3
+    container_name: festival_localstack
+    ports:
+      - "4566:4566"           # LocalStack Gateway
+      - "4510-4559:4510-4559" # External service ports
+    environment:
+      - SERVICES=s3,secretsmanager,cloudwatch,xray,sqs,ecr,logs
+      - DEBUG=0
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - AWS_DEFAULT_REGION=eu-west-2
+    volumes:
+      - localstack_data:/var/lib/localstack
+      - /var/run/docker.sock:/var/run/docker.sock
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  # AWS resource initialization (runs once after LocalStack is healthy)
+  localstack-init:
+    image: amazon/aws-cli:2.15.0
+    container_name: festival_localstack_init
+    depends_on:
+      localstack:
+        condition: service_healthy
+    environment:
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_DEFAULT_REGION=eu-west-2
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - |
+        # Create S3 bucket for app data
+        aws --endpoint-url=http://localstack:4566 s3 mb s3://festival-playlist-dev-app-data
+
+        # Create secrets in Secrets Manager
+        aws --endpoint-url=http://localstack:4566 secretsmanager create-secret \
+          --name festival-playlist/dev/db-credentials \
+          --secret-string '{"url":"postgresql://festival_user:festival_pass@postgres:5432/festival_db"}' || true
+
+        aws --endpoint-url=http://localstack:4566 secretsmanager create-secret \
+          --name festival-playlist/dev/redis-url \
+          --secret-string '{"url":"redis://redis:6379/0"}' || true
+
+        # Create CloudWatch log group
+        aws --endpoint-url=http://localstack:4566 logs create-log-group \
+          --log-group-name /ecs/festival-playlist-dev || true
+
+        echo "LocalStack initialization complete"
+
+  # Override app service with AWS environment variables
+  app:
+    environment:
+      - DATABASE_URL=postgresql://festival_user:festival_pass@postgres:5432/festival_db
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_DEFAULT_REGION=eu-west-2
+      - AWS_ENDPOINT_URL=http://localstack:4566
+      - AWS_S3_BUCKET=festival-playlist-dev-app-data
+      - ENVIRONMENT=dev
+      - IMAGE_CACHE_ENABLED=true
+      - IMAGE_PROXY_URL=http://localhost
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+
+  # Override celery worker with AWS environment variables
+  celery_worker:
+    environment:
+      - DATABASE_URL=postgresql://festival_user:festival_pass@postgres:5432/festival_db
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_DEFAULT_REGION=eu-west-2
+      - AWS_ENDPOINT_URL=http://localstack:4566
+      - ENVIRONMENT=dev
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+
+  # Override celery beat with AWS environment variables
+  celery_beat:
+    environment:
+      - DATABASE_URL=postgresql://festival_user:festival_pass@postgres:5432/festival_db
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_DEFAULT_REGION=eu-west-2
+      - AWS_ENDPOINT_URL=http://localstack:4566
+      - ENVIRONMENT=dev
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+
+volumes:
+  localstack_data:

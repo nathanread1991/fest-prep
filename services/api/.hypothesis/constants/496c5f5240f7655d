@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/api/endpoints/data_export.py
+# hypothesis_version: 6.150.2
+
+['/account', '/cleanup-audit-logs', '/data', '/export', '/retention-policy', '10 minutes', '24 hours', '7 years', 'Content-Disposition', 'Data export failed', 'Invalid session', '^(json|csv|xml)$', 'application/xml', 'application/zip', 'audit_logs', 'cleanup_summary', 'csv', 'data-export', 'data_deletion', 'data_export', 'data_portability', 'deletion_summary', 'description', 'json', 'message', 'oauth_state', 'retention_days', 'retention_period', 'session_data', 'session_id', 'user_data', 'user_rights', 'w', 'xml']

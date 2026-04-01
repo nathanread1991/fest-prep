@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/api/routes.py
+# hypothesis_version: 6.150.2
+
+[200, '/artists', '/auth', '/cache', '/festivals', '/health', '/notifications', '/playlists', '/recommendations', '/setlists', '/user', '/users', '/workflows', 'artists', 'authentication', 'cache', 'data-export', 'festivals', 'healthy', 'notifications', 'playlist-generation', 'playlists', 'recommendations', 'service', 'setlists', 'status', 'users', 'workflows']

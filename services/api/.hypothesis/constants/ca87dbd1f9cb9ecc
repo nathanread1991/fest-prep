@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/core/database.py
+# hypothesis_version: 6.150.2
+
+[100.0, 1000.0, 500, 900, 1800, '...', 'after_cursor_execute', 'connect_args', 'duration_ms', 'echo', 'error_type', 'extra_fields', 'future', 'max_overflow', 'pool_pre_ping', 'pool_recycle', 'pool_size', 'pool_timeout', 'postgresql://', 'query', 'query_start_time', 'slow_query', 'ssl', 'threshold_ms']

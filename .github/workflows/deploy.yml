@@ -1,0 +1,349 @@
+name: Deploy to ECS
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: 'Target environment (dev or prod)'
+        required: true
+        type: string
+      image_tag:
+        description: 'Docker image tag to deploy'
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        type: choice
+        options:
+          - dev
+          - prod
+      image_tag:
+        description: 'Docker image tag to deploy'
+        required: true
+        type: string
+
+concurrency:
+  group: deploy-${{ inputs.environment }}
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: eu-west-2
+  PROJECT_NAME: festival-playlist
+  TF_WORKING_DIR: infrastructure/terraform
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  deploy:
+    name: Deploy (${{ inputs.environment }})
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment == 'prod' && 'production' || inputs.environment }}
+    outputs:
+      api_previous_td: ${{ steps.save-current.outputs.api_td }}
+      worker_previous_td: ${{ steps.save-current.outputs.worker_td }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Save current task definitions for rollback
+        id: save-current
+        run: |
+          CLUSTER="${{ env.PROJECT_NAME }}-${{ inputs.environment }}-cluster"
+          API_TD=$(aws ecs describe-services \
+            --cluster "$CLUSTER" \
+            --services "${{ env.PROJECT_NAME }}-${{ inputs.environment }}-api" \
+            --query 'services[0].taskDefinition' \
+            --output text 2>/dev/null || echo "")
+          WORKER_TD=$(aws ecs describe-services \
+            --cluster "$CLUSTER" \
+            --services "${{ env.PROJECT_NAME }}-${{ inputs.environment }}-worker" \
+            --query 'services[0].taskDefinition' \
+            --output text 2>/dev/null || echo "")
+          echo "api_td=${API_TD}" >> "$GITHUB_OUTPUT"
+          echo "worker_td=${WORKER_TD}" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~> 1.10"
+          terraform_wrapper: false
+
+      - name: Terraform Init
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform init -backend=true
+
+      - name: Update task definitions with new image tag
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: |
+          IMAGE_TAG="${{ inputs.image_tag }}"
+          echo "Deploying image tag: ${IMAGE_TAG} to ${{ inputs.environment }}"
+
+          terraform apply -auto-approve \
+            -var="environment=${{ inputs.environment }}" \
+            -var="api_image_tag=${IMAGE_TAG}" \
+            -var="worker_image_tag=${IMAGE_TAG}" \
+            -target=module.compute.aws_ecs_task_definition.api \
+            -target=module.compute.aws_ecs_task_definition.worker \
+            -target=module.compute.aws_ecs_service.api \
+            -target=module.compute.aws_ecs_service.worker
+
+      - name: Wait for API service stability
+        run: |
+          CLUSTER="${{ env.PROJECT_NAME }}-${{ inputs.environment }}-cluster"
+          SERVICE="${{ env.PROJECT_NAME }}-${{ inputs.environment }}-api"
+          echo "Waiting for API service to stabilize..."
+          aws ecs wait services-stable --cluster "$CLUSTER" --services "$SERVICE"
+          echo "API service is stable"
+
+      - name: Wait for worker service stability
+        run: |
+          CLUSTER="${{ env.PROJECT_NAME }}-${{ inputs.environment }}-cluster"
+          SERVICE="${{ env.PROJECT_NAME }}-${{ inputs.environment }}-worker"
+          DESIRED=$(aws ecs describe-services \
+            --cluster "$CLUSTER" --services "$SERVICE" \
+            --query 'services[0].desiredCount' --output text 2>/dev/null || echo "0")
+
+          if [ "$DESIRED" -eq 0 ]; then
+            echo "Worker desired count is 0 — skipping stability wait"
+          else
+            echo "Waiting for worker service to stabilize..."
+            if aws ecs wait services-stable --cluster "$CLUSTER" --services "$SERVICE" 2>/dev/null; then
+              echo "Worker service is stable"
+            else
+              echo "::warning::Worker service did not stabilize within timeout"
+            fi
+          fi
+
+      - name: Verify ALB target group health
+        run: |
+          TG_ARN=$(aws elbv2 describe-target-groups \
+            --names "${{ env.PROJECT_NAME }}-${{ inputs.environment }}-api-tg" \
+            --query 'TargetGroups[0].TargetGroupArn' \
+            --output text 2>/dev/null || echo "")
+
+          if [ -z "$TG_ARN" ] || [ "$TG_ARN" = "None" ]; then
+            echo "::warning::Target group not found, skipping health check"
+            exit 0
+          fi
+
+          HEALTH_JSON=$(aws elbv2 describe-target-health \
+            --target-group-arn "$TG_ARN" --output json)
+
+          TOTAL=$(echo "$HEALTH_JSON" | jq '.TargetHealthDescriptions | length')
+          HEALTHY=$(echo "$HEALTH_JSON" | jq '[.TargetHealthDescriptions[] | select(.TargetHealth.State == "healthy")] | length')
+
+          echo "Healthy targets: $HEALTHY / $TOTAL"
+
+          if [ "$TOTAL" -eq 0 ]; then
+            echo "::error::No targets registered in target group"
+            exit 1
+          fi
+          if [ "$HEALTHY" -eq 0 ]; then
+            echo "::error::No healthy targets in target group"
+            exit 1
+          fi
+          echo "ALB target group health verified"
+
+  migrate:
+    name: Run Database Migrations
+    runs-on: ubuntu-latest
+    needs: deploy
+    timeout-minutes: 10
+    steps:
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Run Alembic migrations via ECS run-task
+        run: |
+          CLUSTER="${{ env.PROJECT_NAME }}-${{ inputs.environment }}-cluster"
+          TASK_FAMILY="${{ env.PROJECT_NAME }}-${{ inputs.environment }}-migration"
+          API_SERVICE="${{ env.PROJECT_NAME }}-${{ inputs.environment }}-api"
+          LOG_GROUP="/ecs/${{ env.PROJECT_NAME }}-${{ inputs.environment }}/migration"
+
+          TASK_DEF=$(aws ecs describe-task-definition \
+            --task-definition "${TASK_FAMILY}" \
+            --query 'taskDefinition.taskDefinitionArn' \
+            --output text)
+
+          SUBNETS=$(aws ecs describe-services \
+            --cluster "${CLUSTER}" --services "${API_SERVICE}" \
+            --query 'services[0].networkConfiguration.awsvpcConfiguration.subnets' \
+            --output json)
+          SG=$(aws ecs describe-services \
+            --cluster "${CLUSTER}" --services "${API_SERVICE}" \
+            --query 'services[0].networkConfiguration.awsvpcConfiguration.securityGroups' \
+            --output json)
+
+          SUBNET_CSV=$(echo "${SUBNETS}" | python3 -c "import sys,json; print(','.join(json.load(sys.stdin)))")
+          SG_CSV=$(echo "${SG}" | python3 -c "import sys,json; print(','.join(json.load(sys.stdin)))")
+
+          TASK_ARN=$(aws ecs run-task \
+            --cluster "${CLUSTER}" \
+            --task-definition "${TASK_DEF}" \
+            --launch-type FARGATE \
+            --network-configuration "awsvpcConfiguration={subnets=[${SUBNET_CSV}],securityGroups=[${SG_CSV}],assignPublicIp=ENABLED}" \
+            --overrides '{"containerOverrides":[{"name":"migration","command":["alembic","upgrade","head"]}]}' \
+            --query 'tasks[0].taskArn' \
+            --output text)
+
+          TASK_ID=$(echo "${TASK_ARN}" | awk -F'/' '{print $NF}')
+          echo "Migration task: ${TASK_ID}"
+
+          aws ecs wait tasks-stopped --cluster "${CLUSTER}" --tasks "${TASK_ARN}"
+
+          EXIT_CODE=$(aws ecs describe-tasks \
+            --cluster "${CLUSTER}" --tasks "${TASK_ARN}" \
+            --query 'tasks[0].containers[0].exitCode' --output text)
+
+          sleep 3
+          aws logs get-log-events \
+            --log-group-name "${LOG_GROUP}" \
+            --log-stream-name "migration/migration/${TASK_ID}" \
+            --query 'events[*].message' --output text 2>/dev/null || true
+
+          if [ "${EXIT_CODE}" != "0" ]; then
+            echo "::error::Migration failed with exit code ${EXIT_CODE}"
+            exit 1
+          fi
+          echo "Migrations completed successfully"
+
+  smoke-test:
+    name: Smoke Tests
+    runs-on: ubuntu-latest
+    needs: migrate
+    timeout-minutes: 10
+    steps:
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Resolve application URL
+        id: url
+        run: |
+          if [ "${{ inputs.environment }}" = "prod" ]; then
+            echo "base_url=https://api-prod.gig-prep.co.uk" >> "$GITHUB_OUTPUT"
+          else
+            echo "base_url=https://api.gig-prep.co.uk" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 'GET /health'
+        run: |
+          BASE_URL="${{ steps.url.outputs.base_url }}"
+          MAX_RETRIES=10
+          RETRY=0
+
+          echo "Testing /health on ${BASE_URL}..."
+          until curl -sf "${BASE_URL}/health" > /dev/null 2>&1 || [ $RETRY -eq $MAX_RETRIES ]; do
+            echo "Waiting for health check... (attempt $((RETRY+1))/$MAX_RETRIES)"
+            sleep 15
+            RETRY=$((RETRY+1))
+          done
+
+          if [ $RETRY -eq $MAX_RETRIES ]; then
+            echo "::error::Health check failed after $MAX_RETRIES attempts"
+            exit 1
+          fi
+
+          BODY=$(curl -s "${BASE_URL}/health")
+          echo "Health response: ${BODY}"
+          STATUS=$(echo "${BODY}" | python3 -c "import sys,json; print(json.load(sys.stdin).get('status',''))" 2>/dev/null || echo "")
+          if [ "${STATUS}" != "healthy" ]; then
+            echo "::error::Expected status=healthy, got: ${STATUS}"
+            exit 1
+          fi
+          echo "Health check passed"
+
+      - name: 'GET /docs'
+        run: |
+          BASE_URL="${{ steps.url.outputs.base_url }}"
+          CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "${BASE_URL}/docs" || echo "000")
+          echo "/docs returned HTTP ${CODE}"
+          if [[ "${CODE}" =~ ^5 ]]; then
+            echo "::error::/docs returned server error (${CODE})"
+            exit 1
+          fi
+
+      - name: 'GET /api/v1/festivals'
+        run: |
+          BASE_URL="${{ steps.url.outputs.base_url }}"
+          CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "${BASE_URL}/api/v1/festivals" || echo "000")
+          echo "/api/v1/festivals returned HTTP ${CODE}"
+          if [[ "${CODE}" =~ ^5 ]]; then
+            echo "::error::/api/v1/festivals returned server error (${CODE})"
+            exit 1
+          fi
+
+      - name: 'GET /nonexistent-route (expect 404)'
+        run: |
+          BASE_URL="${{ steps.url.outputs.base_url }}"
+          CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "${BASE_URL}/nonexistent-route" || echo "000")
+          echo "/nonexistent-route returned HTTP ${CODE}"
+          if [[ "${CODE}" =~ ^5 ]]; then
+            echo "::error::Unknown route returned server error (${CODE})"
+            exit 1
+          fi
+          echo "Smoke tests passed"
+
+  rollback:
+    name: Rollback (prod only)
+    runs-on: ubuntu-latest
+    needs: [deploy, smoke-test]
+    if: failure() && inputs.environment == 'prod'
+    steps:
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Rollback API service
+        run: |
+          CLUSTER="${{ env.PROJECT_NAME }}-${{ inputs.environment }}-cluster"
+          SERVICE="${{ env.PROJECT_NAME }}-${{ inputs.environment }}-api"
+          PREV_TD="${{ needs.deploy.outputs.api_previous_td }}"
+
+          if [ -n "$PREV_TD" ] && [ "$PREV_TD" != "None" ]; then
+            echo "Rolling back API to: ${PREV_TD}"
+            aws ecs update-service \
+              --cluster "$CLUSTER" \
+              --service "$SERVICE" \
+              --task-definition "$PREV_TD"
+            aws ecs wait services-stable --cluster "$CLUSTER" --services "$SERVICE"
+            echo "API rollback complete"
+          else
+            echo "::warning::No previous task definition found for API — manual intervention required"
+          fi
+
+      - name: Rollback worker service
+        run: |
+          CLUSTER="${{ env.PROJECT_NAME }}-${{ inputs.environment }}-cluster"
+          SERVICE="${{ env.PROJECT_NAME }}-${{ inputs.environment }}-worker"
+          PREV_TD="${{ needs.deploy.outputs.worker_previous_td }}"
+
+          if [ -n "$PREV_TD" ] && [ "$PREV_TD" != "None" ]; then
+            echo "Rolling back worker to: ${PREV_TD}"
+            aws ecs update-service \
+              --cluster "$CLUSTER" \
+              --service "$SERVICE" \
+              --task-definition "$PREV_TD"
+            echo "Worker rollback complete"
+          else
+            echo "::warning::No previous task definition found for worker — skipping"
+          fi

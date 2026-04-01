@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/core/service_orchestrator.py
+# hypothesis_version: 6.150.2
+
+['/tmp/test_oauth.json', 'apple_music', 'artist_analysis', 'artist_id', 'artists_analyzed', 'client_id', 'client_secret', 'completed', 'completed_at', 'created_at', 'data_cleanup', 'db', 'developer_token', 'error', 'errors', 'failed', 'failed_at', 'festival_collection', 'festival_id', 'festival_name', 'festivals_collected', 'id', 'name', 'notification_sent', 'oauth_file', 'orchestrator', 'playlist', 'playlist_generation', 'playlist_updates', 'preferences', 'recommendations', 'redirect_uri', 'setlist_analysis', 'setlists_analyzed', 'setlists_found', 'similarity_score', 'song_count', 'songs', 'spotify', 'started_at', 'statistics', 'status', 'steps_completed', 'tasks_completed', 'test_client_id', 'test_client_secret', 'test_developer_token', 'total_artists', 'total_festivals', 'total_playlists', 'total_users', 'user_id', 'youtube_music']

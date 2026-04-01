@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/api/endpoints/artists.py
+# hypothesis_version: 6.150.2
+
+[100, 201, 400, 1000, '/', '/search/', '/{artist_id}', '1.1', 'Artist', 'Filter by genre', 'Search query', 'created_at', 'dates', 'has_more', 'id', 'items', 'limit', 'location', 'name', 'pagination', 'query', 'search', 'skip', 'total', 'venue']

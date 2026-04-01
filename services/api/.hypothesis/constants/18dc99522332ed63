@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/api/endpoints/setlists.py
+# hypothesis_version: 6.150.2
+
+[100, 503, '%Y-%m-%d', '/', '/artist/{artist_id}', '/refresh/{artist_id}', '/{setlist_id}', '2024-03-10', '2024-03-15', 'Acoustic Version', 'Album Highlight', 'Artist', 'Classic Hit', 'Crowd Pleaser', 'Dance Track', 'Deep Cut', 'Emotional Ballad', 'Encore Opener', 'External API error', 'Fan Favorite', 'Filter by venue', 'Final Song', 'High Energy Song', 'Hit Single #1', 'Instrumental', 'New Track', 'Opening Song', 'Popular Track', 'Radio Hit', 'Setlist', 'Show Opener', 'Sing-Along', 'Surprise Cover', 'World Tour 2024', 'artist_id', 'artist_name', 'created_at', 'date', 'festival_name', 'fetched_count', 'id', 'mock-setlist-1', 'mock-setlist-2', 'setlist.fm', 'song_count', 'songs', 'source', 'tour_name', 'updated_at', 'venue']

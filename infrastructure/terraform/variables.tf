@@ -6,13 +6,6 @@ variable "aws_region" {
   default     = "eu-west-2"
 }
 
-variable "aws_profile" {
-  description = "AWS CLI profile to use for authentication (set to null for env var auth)"
-  type        = string
-  default     = "festival-playlist"
-  nullable    = true
-}
-
 variable "project_name" {
   description = "Name of the project"
   type        = string
@@ -20,9 +13,14 @@ variable "project_name" {
 }
 
 variable "environment" {
-  description = "Environment name (dev, staging, prod)"
+  description = "Environment name (dev or prod)"
   type        = string
   default     = "dev"
+
+  validation {
+    condition     = contains(["dev", "prod"], var.environment)
+    error_message = "Environment must be 'dev' or 'prod'."
+  }
 }
 
 variable "monthly_budget_limit" {
@@ -114,17 +112,27 @@ variable "database_restore_from_snapshot" {
   default     = false
 }
 
+# ============================================================================
+# Snapshot Restore Variables (used by provision.yml workflow)
+# ============================================================================
+
+variable "restore_from_snapshot" {
+  description = "Whether to restore the database from a snapshot during provisioning"
+  type        = bool
+  default     = false
+}
+
+variable "snapshot_identifier" {
+  description = "RDS snapshot identifier to restore from (empty string means use latest or skip)"
+  type        = string
+  default     = ""
+}
+
 # Redis Configuration
 variable "redis_node_type" {
   description = "ElastiCache Redis node type"
   type        = string
   default     = "cache.t4g.micro"
-}
-
-variable "redis_parameter_group_family" {
-  description = "Redis parameter group family"
-  type        = string
-  default     = "redis7"
 }
 
 variable "redis_engine_version" {
@@ -182,17 +190,16 @@ variable "ecs_worker_desired_count" {
   default     = 1
 }
 
-# WAF Configuration
-variable "enable_waf" {
-  description = "Enable AWS WAF for ALB protection"
-  type        = bool
-  default     = true
+variable "api_image_tag" {
+  description = "Docker image tag for the API service (e.g. git SHA or 'latest')"
+  type        = string
+  default     = "latest"
 }
 
-variable "waf_rate_limit" {
-  description = "Rate limit for WAF (requests per 5 minutes per IP)"
-  type        = number
-  default     = 1000
+variable "worker_image_tag" {
+  description = "Docker image tag for the worker service (e.g. git SHA or 'latest')"
+  type        = string
+  default     = "latest"
 }
 
 # CloudWatch Configuration

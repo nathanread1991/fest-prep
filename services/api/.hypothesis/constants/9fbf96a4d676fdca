@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/api/endpoints/cache.py
+# hypothesis_version: 6.150.2
+
+['/config', '/stats', 'artist_by_id', 'artist_by_name', 'artist_by_spotify_id', 'artist_count', 'artist_search', 'cache', 'default', 'festival_by_id', 'festival_by_name', 'festival_count', 'festival_search', 'festival_upcoming', 'ok', 'playlist_by_id', 'playlist_festival', 'playlist_user', 'setlist_data', 'status', 'ttl_seconds']

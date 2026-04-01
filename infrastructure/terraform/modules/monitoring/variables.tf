@@ -51,12 +51,6 @@ variable "db_max_connections" {
   default     = 100
 }
 
-# Cache Configuration
-variable "redis_cluster_id" {
-  description = "ID of the ElastiCache Redis cluster"
-  type        = string
-}
-
 # ALB Configuration
 variable "alb_arn_suffix" {
   description = "ARN suffix of the Application Load Balancer"
@@ -111,6 +105,18 @@ variable "ecs_min_task_count" {
   description = "Minimum number of ECS tasks (alarm if below)"
   type        = number
   default     = 1
+}
+
+variable "ecs_api_cpu_alarm_threshold" {
+  description = "CPU utilization percentage that triggers the ECS API high-CPU alarm"
+  type        = number
+  default     = 85
+}
+
+variable "ecs_api_memory_alarm_threshold" {
+  description = "Memory utilization percentage that triggers the ECS API high-memory alarm"
+  type        = number
+  default     = 90
 }
 
 # X-Ray Configuration

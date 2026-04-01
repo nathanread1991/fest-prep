@@ -5,6 +5,8 @@ from datetime import datetime
 from typing import List, Optional, Tuple
 from uuid import UUID
 
+from festival_playlist_generator.core.cache_config import CachePrefix, CacheTTL
+from festival_playlist_generator.core.metrics import metrics_client
 from festival_playlist_generator.models.artist import Artist
 from festival_playlist_generator.models.festival import Festival
 from festival_playlist_generator.repositories.artist_repository import ArtistRepository
@@ -21,7 +23,7 @@ class FestivalService:
     Service layer for festival business logic.
 
     Handles festival operations with:
-    - Caching strategy (1 hour TTL for get, 5 min for search)
+    - Caching strategy (30 min TTL for get, 5 min for search/upcoming)
     - Artist validation on create
     - Cache invalidation on create/update/delete
 
@@ -71,9 +73,9 @@ class FestivalService:
         # Fetch from database
         festival = await self.festival_repo.get_by_id(festival_id, load_relationships)
 
-        # Cache result (1 hour TTL) - only simple data without relationships
+        # Cache result - only simple data without relationships
         if festival and not load_relationships:
-            await self.cache.set(cache_key, festival, ttl=3600)
+            await self.cache.set(cache_key, festival, ttl=CacheTTL.FESTIVAL_BY_ID)
             logger.debug(f"Cached festival {festival_id}")
 
         return festival
@@ -89,7 +91,7 @@ class FestivalService:
             Festival or None if not found
         """
         # Check cache
-        cache_key = f"festival:name:{name}"
+        cache_key = f"{CachePrefix.FESTIVAL}name:{name}"
         cached = await self.cache.get(cache_key)
         if cached is not None:
             logger.debug(f"Cache hit for festival name {name}")
@@ -98,9 +100,9 @@ class FestivalService:
         # Fetch from database
         festival = await self.festival_repo.get_by_name(name)
 
-        # Cache result (1 hour TTL)
+        # Cache result
         if festival:
-            await self.cache.set(cache_key, festival, ttl=3600)
+            await self.cache.set(cache_key, festival, ttl=CacheTTL.FESTIVAL_BY_NAME)
 
         return festival
 
@@ -129,9 +131,9 @@ class FestivalService:
             limit, from_date=None if not load_relationships else None
         )
 
-        # Cache result (5 minute TTL) - shorter TTL for time-sensitive data
+        # Cache result - shorter TTL for time-sensitive data
         if not load_relationships:
-            await self.cache.set(cache_key, festivals, ttl=300)
+            await self.cache.set(cache_key, festivals, ttl=CacheTTL.FESTIVAL_UPCOMING)
 
         return festivals
 
@@ -213,6 +215,9 @@ class FestivalService:
 
         # Invalidate search caches
         await self._invalidate_search_caches()
+
+        # Publish business metric
+        await metrics_client.put_metric("FestivalCreated", 1.0, "Count")
 
         logger.info(f"Created festival {created_festival.id}: {created_festival.name}")
         return created_festival
@@ -358,7 +363,7 @@ class FestivalService:
             Total number of festivals
         """
         # Check cache
-        cache_key = "festivals:count:total"
+        cache_key = f"{CachePrefix.FESTIVALS}count:total"
         cached = await self.cache.get(cache_key)
         if cached is not None:
             return cached  # type: ignore[no-any-return]
@@ -366,8 +371,8 @@ class FestivalService:
         # Fetch from database
         count = await self.festival_repo.count_total()
 
-        # Cache result (5 minute TTL)
-        await self.cache.set(cache_key, count, ttl=300)
+        # Cache result
+        await self.cache.set(cache_key, count, ttl=CacheTTL.FESTIVAL_COUNT)
 
         return count
 
@@ -409,10 +414,10 @@ class FestivalService:
     async def _invalidate_search_caches(self) -> None:
         """Invalidate all festival search and count caches."""
         # Delete all search result caches
-        await self.cache.delete_pattern("festivals:search:*")
-        await self.cache.delete_pattern("festivals:upcoming:*")
+        await self.cache.delete_pattern(f"{CachePrefix.FESTIVALS}search:*")
+        await self.cache.delete_pattern(f"{CachePrefix.FESTIVALS}upcoming:*")
 
         # Delete count caches
-        await self.cache.delete("festivals:count:total")
+        await self.cache.delete(f"{CachePrefix.FESTIVALS}count:total")
 
         logger.debug("Invalidated festival search caches")

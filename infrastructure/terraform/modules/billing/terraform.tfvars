@@ -3,7 +3,7 @@
 # DO NOT commit terraform.tfvars to Git (it contains sensitive information)
 
 # AWS Configuration
-aws_region  = "eu-west-2" # London region
+aws_region = "eu-west-2" # London region
 
 # Project Configuration
 project_name = "festival-playlist"

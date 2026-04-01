@@ -51,6 +51,8 @@ class SetlistRepository(BaseRepository[Setlist]):
         """
         Get all setlists for a specific artist.
 
+        Eager-loads artist to avoid N+1 queries.
+
         Args:
             artist_id: Artist UUID
             skip: Number of records to skip
@@ -61,6 +63,7 @@ class SetlistRepository(BaseRepository[Setlist]):
         """
         result = await self.db.execute(
             select(Setlist)
+            .options(selectinload(Setlist.artist))
             .where(Setlist.artist_id == artist_id)
             .order_by(Setlist.date.desc())
             .offset(skip)
@@ -75,6 +78,8 @@ class SetlistRepository(BaseRepository[Setlist]):
         """
         Get recent setlists for an artist.
 
+        Eager-loads artist to avoid N+1 queries.
+
         Args:
             artist_id: Artist UUID
             limit: Maximum number of setlists to return
@@ -83,7 +88,11 @@ class SetlistRepository(BaseRepository[Setlist]):
         Returns:
             List of recent setlists ordered by date (most recent first)
         """
-        query = select(Setlist).where(Setlist.artist_id == artist_id)
+        query = (
+            select(Setlist)
+            .options(selectinload(Setlist.artist))
+            .where(Setlist.artist_id == artist_id)
+        )
 
         if from_date:
             query = query.where(Setlist.date >= from_date)

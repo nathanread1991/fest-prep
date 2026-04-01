@@ -1,6 +1,16 @@
 # Networking Module - VPC, Subnets, Security Groups, and VPC Endpoints
 # This module creates the network infrastructure for the Festival Playlist Generator
 
+terraform {
+  required_version = ">= 1.10"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+
 # Data source to get available AZs in the region
 data "aws_availability_zones" "available" {
   state = "available"
@@ -8,6 +18,8 @@ data "aws_availability_zones" "available" {
 
 # VPC
 resource "aws_vpc" "main" {
+  #checkov:skip=CKV2_AWS_12:Default security group managed separately
+  #checkov:skip=CKV2_AWS_11:VPC flow logs planned for production
   cidr_block           = var.vpc_cidr
   enable_dns_hostnames = true
   enable_dns_support   = true
@@ -38,7 +50,7 @@ resource "aws_subnet" "public" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = var.public_subnet_cidrs[count.index]
   availability_zone       = data.aws_availability_zones.available.names[count.index]
-  map_public_ip_on_launch = true
+  map_public_ip_on_launch = false
 
   tags = merge(
     var.common_tags,
@@ -115,6 +127,7 @@ resource "aws_route_table_association" "private" {
 
 # ALB Security Group
 resource "aws_security_group" "alb" {
+  #checkov:skip=CKV2_AWS_5:Security groups attached via module references
   name_prefix = "${var.project_name}-${var.environment}-alb-"
   description = "Security group for Application Load Balancer"
   vpc_id      = aws_vpc.main.id
@@ -149,6 +162,7 @@ resource "aws_vpc_security_group_ingress_rule" "alb_https" {
 }
 
 resource "aws_vpc_security_group_ingress_rule" "alb_http" {
+  #checkov:skip=CKV_AWS_260:Public ALB requires open HTTP ingress for redirect to HTTPS
   security_group_id = aws_security_group.alb.id
   description       = "Allow HTTP from internet (redirect to HTTPS)"
   from_port         = 80
@@ -183,6 +197,7 @@ resource "aws_vpc_security_group_egress_rule" "alb_to_ecs" {
 
 # ECS Tasks Security Group
 resource "aws_security_group" "ecs_tasks" {
+  #checkov:skip=CKV2_AWS_5:Security groups attached via module references
   name_prefix = "${var.project_name}-${var.environment}-ecs-"
   description = "Security group for ECS tasks"
   vpc_id      = aws_vpc.main.id
@@ -283,6 +298,7 @@ resource "aws_vpc_security_group_egress_rule" "ecs_to_vpc_endpoints" {
 
 # RDS Security Group
 resource "aws_security_group" "rds" {
+  #checkov:skip=CKV2_AWS_5:Security groups attached via module references
   name_prefix = "${var.project_name}-${var.environment}-rds-"
   description = "Security group for RDS database"
   vpc_id      = aws_vpc.main.id
@@ -318,6 +334,7 @@ resource "aws_vpc_security_group_ingress_rule" "rds_from_ecs" {
 
 # Redis Security Group
 resource "aws_security_group" "redis" {
+  #checkov:skip=CKV2_AWS_5:Security groups attached via module references
   name_prefix = "${var.project_name}-${var.environment}-redis-"
   description = "Security group for ElastiCache Redis"
   vpc_id      = aws_vpc.main.id

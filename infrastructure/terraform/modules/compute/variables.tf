@@ -46,11 +46,6 @@ variable "public_subnet_ids" {
   type        = list(string)
 }
 
-variable "private_subnet_ids" {
-  description = "List of private subnet IDs (for future use)"
-  type        = list(string)
-}
-
 variable "alb_security_group_id" {
   description = "ID of the ALB security group"
   type        = string
@@ -139,7 +134,7 @@ variable "api_health_check_interval" {
 variable "api_health_check_timeout" {
   description = "Health check timeout in seconds"
   type        = number
-  default     = 5
+  default     = 10
 }
 
 variable "api_health_check_healthy_threshold" {
@@ -200,6 +195,12 @@ variable "api_desired_count" {
   description = "Desired number of API tasks"
   type        = number
   default     = 1
+}
+
+variable "api_health_check_grace_period" {
+  description = "Seconds to wait before ECS starts health checking a newly launched task"
+  type        = number
+  default     = 120
 }
 
 variable "api_min_capacity" {
@@ -264,6 +265,24 @@ variable "worker_use_spot" {
   description = "Use FARGATE_SPOT for worker tasks (70% cost savings)"
   type        = bool
   default     = true
+}
+
+variable "worker_cpu_target" {
+  description = "Target CPU utilization percentage for worker auto-scaling"
+  type        = number
+  default     = 70
+}
+
+variable "worker_memory_target" {
+  description = "Target memory utilization percentage for worker auto-scaling"
+  type        = number
+  default     = 80
+}
+
+variable "api_request_count_target" {
+  description = "Target ALB request count per target for API auto-scaling"
+  type        = number
+  default     = 1000
 }
 
 # ============================================================================
@@ -383,3 +402,4 @@ variable "setlistfm_secret_arn" {
   type        = string
   default     = ""
 }
+

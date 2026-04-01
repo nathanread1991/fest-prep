@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/core/redis.py
+# hypothesis_version: 6.150.2
+
+[0.5, 5.0, 3600, 'decode_responses', 'max_connections', 'redis.Redis[bytes]', 'rediss://', 'retry', 'retry_on_error', 'socket_keepalive', 'socket_timeout', 'ssl', 'ssl_ca_certs']

@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/services/auth.py
+# hypothesis_version: 6.150.2
+
+[3600, 31536000, ':', 'created_at', 'expires_at', 'user_id']

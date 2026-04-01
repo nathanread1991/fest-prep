@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/schemas/artist.py
+# hypothesis_version: 6.150.2
+
+[0.0, 1.0, 255, 'Artist genres', 'Artist name', 'created_at', 'id']

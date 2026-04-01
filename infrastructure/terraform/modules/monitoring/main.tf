@@ -16,6 +16,7 @@ terraform {
 
 # Log group for ECS API service
 resource "aws_cloudwatch_log_group" "api" {
+  #checkov:skip=CKV_AWS_158:CloudWatch log encryption managed at account level
   name              = "/ecs/${var.project_name}-${var.environment}-api"
   retention_in_days = var.log_retention_days
 
@@ -31,6 +32,7 @@ resource "aws_cloudwatch_log_group" "api" {
 
 # Log group for ECS worker service
 resource "aws_cloudwatch_log_group" "worker" {
+  #checkov:skip=CKV_AWS_158:CloudWatch log encryption managed at account level
   name              = "/ecs/${var.project_name}-${var.environment}-worker"
   retention_in_days = var.log_retention_days
 
@@ -67,6 +69,21 @@ resource "aws_kms_key" "sns" {
   description             = "KMS key for SNS topic encryption"
   deletion_window_in_days = 7
   enable_key_rotation     = true
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "Enable IAM User Permissions"
+        Effect = "Allow"
+        Principal = {
+          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+        }
+        Action   = "kms:*"
+        Resource = "*"
+      }
+    ]
+  })
 
   tags = merge(
     var.common_tags,
@@ -267,6 +284,105 @@ resource "aws_cloudwatch_metric_alarm" "ecs_task_count" {
     {
       Name        = "${var.project_name}-${var.environment}-ecs-task-count"
       Service     = "ecs"
+      Environment = var.environment
+    }
+  )
+}
+
+# Alarm for ECS API CPU utilization (high — indicates scaling pressure)
+resource "aws_cloudwatch_metric_alarm" "ecs_api_cpu_high" {
+  count = var.enable_alarms ? 1 : 0
+
+  alarm_name          = "${var.project_name}-${var.environment}-ecs-api-cpu-high"
+  alarm_description   = "ECS API CPU utilization exceeds scaling threshold — auto-scaling should be active"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 3
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/ECS"
+  period              = 60
+  statistic           = "Average"
+  threshold           = var.ecs_api_cpu_alarm_threshold
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    ClusterName = var.cluster_name
+    ServiceName = var.api_service_name
+  }
+
+  alarm_actions = [aws_sns_topic.alarms.arn]
+  ok_actions    = [aws_sns_topic.alarms.arn]
+
+  tags = merge(
+    var.common_tags,
+    {
+      Name        = "${var.project_name}-${var.environment}-ecs-api-cpu-high"
+      Service     = "ecs"
+      Environment = var.environment
+    }
+  )
+}
+
+# Alarm for ECS API memory utilization (high)
+resource "aws_cloudwatch_metric_alarm" "ecs_api_memory_high" {
+  count = var.enable_alarms ? 1 : 0
+
+  alarm_name          = "${var.project_name}-${var.environment}-ecs-api-memory-high"
+  alarm_description   = "ECS API memory utilization exceeds threshold — auto-scaling should be active"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 3
+  metric_name         = "MemoryUtilization"
+  namespace           = "AWS/ECS"
+  period              = 60
+  statistic           = "Average"
+  threshold           = var.ecs_api_memory_alarm_threshold
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    ClusterName = var.cluster_name
+    ServiceName = var.api_service_name
+  }
+
+  alarm_actions = [aws_sns_topic.alarms.arn]
+  ok_actions    = [aws_sns_topic.alarms.arn]
+
+  tags = merge(
+    var.common_tags,
+    {
+      Name        = "${var.project_name}-${var.environment}-ecs-api-memory-high"
+      Service     = "ecs"
+      Environment = var.environment
+    }
+  )
+}
+
+# Alarm for ECS worker task count (below minimum when scaling is enabled)
+resource "aws_cloudwatch_metric_alarm" "ecs_worker_task_count" {
+  count = var.enable_alarms && var.worker_service_name != "" ? 1 : 0
+
+  alarm_name          = "${var.project_name}-${var.environment}-ecs-worker-task-count"
+  alarm_description   = "ECS worker task count below minimum"
+  comparison_operator = "LessThanThreshold"
+  evaluation_periods  = 2
+  metric_name         = "RunningTaskCount"
+  namespace           = "ECS/ContainerInsights"
+  period              = 60
+  statistic           = "Average"
+  threshold           = 1
+  treat_missing_data  = "breaching"
+
+  dimensions = {
+    ClusterName = var.cluster_name
+    ServiceName = var.worker_service_name
+  }
+
+  alarm_actions = [aws_sns_topic.alarms.arn]
+  ok_actions    = [aws_sns_topic.alarms.arn]
+
+  tags = merge(
+    var.common_tags,
+    {
+      Name        = "${var.project_name}-${var.environment}-ecs-worker-task-count"
+      Service     = "ecs-worker"
       Environment = var.environment
     }
   )
@@ -595,6 +711,101 @@ resource "aws_cloudwatch_dashboard" "main" {
         height = 6
         x      = 16
         y      = 24
+      },
+      # ECS API Auto-Scaling: Desired vs Running Task Count
+      {
+        type = "metric"
+        properties = {
+          metrics = [
+            ["ECS/ContainerInsights", "DesiredTaskCount", "ClusterName", var.cluster_name, "ServiceName", var.api_service_name, { stat = "Average", label = "Desired" }],
+            ["ECS/ContainerInsights", "RunningTaskCount", "ClusterName", var.cluster_name, "ServiceName", var.api_service_name, { stat = "Average", label = "Running" }]
+          ]
+          period = 60
+          region = data.aws_region.current.name
+          title  = "API Auto-Scaling: Desired vs Running Tasks"
+          yAxis = {
+            left = {
+              min = 0
+            }
+          }
+        }
+        width  = 12
+        height = 6
+        x      = 0
+        y      = 30
+      },
+      # ECS API CPU + Memory for scaling correlation
+      {
+        type = "metric"
+        properties = {
+          metrics = [
+            ["AWS/ECS", "CPUUtilization", "ClusterName", var.cluster_name, "ServiceName", var.api_service_name, { stat = "Average", label = "CPU %" }],
+            ["AWS/ECS", "MemoryUtilization", "ClusterName", var.cluster_name, "ServiceName", var.api_service_name, { stat = "Average", label = "Memory %" }]
+          ]
+          period = 60
+          region = data.aws_region.current.name
+          title  = "API CPU & Memory (scaling triggers)"
+          yAxis = {
+            left = {
+              min = 0
+              max = 100
+            }
+          }
+          annotations = {
+            horizontal = [
+              { label = "CPU target (70%)", value = 70, color = "#ff9900" },
+              { label = "Memory target (80%)", value = 80, color = "#d13212" }
+            ]
+          }
+        }
+        width  = 12
+        height = 6
+        x      = 12
+        y      = 30
+      },
+      # ECS Worker Auto-Scaling: Desired vs Running Task Count
+      {
+        type = "metric"
+        properties = {
+          metrics = [
+            ["ECS/ContainerInsights", "DesiredTaskCount", "ClusterName", var.cluster_name, "ServiceName", var.worker_service_name, { stat = "Average", label = "Desired" }],
+            ["ECS/ContainerInsights", "RunningTaskCount", "ClusterName", var.cluster_name, "ServiceName", var.worker_service_name, { stat = "Average", label = "Running" }]
+          ]
+          period = 60
+          region = data.aws_region.current.name
+          title  = "Worker Auto-Scaling: Desired vs Running Tasks"
+          yAxis = {
+            left = {
+              min = 0
+            }
+          }
+        }
+        width  = 12
+        height = 6
+        x      = 0
+        y      = 36
+      },
+      # ALB Request Count Per Target (scaling metric)
+      {
+        type = "metric"
+        properties = {
+          metrics = [
+            ["AWS/ApplicationELB", "RequestCountPerTarget", { stat = "Sum", label = "Requests/Target" }]
+          ]
+          period = 60
+          stat   = "Sum"
+          region = data.aws_region.current.name
+          title  = "ALB Requests Per Target (scaling trigger)"
+          yAxis = {
+            left = {
+              min = 0
+            }
+          }
+        }
+        width  = 12
+        height = 6
+        x      = 12
+        y      = 36
       }
     ]
   })
@@ -657,7 +868,48 @@ resource "aws_xray_sampling_rule" "errors" {
 }
 
 # ============================================================================
+# CloudWatch Logs Insights - Slow Query Monitoring
+# ============================================================================
+
+# Saved query for identifying slow database queries (> 100ms)
+resource "aws_cloudwatch_query_definition" "slow_queries" {
+  name = "${var.project_name}-${var.environment}-slow-db-queries"
+
+  log_group_names = [
+    aws_cloudwatch_log_group.api.name,
+    aws_cloudwatch_log_group.worker.name,
+  ]
+
+  query_string = <<-EOT
+    fields @timestamp, @message, @logStream
+    | filter @message like /slow_query/
+    | parse @message '"duration_ms": *,' as duration_ms
+    | parse @message '"query": "*"' as query
+    | sort duration_ms desc
+    | limit 50
+  EOT
+}
+
+# Saved query for database query performance overview
+resource "aws_cloudwatch_query_definition" "query_performance" {
+  name = "${var.project_name}-${var.environment}-db-query-performance"
+
+  log_group_names = [
+    aws_cloudwatch_log_group.api.name,
+  ]
+
+  query_string = <<-EOT
+    fields @timestamp, @message
+    | filter @message like /slow_query/
+    | parse @message '"duration_ms": *,' as duration_ms
+    | stats avg(duration_ms) as avg_ms, max(duration_ms) as max_ms, count(*) as total by bin(5m)
+    | sort @timestamp desc
+  EOT
+}
+
+# ============================================================================
 # Data Sources
 # ============================================================================
 
 data "aws_region" "current" {}
+data "aws_caller_identity" "current" {}

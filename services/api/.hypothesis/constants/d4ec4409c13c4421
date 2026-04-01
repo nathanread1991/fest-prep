@@ -1,0 +1,4 @@
+# file: /app/festival_playlist_generator/api/endpoints/playlists.py
+# hypothesis_version: 6.150.2
+
+[100, 200, 201, 204, 400, 401, 404, 500, 503, 1000, '/', '/create', '/user/{user_id}', '/{playlist_id}', '/{playlist_id}/songs', '1.1', 'Artist', 'Festival', 'Filter by artist ID', 'Filter by platform', 'Filter by user ID', 'Playlist', 'Playlist not found', 'Song not found', 'Song not in playlist', 'Songs not found', 'Spotify API error', 'User', 'User not found', 'access_token', 'artist', 'external_urls', 'has_more', 'id', 'is_cover', 'items', 'limit', 'message', 'original_artist', 'pagination', 'performance_count', 'playlist_id', 'playlist_name', 'playlist_url', 'skip', 'song_ids', 'spotify', 'title', 'total', 'track', 'tracks', 'tracks_added', 'tracks_not_found', 'tracks_requested', 'uri']
