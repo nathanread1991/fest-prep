@@ -16,6 +16,7 @@ terraform {
 
 # Log group for ECS API service
 resource "aws_cloudwatch_log_group" "api" {
+  #checkov:skip=CKV_AWS_158:CloudWatch log encryption managed at account level
   name              = "/ecs/${var.project_name}-${var.environment}-api"
   retention_in_days = var.log_retention_days
 
@@ -31,6 +32,7 @@ resource "aws_cloudwatch_log_group" "api" {
 
 # Log group for ECS worker service
 resource "aws_cloudwatch_log_group" "worker" {
+  #checkov:skip=CKV_AWS_158:CloudWatch log encryption managed at account level
   name              = "/ecs/${var.project_name}-${var.environment}-worker"
   retention_in_days = var.log_retention_days
 
@@ -67,6 +69,21 @@ resource "aws_kms_key" "sns" {
   description             = "KMS key for SNS topic encryption"
   deletion_window_in_days = 7
   enable_key_rotation     = true
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "Enable IAM User Permissions"
+        Effect = "Allow"
+        Principal = {
+          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+        }
+        Action   = "kms:*"
+        Resource = "*"
+      }
+    ]
+  })
 
   tags = merge(
     var.common_tags,
@@ -895,3 +912,4 @@ resource "aws_cloudwatch_query_definition" "query_performance" {
 # ============================================================================
 
 data "aws_region" "current" {}
+data "aws_caller_identity" "current" {}

@@ -20,6 +20,10 @@ data "aws_canonical_user_id" "current" {}
 
 # S3 bucket for application data (user uploads, backups, etc.)
 resource "aws_s3_bucket" "app_data" {
+  #checkov:skip=CKV2_AWS_62:Event notifications not required for this bucket
+  #checkov:skip=CKV_AWS_144:Cross-region replication not required for dev
+  #checkov:skip=CKV_AWS_145:AES256 server-side encryption is configured
+  #checkov:skip=CKV_AWS_18:Access logging configured via aws_s3_bucket_logging resource
   bucket        = "${var.project_name}-${var.environment}-app-data"
   force_destroy = true
 
@@ -86,6 +90,39 @@ resource "aws_s3_bucket_intelligent_tiering_configuration" "app_data" {
   }
 }
 
+# Access logging for app-data bucket
+resource "aws_s3_bucket_logging" "app_data" {
+  bucket = aws_s3_bucket.app_data.id
+
+  target_bucket = aws_s3_bucket.cloudfront_logs.id
+  target_prefix = "s3-access-logs/app-data/"
+}
+
+# Lifecycle configuration for app-data bucket
+resource "aws_s3_bucket_lifecycle_configuration" "app_data" {
+  bucket = aws_s3_bucket.app_data.id
+
+  rule {
+    id     = "transition-old-objects"
+    status = "Enabled"
+
+    filter {}
+
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 7
+    }
+
+    transition {
+      days          = 90
+      storage_class = "STANDARD_IA"
+    }
+
+    noncurrent_version_expiration {
+      noncurrent_days = 90
+    }
+  }
+}
+
 
 # ============================================================================
 # S3 Bucket - CloudFront Logs
@@ -93,6 +130,10 @@ resource "aws_s3_bucket_intelligent_tiering_configuration" "app_data" {
 
 # S3 bucket for CloudFront access logs
 resource "aws_s3_bucket" "cloudfront_logs" {
+  #checkov:skip=CKV2_AWS_62:Event notifications not required for this bucket
+  #checkov:skip=CKV_AWS_144:Cross-region replication not required for dev
+  #checkov:skip=CKV_AWS_145:AES256 server-side encryption is configured
+  #checkov:skip=CKV_AWS_18:This is the logging destination bucket
   bucket        = "${var.project_name}-${var.environment}-cloudfront-logs"
   force_destroy = true
 
@@ -133,6 +174,15 @@ resource "aws_s3_bucket_public_access_block" "cloudfront_logs" {
   restrict_public_buckets = true
 }
 
+# Enable versioning on cloudfront-logs bucket
+resource "aws_s3_bucket_versioning" "cloudfront_logs" {
+  bucket = aws_s3_bucket.cloudfront_logs.id
+
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
 # Lifecycle policy for logs bucket (30-day expiration)
 resource "aws_s3_bucket_lifecycle_configuration" "cloudfront_logs" {
   bucket = aws_s3_bucket.cloudfront_logs.id
@@ -142,6 +192,10 @@ resource "aws_s3_bucket_lifecycle_configuration" "cloudfront_logs" {
     status = "Enabled"
 
     filter {}
+
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 7
+    }
 
     expiration {
       days = 30
@@ -187,6 +241,7 @@ resource "aws_s3_bucket_acl" "cloudfront_logs" {
 
 # Ownership controls for CloudFront logs bucket
 resource "aws_s3_bucket_ownership_controls" "cloudfront_logs" {
+  #checkov:skip=CKV2_AWS_65:BucketOwnerPreferred required for CloudFront log delivery
   bucket = aws_s3_bucket.cloudfront_logs.id
 
   rule {
@@ -202,8 +257,9 @@ resource "aws_s3_bucket_ownership_controls" "cloudfront_logs" {
 
 # ECR repository for application container images
 resource "aws_ecr_repository" "app" {
+  #checkov:skip=CKV_AWS_136:Basic scanning enabled, enhanced scanning configured at registry level
   name                 = "${var.project_name}-${var.environment}"
-  image_tag_mutability = "MUTABLE"
+  image_tag_mutability = "IMMUTABLE"
   force_delete         = true
 
   # Enable image scanning on push

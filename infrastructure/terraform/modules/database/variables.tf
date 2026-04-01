@@ -134,7 +134,7 @@ variable "monitoring_interval" {
 variable "deletion_protection" {
   description = "Enable deletion protection (recommended for prod)"
   type        = bool
-  default     = false
+  default     = true
 }
 
 # Apply Changes

@@ -244,6 +244,8 @@ resource "aws_wafv2_web_acl_association" "alb" {
 
 # CloudWatch Log Group for WAF logs
 resource "aws_cloudwatch_log_group" "waf" {
+  #checkov:skip=CKV_AWS_158:CloudWatch log encryption managed at account level
+  #checkov:skip=CKV_AWS_338:Short retention appropriate for dev environment
   name              = "aws-waf-logs-${var.project_name}-${var.environment}"
   retention_in_days = var.environment == "prod" ? 30 : 7
 

@@ -62,3 +62,9 @@ variable "common_tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "waf_web_acl_arn" {
+  description = "ARN of the WAF Web ACL to associate with CloudFront distribution"
+  type        = string
+  default     = null
+}

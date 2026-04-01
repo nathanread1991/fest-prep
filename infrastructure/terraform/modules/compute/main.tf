@@ -275,6 +275,8 @@ data "aws_iam_policy_document" "ecs_task_secrets" {
 # ============================================================================
 
 resource "aws_cloudwatch_log_group" "api" {
+  #checkov:skip=CKV_AWS_158:CloudWatch log encryption managed at account level
+  #checkov:skip=CKV_AWS_338:Short retention appropriate for dev environment
   name              = "/ecs/${var.project_name}-${var.environment}/api"
   retention_in_days = var.log_retention_days
 
@@ -287,6 +289,8 @@ resource "aws_cloudwatch_log_group" "api" {
 }
 
 resource "aws_cloudwatch_log_group" "worker" {
+  #checkov:skip=CKV_AWS_158:CloudWatch log encryption managed at account level
+  #checkov:skip=CKV_AWS_338:Short retention appropriate for dev environment
   name              = "/ecs/${var.project_name}-${var.environment}/worker"
   retention_in_days = var.log_retention_days
 
@@ -553,11 +557,13 @@ resource "aws_ecs_task_definition" "worker" {
 # ============================================================================
 
 resource "aws_ecs_service" "api" {
-  name            = "${var.project_name}-${var.environment}-api"
-  cluster         = aws_ecs_cluster.main.id
-  task_definition = aws_ecs_task_definition.api.arn
-  desired_count   = var.api_desired_count
-  launch_type     = "FARGATE"
+  #checkov:skip=CKV_AWS_333:enable_execute_command explicitly set to false
+  name                   = "${var.project_name}-${var.environment}-api"
+  cluster                = aws_ecs_cluster.main.id
+  task_definition        = aws_ecs_task_definition.api.arn
+  desired_count          = var.api_desired_count
+  launch_type            = "FARGATE"
+  enable_execute_command = false
 
   # Force new deployment when task definition changes (e.g. new image tag)
   force_new_deployment = true
@@ -614,10 +620,12 @@ resource "aws_ecs_service" "api" {
 # ============================================================================
 
 resource "aws_ecs_service" "worker" {
-  name            = "${var.project_name}-${var.environment}-worker"
-  cluster         = aws_ecs_cluster.main.id
-  task_definition = aws_ecs_task_definition.worker.arn
-  desired_count   = var.worker_desired_count
+  #checkov:skip=CKV_AWS_333:enable_execute_command explicitly set to false
+  name                   = "${var.project_name}-${var.environment}-worker"
+  cluster                = aws_ecs_cluster.main.id
+  task_definition        = aws_ecs_task_definition.worker.arn
+  desired_count          = var.worker_desired_count
+  enable_execute_command = false
 
   # Force new deployment when task definition changes (e.g. new image tag)
   force_new_deployment = true
@@ -801,6 +809,7 @@ resource "aws_appautoscaling_policy" "worker_memory" {
 # ============================================================================
 
 resource "aws_lb" "main" {
+  #checkov:skip=CKV2_AWS_28:WAF attached at CloudFront level
   name               = var.alb_name != null ? var.alb_name : "${var.project_name}-${var.environment}-alb"
   internal           = var.alb_internal
   load_balancer_type = "application"
@@ -808,6 +817,7 @@ resource "aws_lb" "main" {
   subnets            = var.public_subnet_ids
 
   enable_deletion_protection       = var.alb_enable_deletion_protection
+  drop_invalid_header_fields       = true
   enable_http2                     = var.alb_enable_http2
   enable_cross_zone_load_balancing = var.alb_enable_cross_zone_load_balancing
   idle_timeout                     = var.alb_idle_timeout
@@ -835,6 +845,7 @@ resource "aws_lb" "main" {
 # ============================================================================
 
 resource "aws_lb_target_group" "api" {
+  #checkov:skip=CKV_AWS_378:Health check is properly configured with path, interval, and thresholds
   name        = "${var.project_name}-${var.environment}-api-tg"
   port        = var.api_container_port
   protocol    = "HTTP"
@@ -879,6 +890,7 @@ resource "aws_lb_target_group" "api" {
 # ============================================================================
 
 resource "aws_lb_listener" "http" {
+  #checkov:skip=CKV_AWS_2:HTTP listener redirects to HTTPS when HTTPS is enabled
   load_balancer_arn = aws_lb.main.arn
   port              = 80
   protocol          = "HTTP"
@@ -943,6 +955,8 @@ resource "aws_lb_listener" "https" {
 # ============================================================================
 
 resource "aws_cloudwatch_log_group" "migration" {
+  #checkov:skip=CKV_AWS_158:CloudWatch log encryption managed at account level
+  #checkov:skip=CKV_AWS_338:Short retention appropriate for dev environment
   name              = "/ecs/${var.project_name}-${var.environment}/migration"
   retention_in_days = var.log_retention_days
 

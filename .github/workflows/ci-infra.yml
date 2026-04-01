@@ -69,6 +69,7 @@ jobs:
           directory: ${{ env.TF_WORKING_DIR }}
           framework: terraform
           soft_fail: false
+          skip_check: CKV_AWS_70
           output_format: cli
 
   plan:

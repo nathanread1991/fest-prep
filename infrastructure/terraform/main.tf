@@ -221,19 +221,20 @@ module "compute" {
     local.setlistfm_secret_arn,
     local.jwt_secret_arn
   ]
-  acm_certificate_arn   = module.security.alb_certificate_arn
-  enable_https_listener = true
-  api_cpu               = var.ecs_api_cpu
-  api_memory            = var.ecs_api_memory
-  api_desired_count     = var.ecs_api_desired_count
-  api_min_capacity      = var.ecs_api_min_capacity
-  api_max_capacity      = var.ecs_api_max_capacity
-  api_image_tag         = var.api_image_tag
-  worker_image_tag      = var.worker_image_tag
-  worker_cpu            = var.ecs_worker_cpu
-  worker_memory         = var.ecs_worker_memory
-  worker_desired_count  = var.ecs_worker_desired_count
-  common_tags           = var.common_tags
+  acm_certificate_arn            = module.security.alb_certificate_arn
+  enable_https_listener          = true
+  api_cpu                        = var.ecs_api_cpu
+  api_memory                     = var.ecs_api_memory
+  api_desired_count              = var.ecs_api_desired_count
+  api_min_capacity               = var.ecs_api_min_capacity
+  api_max_capacity               = var.ecs_api_max_capacity
+  api_image_tag                  = var.api_image_tag
+  worker_image_tag               = var.worker_image_tag
+  worker_cpu                     = var.ecs_worker_cpu
+  worker_memory                  = var.ecs_worker_memory
+  worker_desired_count           = var.ecs_worker_desired_count
+  alb_enable_deletion_protection = true
+  common_tags                    = var.common_tags
 }
 
 # CDN Module
