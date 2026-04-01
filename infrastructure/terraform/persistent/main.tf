@@ -874,7 +874,11 @@ data "aws_iam_policy_document" "terraform_infra" {
       "secretsmanager:PutSecretValue",
       "secretsmanager:DescribeSecret",
       "secretsmanager:GetSecretValue",
+      "secretsmanager:GetResourcePolicy",
+      "secretsmanager:PutResourcePolicy",
+      "secretsmanager:DeleteResourcePolicy",
       "secretsmanager:ListSecrets",
+      "secretsmanager:ListSecretVersionIds",
       "secretsmanager:TagResource",
       "secretsmanager:UntagResource",
 
