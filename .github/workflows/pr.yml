@@ -118,7 +118,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install mypy types-redis types-requests
+          pip install -r requirements-dev.txt
 
       - name: Run mypy (strict mode)
         run: |
@@ -195,6 +195,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip install -r requirements-dev.txt
           pip install pytest-cov
 
       - name: Run unit tests with coverage
@@ -263,6 +264,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip install -r requirements-dev.txt
           pip install pytest-cov
 
       - name: Install Redis CLI
@@ -344,7 +346,63 @@ jobs:
           echo "Coverage threshold check skipped - refactoring in progress"
           # Note: Coverage thresholds will be enforced after refactoring is complete
 
-  # Job 7: Docker Build and Validation
+  # Job 7: Infracost - Terraform Cost Estimation
+  infracost:
+    name: Infracost Cost Estimation
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Infracost
+        uses: infracost/actions/setup@v3
+        with:
+          api-key: ${{ secrets.INFRACOST_API_KEY }}
+
+      - name: Checkout base branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+          path: base
+
+      - name: Generate Infracost cost estimate (base)
+        run: |
+          infracost breakdown \
+            --path=base/infrastructure/terraform \
+            --format=json \
+            --out-file=/tmp/infracost-base.json
+        continue-on-error: true
+
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          path: pr
+
+      - name: Generate Infracost diff
+        run: |
+          infracost diff \
+            --path=pr/infrastructure/terraform \
+            --compare-to=/tmp/infracost-base.json \
+            --format=json \
+            --out-file=/tmp/infracost-diff.json
+        continue-on-error: true
+
+      - name: Post Infracost comment on PR
+        run: |
+          infracost comment github \
+            --path=/tmp/infracost-diff.json \
+            --repo=${{ github.repository }} \
+            --pull-request=${{ github.event.pull_request.number }} \
+            --github-token=${{ secrets.GITHUB_TOKEN }} \
+            --behavior=update
+        continue-on-error: true
+
+  # Job 8: Docker Build and Validation
   docker-build:
     name: Docker Build & Validation
     runs-on: ubuntu-latest
