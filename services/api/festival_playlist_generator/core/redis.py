@@ -50,7 +50,7 @@ def _build_pool_kwargs() -> Dict[str, Any]:
 
         # Retry configuration for ElastiCache failover/reconnection
         kwargs["retry"] = Retry(
-            ExponentialBackoff(cap=10, base=0.5),  # type: ignore[no-untyped-call]
+            ExponentialBackoff(cap=10, base=0.5),
             retries=3,
         )
         kwargs["retry_on_error"] = [
@@ -83,9 +83,7 @@ async def init_redis() -> None:
     global redis_pool
     try:
         pool_kwargs = _build_pool_kwargs()
-        redis_pool = redis.ConnectionPool.from_url(
-            settings.REDIS_URL, **pool_kwargs
-        )
+        redis_pool = redis.ConnectionPool.from_url(settings.REDIS_URL, **pool_kwargs)
         logger.info("Redis connection pool initialized")
     except Exception as e:
         logger.error(f"Error initializing Redis: {e}")

@@ -77,17 +77,13 @@ class MetricsMiddleware(BaseHTTPMiddleware):
         # Fire-and-forget metric publishing (non-blocking)
         dims = {"Endpoint": path, "Method": method}
 
-        await metrics_client.put_metric(
-            "RequestCount", 1.0, "Count", dims
-        )
+        await metrics_client.put_metric("RequestCount", 1.0, "Count", dims)
         await metrics_client.put_metric(
             "RequestLatency", latency_ms, "Milliseconds", dims
         )
 
         if status >= 400:
             error_dims = {**dims, "StatusCode": str(status)}
-            await metrics_client.put_metric(
-                "ErrorCount", 1.0, "Count", error_dims
-            )
+            await metrics_client.put_metric("ErrorCount", 1.0, "Count", error_dims)
 
         return response

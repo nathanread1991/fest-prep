@@ -109,7 +109,7 @@ def apply_sampling_rules() -> None:
         return
 
     try:
-        from aws_xray_sdk.core.sampling.local.sampler import (  # type: ignore[import-untyped]  # noqa: E501
+        from aws_xray_sdk.core.sampling.local.sampler import (  # noqa: E501
             LocalSampler,
         )
 

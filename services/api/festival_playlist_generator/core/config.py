@@ -115,7 +115,7 @@ class Settings(BaseSettings):
 
     @model_validator(mode="before")
     @classmethod
-    def map_aws_env_vars(cls, values: dict) -> dict:  # type: ignore[type-arg]
+    def map_aws_env_vars(cls, values: dict) -> dict:
         """Map AWS ECS-injected env var names to application field names.
 
         ECS task definitions inject secrets with specific env var names

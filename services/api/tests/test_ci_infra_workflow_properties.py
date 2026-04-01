@@ -22,15 +22,14 @@ from hypothesis import strategies as st
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _find_repo_root() -> Path:
     """Walk up from this file to find the repo root (contains .github/)."""
     current = Path(__file__).resolve().parent
     for parent in [current] + list(current.parents):
         if (parent / ".github" / "workflows").is_dir():
             return parent
-    raise FileNotFoundError(
-        "Cannot find repo root containing .github/workflows/"
-    )
+    raise FileNotFoundError("Cannot find repo root containing .github/workflows/")
 
 
 REPO_ROOT = _find_repo_root()
@@ -72,9 +71,9 @@ class TestInfraCITriggerPaths:
         paths = _get_trigger_paths(workflow, "push")
         assert len(paths) > 0, "ci-infra.yml must define push path filters"
         for p in paths:
-            assert p.startswith(INFRA_PATH_PREFIX), (
-                f"Push path filter '{p}' is outside {INFRA_PATH_PREFIX}"
-            )
+            assert p.startswith(
+                INFRA_PATH_PREFIX
+            ), f"Push path filter '{p}' is outside {INFRA_PATH_PREFIX}"
 
     def test_pull_request_paths_only_include_infra(self) -> None:
         """All pull_request path filters must be under infrastructure/terraform/."""
@@ -82,9 +81,9 @@ class TestInfraCITriggerPaths:
         paths = _get_trigger_paths(workflow, "pull_request")
         assert len(paths) > 0, "ci-infra.yml must define pull_request path filters"
         for p in paths:
-            assert p.startswith(INFRA_PATH_PREFIX), (
-                f"PR path filter '{p}' is outside {INFRA_PATH_PREFIX}"
-            )
+            assert p.startswith(
+                INFRA_PATH_PREFIX
+            ), f"PR path filter '{p}' is outside {INFRA_PATH_PREFIX}"
 
     @settings(max_examples=100)
     @given(
@@ -97,9 +96,7 @@ class TestInfraCITriggerPaths:
             max_size=80,
         )
     )
-    def test_app_only_paths_never_match_infra_filters(
-        self, suffix: str
-    ) -> None:
+    def test_app_only_paths_never_match_infra_filters(self, suffix: str) -> None:
         """
         For any randomly generated app-only file path, none of the
         ci-infra.yml path filters should match it.
@@ -115,9 +112,9 @@ class TestInfraCITriggerPaths:
             # "infrastructure/terraform/" will never match a path starting
             # with "services/api/".
             prefix = pattern.rstrip("*").rstrip("/")
-            assert not app_path.startswith(prefix), (
-                f"App path '{app_path}' would match infra filter '{pattern}'"
-            )
+            assert not app_path.startswith(
+                prefix
+            ), f"App path '{app_path}' would match infra filter '{pattern}'"
 
 
 # ---------------------------------------------------------------------------
@@ -135,13 +132,9 @@ class TestInfraCIConcurrency:
     def test_concurrency_group_is_defined(self) -> None:
         """ci-infra.yml must define a top-level concurrency group."""
         workflow = _load_workflow()
-        assert "concurrency" in workflow, (
-            "ci-infra.yml must define a concurrency block"
-        )
+        assert "concurrency" in workflow, "ci-infra.yml must define a concurrency block"
         concurrency = workflow["concurrency"]
-        assert "group" in concurrency, (
-            "concurrency block must define a group"
-        )
+        assert "group" in concurrency, "concurrency block must define a group"
 
     def test_cancel_in_progress_is_false(self) -> None:
         """
@@ -163,6 +156,6 @@ class TestInfraCIConcurrency:
         """
         workflow = _load_workflow()
         group: str = workflow["concurrency"]["group"]
-        assert "infra" in group.lower(), (
-            f"Concurrency group '{group}' should reference 'infra'"
-        )
+        assert (
+            "infra" in group.lower()
+        ), f"Concurrency group '{group}' should reference 'infra'"

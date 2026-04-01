@@ -26,9 +26,7 @@ def _before_cursor_execute(
     conn: Connection,
     cursor: Any,
     statement: str,
-    parameters: Optional[
-        Sequence[Any] | dict[str, Any]
-    ],
+    parameters: Optional[Sequence[Any] | dict[str, Any]],
     context: Any,
     executemany: bool,
 ) -> None:
@@ -40,9 +38,7 @@ def _after_cursor_execute(
     conn: Connection,
     cursor: Any,
     statement: str,
-    parameters: Optional[
-        Sequence[Any] | dict[str, Any]
-    ],
+    parameters: Optional[Sequence[Any] | dict[str, Any]],
     context: Any,
     executemany: bool,
 ) -> None:
@@ -67,19 +63,13 @@ def _after_cursor_execute(
         loop.create_task(_publish_db_metrics(latency_ms, dims))
     except RuntimeError:
         # No running loop (e.g. during tests) – just log
-        logger.debug(
-            f"DB metric (no loop): {operation} {latency_ms:.1f}ms"
-        )
+        logger.debug(f"DB metric (no loop): {operation} {latency_ms:.1f}ms")
 
 
-async def _publish_db_metrics(
-    latency_ms: float, dims: dict[str, str]
-) -> None:
+async def _publish_db_metrics(latency_ms: float, dims: dict[str, str]) -> None:
     """Publish database metrics to the metrics client."""
     await metrics_client.put_metric("DBQueryCount", 1.0, "Count", dims)
-    await metrics_client.put_metric(
-        "DBQueryLatency", latency_ms, "Milliseconds", dims
-    )
+    await metrics_client.put_metric("DBQueryLatency", latency_ms, "Milliseconds", dims)
 
 
 def _extract_operation(statement: str) -> str:

@@ -94,15 +94,13 @@ class MetricsClient:
         """Lazily create boto3 CloudWatch client."""
         if self._client is None:
             try:
-                import boto3  # type: ignore[import-untyped]
+                import boto3
 
                 self._client = boto3.client(
                     "cloudwatch", region_name=settings.AWS_REGION
                 )
             except ImportError:
-                logger.warning(
-                    "boto3 not installed; CloudWatch metrics disabled"
-                )
+                logger.warning("boto3 not installed; CloudWatch metrics disabled")
                 self._enabled = False
         return self._client
 
@@ -148,14 +146,10 @@ class MetricsClient:
         if dimensions:
             merged_dims.update(dimensions)
 
-        datum = MetricDatum(
-            name=name, value=value, unit=unit, dimensions=merged_dims
-        )
+        datum = MetricDatum(name=name, value=value, unit=unit, dimensions=merged_dims)
 
         if not self._enabled:
-            logger.debug(
-                f"Metric (local): {name}={value} {unit} dims={merged_dims}"
-            )
+            logger.debug(f"Metric (local): {name}={value} {unit} dims={merged_dims}")
             return
 
         async with self._lock:
@@ -204,9 +198,7 @@ class MetricsClient:
                         Namespace=self._namespace, MetricData=md
                     ),
                 )
-                logger.debug(
-                    f"Published {len(batch)} metrics to CloudWatch"
-                )
+                logger.debug(f"Published {len(batch)} metrics to CloudWatch")
             except Exception:
                 logger.exception(
                     f"Failed to publish {len(batch)} metrics to CloudWatch"
@@ -225,6 +217,7 @@ class MetricsClient:
 # ---------------------------------------------------------------------------
 # Convenience helpers
 # ---------------------------------------------------------------------------
+
 
 def _timer() -> float:
     """Return a monotonic timestamp for latency measurement."""

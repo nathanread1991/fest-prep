@@ -17,7 +17,6 @@ from festival_playlist_generator.core.metrics import (
     metrics_client,
 )
 
-
 # ---------------------------------------------------------------------------
 # MetricDatum
 # ---------------------------------------------------------------------------
@@ -80,9 +79,7 @@ class TestMetricsClientDisabled:
         assert len(client._buffer) == 0
 
     @pytest.mark.asyncio
-    async def test_put_metrics_batch_logs_only(
-        self, client: MetricsClient
-    ) -> None:
+    async def test_put_metrics_batch_logs_only(self, client: MetricsClient) -> None:
         data = [MetricDatum(name="A", value=1.0), MetricDatum(name="B", value=2.0)]
         await client.put_metrics_batch(data)
         assert len(client._buffer) == 0
@@ -146,9 +143,7 @@ class TestMetricsClientEnabled:
         mock_cw.put_metric_data.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_flush_handles_cloudwatch_error(
-        self, client: MetricsClient
-    ) -> None:
+    async def test_flush_handles_cloudwatch_error(self, client: MetricsClient) -> None:
         """Flush should not raise even if CloudWatch call fails."""
         await client.put_metric("Test", 1.0, "Count")
 

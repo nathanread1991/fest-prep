@@ -56,17 +56,14 @@ def _get_secrets_client() -> Any:
         ImportError: If boto3 is not installed.
     """
     try:
-        import boto3  # type: ignore[import-untyped]
+        import boto3
 
         return boto3.client(
             "secretsmanager",
             region_name=get_aws_region(),
         )
     except ImportError:
-        logger.error(
-            "boto3 is not installed. "
-            "Install it with: pip install boto3"
-        )
+        logger.error("boto3 is not installed. " "Install it with: pip install boto3")
         raise
 
 
@@ -87,24 +84,16 @@ def get_secret(secret_name: str) -> Dict[str, Any]:
     """
     try:
         client = _get_secrets_client()
-        response: Dict[str, Any] = client.get_secret_value(
-            SecretId=secret_name
-        )
+        response: Dict[str, Any] = client.get_secret_value(SecretId=secret_name)
         secret_string = response.get("SecretString", "")
         if not secret_string:
-            raise RuntimeError(
-                f"Secret '{secret_name}' has no SecretString value"
-            )
+            raise RuntimeError(f"Secret '{secret_name}' has no SecretString value")
         result: Dict[str, Any] = json.loads(secret_string)
         return result
     except json.JSONDecodeError as e:
-        raise RuntimeError(
-            f"Secret '{secret_name}' is not valid JSON: {e}"
-        ) from e
+        raise RuntimeError(f"Secret '{secret_name}' is not valid JSON: {e}") from e
     except Exception as e:
-        raise RuntimeError(
-            f"Failed to retrieve secret '{secret_name}': {e}"
-        ) from e
+        raise RuntimeError(f"Failed to retrieve secret '{secret_name}': {e}") from e
 
 
 def get_database_url_from_secret(secret_name: str) -> str:
@@ -200,9 +189,7 @@ def validate_aws_environment() -> None:
         AWSEnvironmentError: If required variables are missing.
     """
     if not is_aws_environment():
-        logger.debug(
-            "Not running in AWS environment, skipping validation"
-        )
+        logger.debug("Not running in AWS environment, skipping validation")
         return
 
     required_vars = [

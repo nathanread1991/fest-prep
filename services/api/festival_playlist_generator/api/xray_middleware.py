@@ -81,7 +81,7 @@ class XRayMiddleware(BaseHTTPMiddleware):
                 elif response.status_code >= 400:
                     segment.add_error_flag()
 
-            return response  # type: ignore[return-value]
+            return response
 
         except Exception as exc:
             if segment is not None:

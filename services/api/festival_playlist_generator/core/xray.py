@@ -44,7 +44,7 @@ def configure_xray() -> None:
         return
 
     try:
-        from aws_xray_sdk.core import (  # type: ignore[import-untyped]
+        from aws_xray_sdk.core import (
             xray_recorder,
         )
 
