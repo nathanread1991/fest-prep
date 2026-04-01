@@ -197,7 +197,7 @@ jobs:
             --task-definition "${TASK_DEF}" \
             --launch-type FARGATE \
             --network-configuration "awsvpcConfiguration={subnets=[${SUBNET_CSV}],securityGroups=[${SG_CSV}],assignPublicIp=ENABLED}" \
-            --overrides '{"containerOverrides":[{"name":"migration","command":["sh","-c","alembic current 2>/dev/null || alembic stamp head; alembic upgrade head"]}]}' \
+            --overrides '{"containerOverrides":[{"name":"migration","command":["sh","-c","alembic upgrade head || (echo Stamp and retry && alembic stamp head && alembic upgrade head)"]}]}' \
             --query 'tasks[0].taskArn' \
             --output text)
 
