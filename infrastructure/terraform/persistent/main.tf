@@ -811,8 +811,15 @@ data "aws_iam_policy_document" "terraform_infra" {
       "logs:PutQueryDefinition",
       "logs:DeleteQueryDefinition",
       "logs:DescribeQueryDefinitions",
+      "logs:CreateLogDelivery",
+      "logs:DeleteLogDelivery",
+      "logs:GetLogDelivery",
+      "logs:ListLogDeliveries",
+      "logs:UpdateLogDelivery",
+      "logs:PutResourcePolicy",
+      "logs:DescribeResourcePolicies",
 
-      # IAM (for ECS roles)
+      # IAM (for ECS and RDS monitoring roles)
       "iam:CreateRole",
       "iam:DeleteRole",
       "iam:GetRole",
@@ -824,6 +831,7 @@ data "aws_iam_policy_document" "terraform_infra" {
       "iam:ListAttachedRolePolicies",
       "iam:ListRolePolicies",
       "iam:ListInstanceProfilesForRole",
+      "iam:PassRole",
       "iam:TagRole",
       "iam:UntagRole",
 
@@ -841,6 +849,10 @@ data "aws_iam_policy_document" "terraform_infra" {
       "kms:CreateAlias",
       "kms:DeleteAlias",
       "kms:UpdateAlias",
+      "kms:Decrypt",
+      "kms:Encrypt",
+      "kms:GenerateDataKey",
+      "kms:GenerateDataKeyWithoutPlaintext",
 
       # SNS
       "sns:CreateTopic",
@@ -850,6 +862,7 @@ data "aws_iam_policy_document" "terraform_infra" {
       "sns:Subscribe",
       "sns:Unsubscribe",
       "sns:ListSubscriptionsByTopic",
+      "sns:GetSubscriptionAttributes",
       "sns:TagResource",
       "sns:UntagResource",
       "sns:ListTagsForResource",
@@ -859,6 +872,9 @@ data "aws_iam_policy_document" "terraform_infra" {
       "secretsmanager:DeleteSecret",
       "secretsmanager:UpdateSecret",
       "secretsmanager:PutSecretValue",
+      "secretsmanager:DescribeSecret",
+      "secretsmanager:GetSecretValue",
+      "secretsmanager:ListSecrets",
       "secretsmanager:TagResource",
       "secretsmanager:UntagResource",
 
@@ -910,6 +926,29 @@ data "aws_iam_policy_document" "terraform_infra" {
       "xray:TagResource",
       "xray:UntagResource",
       "xray:ListTagsForResource",
+
+      # ECS (full cluster and service management)
+      "ecs:CreateCluster",
+      "ecs:DeleteCluster",
+      "ecs:DescribeClusters",
+      "ecs:UpdateCluster",
+      "ecs:PutClusterCapacityProviders",
+      "ecs:CreateService",
+      "ecs:DeleteService",
+      "ecs:DescribeServices",
+      "ecs:UpdateService",
+      "ecs:RegisterTaskDefinition",
+      "ecs:DeregisterTaskDefinition",
+      "ecs:DescribeTaskDefinition",
+      "ecs:ListTaskDefinitions",
+      "ecs:ListTasks",
+      "ecs:DescribeTasks",
+      "ecs:RunTask",
+      "ecs:StopTask",
+      "ecs:ListServices",
+      "ecs:TagResource",
+      "ecs:UntagResource",
+      "ecs:ListTagsForResource",
 
       # Application Auto Scaling
       "application-autoscaling:RegisterScalableTarget",
