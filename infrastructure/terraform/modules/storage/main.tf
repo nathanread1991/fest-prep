@@ -296,8 +296,9 @@ resource "aws_s3_bucket_ownership_controls" "cloudfront_logs" {
 # ECR repository for application container images
 resource "aws_ecr_repository" "app" {
   #checkov:skip=CKV_AWS_136:Basic scanning enabled, enhanced scanning configured at registry level
+  #checkov:skip=CKV_AWS_51:Mutable tags required for latest tag workflow
   name                 = "${var.project_name}-${var.environment}"
-  image_tag_mutability = "IMMUTABLE"
+  image_tag_mutability = "MUTABLE"
   force_delete         = true
 
   # Enable image scanning on push

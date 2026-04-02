@@ -81,8 +81,9 @@ resource "aws_kms_alias" "s3" {
 
 resource "aws_ecr_repository" "app" {
   #checkov:skip=CKV_AWS_136:Basic scanning enabled, enhanced scanning configured at registry level
+  #checkov:skip=CKV_AWS_51:Mutable tags required for latest tag workflow
   name                 = "${var.project_name}-${var.environment}"
-  image_tag_mutability = "IMMUTABLE"
+  image_tag_mutability = "MUTABLE"
   force_delete         = false
 
   image_scanning_configuration {
