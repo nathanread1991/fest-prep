@@ -1,0 +1,13 @@
+:root {
+  --bg-primary: #0A0A0A;
+  --bg-secondary: #121212;
+  --border: #1F1F1F;
+
+  --text-primary: #F2F2F2;
+  --text-secondary: #888888;
+
+  --accent: #8A1C1C;
+
+  --font-heading: "Space Grotesk", "Inter", Arial, sans-serif;
+  --font-body: "Inter", Arial, sans-serif;
+}
