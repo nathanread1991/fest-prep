@@ -580,6 +580,7 @@ data "aws_iam_policy_document" "ecr_access" {
       "ecr:UploadLayerPart",
       "ecr:CompleteLayerUpload",
       "ecr:DescribeRepositories",
+      "ecr:DescribeImages",
       "ecr:ListImages",
     ]
     resources = [aws_ecr_repository.app.arn]
