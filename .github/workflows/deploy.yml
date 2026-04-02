@@ -21,9 +21,10 @@ on:
           - dev
           - prod
       image_tag:
-        description: 'Docker image tag to deploy'
-        required: true
+        description: 'Docker image tag (leave empty for latest from ECR)'
+        required: false
         type: string
+        default: ''
 
 concurrency:
   group: deploy-${{ inputs.environment }}
@@ -40,9 +41,39 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
+  resolve-image:
+    name: Resolve Image Tag
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.resolve.outputs.image_tag }}
+    steps:
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Resolve image tag
+        id: resolve
+        run: |
+          INPUT_TAG="${{ inputs.image_tag }}"
+          if [ -n "${INPUT_TAG}" ]; then
+            echo "Using provided image tag: ${INPUT_TAG}"
+            echo "image_tag=${INPUT_TAG}" >> "$GITHUB_OUTPUT"
+          else
+            echo "No image tag provided, fetching latest from ECR..."
+            LATEST=$(aws ecr describe-images \
+              --repository-name ${{ env.PROJECT_NAME }}-${{ inputs.environment || 'dev' }} \
+              --query 'sort_by(imageDetails,& imagePushedAt)[-1].imageTags[?!contains(@,`latest`)] | [0]' \
+              --output text --region ${{ env.AWS_REGION }})
+            echo "Resolved latest ECR image tag: ${LATEST}"
+            echo "image_tag=${LATEST}" >> "$GITHUB_OUTPUT"
+          fi
+
   deploy:
     name: Deploy (${{ inputs.environment }})
     runs-on: ubuntu-latest
+    needs: resolve-image
     environment: ${{ inputs.environment == 'prod' && 'production' || inputs.environment }}
     outputs:
       api_previous_td: ${{ steps.save-current.outputs.api_td }}
@@ -87,7 +118,7 @@ jobs:
       - name: Update task definitions with new image tag
         working-directory: ${{ env.TF_WORKING_DIR }}
         run: |
-          IMAGE_TAG="${{ inputs.image_tag }}"
+          IMAGE_TAG="${{ needs.resolve-image.outputs.image_tag }}"
           echo "Deploying image tag: ${IMAGE_TAG} to ${{ inputs.environment }}"
 
           terraform apply -auto-approve \
