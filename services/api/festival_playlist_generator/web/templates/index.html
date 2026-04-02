@@ -4,7 +4,7 @@
 
 {% block content %}
 <!-- DEV Environment Banner -->
-<div style="background-color: #dc3545; color: white; text-align: center; padding: 8px 0; font-weight: bold; font-size: 14px; position: sticky; top: 0; z-index: 9999;">
+<div class="dev-banner">
     🚧 DEV ENVIRONMENT — This is not production 🚧
 </div>
 
@@ -30,103 +30,6 @@
         </div>
     </div>
 </div>
-
-<style>
-.welcome-banner {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 1.5rem;
-    margin-bottom: 2rem;
-    border-radius: 12px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    animation: slideInDown 0.5s ease-out;
-}
-
-@keyframes slideInDown {
-    from {
-        opacity: 0;
-        transform: translateY(-20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.welcome-content {
-    max-width: 800px;
-    margin: 0 auto;
-}
-
-.welcome-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-}
-
-.welcome-header h3 {
-    margin: 0;
-    font-size: 1.25rem;
-}
-
-.welcome-close {
-    background: rgba(255, 255, 255, 0.2);
-    border: none;
-    color: white;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    cursor: pointer;
-    font-size: 1.2rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background-color 0.2s ease;
-}
-
-.welcome-close:hover {
-    background: rgba(255, 255, 255, 0.3);
-}
-
-.welcome-content p {
-    margin: 0 0 1rem 0;
-    line-height: 1.5;
-    opacity: 0.95;
-}
-
-.welcome-actions {
-    display: flex;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-}
-
-.btn-sm {
-    padding: 0.5rem 1rem;
-    font-size: 0.85rem;
-}
-
-@media (max-width: 768px) {
-    .welcome-banner {
-        margin: 1rem;
-        padding: 1rem;
-    }
-    
-    .welcome-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.5rem;
-    }
-    
-    .welcome-close {
-        align-self: flex-end;
-    }
-    
-    .welcome-actions {
-        flex-direction: column;
-    }
-}
-</style>
 {% endif %}
 
 <!-- Hero Section -->
@@ -137,14 +40,14 @@
             Get ready for any festival with personalized playlists based on artists' recent setlists.
             Never miss a song you should know!
         </p>
-        
+
         <!-- Search Form -->
         <form class="search-form" id="festival-search-form">
             <div class="search-input-group">
-                <input 
-                    type="text" 
-                    id="festival-search" 
-                    class="search-input" 
+                <input
+                    type="text"
+                    id="festival-search"
+                    class="search-input"
                     placeholder="Search festivals or artists..."
                     autocomplete="off"
                 >
@@ -154,7 +57,7 @@
                 </button>
             </div>
         </form>
-        
+
         <!-- Quick Actions -->
         <div class="quick-actions">
             <button class="btn btn-primary" onclick="showFestivalSearch()">
@@ -178,7 +81,7 @@
                 Search for upcoming festivals and discover their lineups
             </p>
         </div>
-        
+
         <div class="feature-card">
             <div class="feature-icon">📊</div>
             <h4 class="feature-title">Analyze Setlists</h4>
@@ -186,7 +89,7 @@
                 We analyze recent performances to predict what songs artists will play
             </p>
         </div>
-        
+
         <div class="feature-card">
             <div class="feature-icon">🎵</div>
             <h4 class="feature-title">Create Playlists</h4>
@@ -194,7 +97,7 @@
                 Generate playlists on Spotify, Apple Music, or YouTube Music
             </p>
         </div>
-        
+
         <div class="feature-card">
             <div class="feature-icon">✅</div>
             <h4 class="feature-title">Track Progress</h4>
@@ -223,7 +126,7 @@ function closeWelcomeBanner() {
     if (banner) {
         banner.style.animation = 'slideOutUp 0.3s ease-in';
         setTimeout(() => banner.remove(), 300);
-        
+
         // Track welcome banner dismissal
         if (typeof gtag !== 'undefined') {
             gtag('event', 'welcome_banner_dismissed');
@@ -234,14 +137,14 @@ function closeWelcomeBanner() {
 // Load popular festivals on page load
 document.addEventListener('DOMContentLoaded', function() {
     loadPopularFestivals();
-    
+
     // Auto-hide welcome banner after 10 seconds
     const welcomeBanner = document.getElementById('welcome-banner');
     if (welcomeBanner) {
         setTimeout(() => {
             closeWelcomeBanner();
         }, 10000);
-        
+
         // Track welcome banner view
         if (typeof gtag !== 'undefined') {
             gtag('event', 'welcome_banner_viewed');
@@ -279,7 +182,7 @@ async function loadPopularFestivals() {
     try {
         const response = await fetch('/api/v1/festivals?limit=6');
         const data = await response.json();
-        
+
         const container = document.getElementById('popular-festivals');
         if (data.festivals && data.festivals.length > 0) {
             container.innerHTML = data.festivals.map(festival => `
@@ -295,7 +198,7 @@ async function loadPopularFestivals() {
         }
     } catch (error) {
         console.error('Error loading festivals:', error);
-        document.getElementById('popular-festivals').innerHTML = 
+        document.getElementById('popular-festivals').innerHTML =
             '<p class="error">Unable to load festivals. Please try again later.</p>';
     }
 }
@@ -303,10 +206,10 @@ async function loadPopularFestivals() {
 function formatDates(dates) {
     if (!dates || dates.length === 0) return 'Dates TBA';
     const date = new Date(dates[0]);
-    return date.toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric', 
-        year: 'numeric' 
+    return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
     });
 }
 

@@ -187,6 +187,31 @@ jobs:
           fi
           echo "ALB target group health verified"
 
+      - name: Invalidate CloudFront static asset cache
+        run: |
+          DIST_ID=$(aws cloudfront list-distributions \
+            --query "DistributionList.Items[?Comment=='${{ env.PROJECT_NAME }}-${{ inputs.environment }}'].Id | [0]" \
+            --output text 2>/dev/null || echo "")
+
+          if [ -z "$DIST_ID" ] || [ "$DIST_ID" = "None" ]; then
+            echo "Falling back to Terraform output for distribution ID..."
+            cd ${{ env.TF_WORKING_DIR }}
+            DIST_ID=$(terraform output -raw cloudfront_distribution_id 2>/dev/null || echo "")
+          fi
+
+          if [ -z "$DIST_ID" ] || [ "$DIST_ID" = "None" ]; then
+            echo "::warning::CloudFront distribution not found — skipping invalidation"
+            exit 0
+          fi
+
+          echo "Invalidating CloudFront cache for distribution: ${DIST_ID}"
+          INVALIDATION_ID=$(aws cloudfront create-invalidation \
+            --distribution-id "$DIST_ID" \
+            --paths "/static/*" \
+            --query 'Invalidation.Id' \
+            --output text)
+          echo "Invalidation created: ${INVALIDATION_ID}"
+
   migrate:
     name: Run Database Migrations
     runs-on: ubuntu-latest
