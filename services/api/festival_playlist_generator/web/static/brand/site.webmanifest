@@ -1,0 +1,19 @@
+{
+  "name": "GIG-PREP",
+  "short_name": "GIG-PREP",
+  "theme_color": "#0A0A0A",
+  "background_color": "#0A0A0A",
+  "display": "standalone",
+  "icons": [
+    {
+      "src": "/static/brand/png/icon-dark-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/static/brand/png/icon-dark-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

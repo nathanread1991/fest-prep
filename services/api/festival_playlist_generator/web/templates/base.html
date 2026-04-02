@@ -5,237 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Festival Playlist Generator - Create playlists for festivals and concerts">
     <title>{% block title %}Festival Playlist Generator{% endblock %}</title>
-    
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+
     <!-- CSS -->
+    <link rel="stylesheet" href="/static/brand/css/brand-tokens.css">
     <link rel="stylesheet" href="{{ css_url('main.css') }}">
-    
-    <style>
-    .admin-link {
-        background: #ef4444 !important;
-        color: white !important;
-        padding: 5px 10px !important;
-        border-radius: 4px !important;
-        font-size: 0.9em !important;
-    }
-    .admin-link:hover {
-        background: #dc2626 !important;
-    }
-    
-    /* Authentication styles */
-    .auth-link {
-        background: #6366f1 !important;
-        color: white !important;
-        padding: 8px 20px !important;
-        border-radius: 8px !important;
-        font-size: 0.9em !important;
-        text-decoration: none !important;
-        border: none !important;
-        cursor: pointer !important;
-        font-family: inherit !important;
-        font-weight: 500 !important;
-        transition: all 0.2s ease !important;
-        box-shadow: 0 1px 3px rgba(99, 102, 241, 0.3) !important;
-    }
-    .auth-link:hover {
-        background: #5856eb !important;
-        transform: translateY(-1px) !important;
-        box-shadow: 0 4px 6px rgba(99, 102, 241, 0.4) !important;
-    }
-    
-    .user-menu {
-        position: relative;
-        display: inline-block;
-    }
-    
-    .user-menu-toggle {
-        display: flex;
-        align-items: center;
-        gap: 0.625rem;
-        background: white;
-        border: 2px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 0.5rem 1rem;
-        cursor: pointer;
-        font-size: 0.9rem;
-        color: #1f2937;
-        font-weight: 500;
-        transition: all 0.2s ease;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    }
-    
-    .user-menu-toggle:hover {
-        background: #f8fafc;
-        border-color: #cbd5e1;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-        transform: translateY(-1px);
-    }
-    
-    .dropdown-chevron {
-        opacity: 0.5;
-        transition: transform 0.2s ease, opacity 0.2s ease;
-    }
-    
-    .user-menu-toggle:hover .dropdown-chevron {
-        opacity: 0.7;
-    }
-    
-    .user-dropdown.show ~ .user-menu-toggle .dropdown-chevron {
-        transform: rotate(180deg);
-    }
-    
-    .user-avatar {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.9rem;
-        color: white;
-        font-weight: 600;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-    
-    .user-avatar img {
-        width: 100%;
-        height: 100%;
-        border-radius: 50%;
-        object-fit: cover;
-    }
-    
-    .user-dropdown {
-        position: absolute;
-        top: calc(100% + 8px);
-        right: 0;
-        background: white;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        min-width: 240px;
-        z-index: 1000;
-        display: none;
-        overflow: hidden;
-    }
-    
-    .user-dropdown.show {
-        display: block;
-        animation: dropdownSlideIn 0.2s ease-out;
-    }
-    
-    @keyframes dropdownSlideIn {
-        from {
-            opacity: 0;
-            transform: translateY(-10px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-    
-    .user-dropdown-header {
-        padding: 1rem 1.25rem;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-    }
-    
-    .user-dropdown-name {
-        font-weight: 600;
-        font-size: 1rem;
-        margin: 0;
-        color: white;
-    }
-    
-    .user-dropdown-email {
-        font-size: 0.8rem;
-        margin: 0.25rem 0 0 0;
-        opacity: 0.9;
-        color: white;
-    }
-    
-    .user-dropdown a {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        padding: 0.875rem 1.25rem;
-        color: #374151;
-        text-decoration: none;
-        transition: all 0.15s ease;
-        font-size: 0.9rem;
-    }
-    
-    .user-dropdown a:hover {
-        background: #f8fafc;
-        color: #6366f1;
-    }
-    
-    .user-dropdown a:hover .dropdown-icon {
-        opacity: 1;
-        color: #6366f1;
-    }
-    
-    .dropdown-icon {
-        width: 18px;
-        height: 18px;
-        opacity: 0.5;
-        transition: all 0.15s ease;
-    }
-    
-    .logout-btn {
-        width: 100%;
-        text-align: left;
-        padding: 0.875rem 1.25rem;
-        background: none;
-        border: none;
-        color: #ef4444;
-        cursor: pointer;
-        font-size: 0.9rem;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        transition: all 0.15s ease;
-        border-top: 1px solid #f1f5f9;
-        font-weight: 500;
-    }
-    
-    .logout-btn:hover {
-        background: #fef2f2;
-        color: #dc2626;
-    }
-    
-    .logout-btn:hover .dropdown-icon {
-        opacity: 1;
-    }
-    
-    @media (max-width: 768px) {
-        .nav {
-            flex-wrap: wrap;
-            gap: 0.5rem;
-        }
-        
-        .user-menu-toggle {
-            padding: 0.4rem 0.6rem;
-            font-size: 0.8rem;
-        }
-        
-        .user-name {
-            display: none;
-        }
-    }
-    </style>
-    
+
     <!-- PWA Manifest -->
     <link rel="manifest" href="/static/manifest.json">
-    
+
     <!-- Theme colors -->
     <meta name="theme-color" content="#6366f1">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    
+
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
-    
+
     {% block head %}{% endblock %}
 </head>
 <body>
@@ -253,7 +43,7 @@
                     <!-- My Playlists link - only show when authenticated -->
                     <a href="/playlists" class="nav-link" data-section="playlists" id="my-playlists-link" style="display: none;">My Playlists</a>
                     <a href="/streaming" class="nav-link" data-section="streaming">Streaming</a>
-                    
+
                     <!-- Authentication links -->
                     <button class="nav-link auth-link" id="sign-in-link" onclick="openAuthModal()">Sign In</button>
                     <div class="user-menu" id="user-menu" style="display: none;">
@@ -302,7 +92,7 @@
                             </a>
                         </div>
                     </div>
-                    
+
                     <a href="/admin" class="nav-link admin-link" data-section="admin">Admin</a>
                 </nav>
             </div>
@@ -325,7 +115,7 @@
 
     <!-- Authentication Modal Component -->
     {% include "components/auth_modal.html" %}
-    
+
     <!-- Login Prompt Component -->
     {% include "components/login_prompt.html" %}
 
@@ -337,41 +127,41 @@
     <script src="{{ js_url('performance.js') }}"></script>
     <script src="{{ js_url('auth-modal.js') }}"></script>
     <script src="{{ js_url('login-prompt.js') }}"></script>
-    
+
     <!-- Data refresh script for section navigation -->
     <script>
         // Add cache-busting and data refresh for section navigation
         document.addEventListener('DOMContentLoaded', function() {
             const navLinks = document.querySelectorAll('.nav-link[data-section]');
-            
+
             navLinks.forEach(link => {
                 link.addEventListener('click', function(e) {
                     const section = this.getAttribute('data-section');
                     const currentSection = getCurrentSection();
-                    
+
                     // If navigating to a different section, add cache-busting parameter
                     if (section !== currentSection) {
                         e.preventDefault();
-                        
+
                         // Show loading indicator
                         showSectionLoadingIndicator();
-                        
+
                         // Add cache-busting parameter
                         const url = new URL(this.href);
                         url.searchParams.set('_refresh', Date.now());
-                        
+
                         // Navigate with cache-busting
                         window.location.href = url.toString();
                     }
                 });
             });
-            
+
             // Clear any cached data when navigating between sections
             window.addEventListener('beforeunload', function() {
                 // Clear section-specific cache
                 clearSectionCache();
             });
-            
+
             // Refresh data when returning to a tab/window
             document.addEventListener('visibilitychange', function() {
                 if (!document.hidden) {
@@ -379,7 +169,7 @@
                 }
             });
         });
-        
+
         function getCurrentSection() {
             const path = window.location.pathname;
             if (path === '/') return 'home';
@@ -390,7 +180,7 @@
             if (path.startsWith('/admin')) return 'admin';
             return 'unknown';
         }
-        
+
         function showSectionLoadingIndicator() {
             // Create loading overlay
             const loadingOverlay = document.createElement('div');
@@ -414,7 +204,7 @@
                 z-index: 9999;
                 backdrop-filter: blur(2px);
             `;
-            
+
             const spinner = loadingOverlay.querySelector('.spinner');
             spinner.style.cssText = `
                 width: 40px;
@@ -425,7 +215,7 @@
                 animation: spin 1s linear infinite;
                 margin-bottom: 10px;
             `;
-            
+
             // Add spinner animation
             if (!document.getElementById('spinner-styles')) {
                 const style = document.createElement('style');
@@ -443,10 +233,10 @@
                 `;
                 document.head.appendChild(style);
             }
-            
+
             document.body.appendChild(loadingOverlay);
         }
-        
+
         function clearSectionCache() {
             // Clear localStorage cache for sections
             const keysToRemove = [];
@@ -457,7 +247,7 @@
                 }
             }
             keysToRemove.forEach(key => localStorage.removeItem(key));
-            
+
             // Clear sessionStorage cache
             const sessionKeysToRemove = [];
             for (let i = 0; i < sessionStorage.length; i++) {
@@ -468,10 +258,10 @@
             }
             sessionKeysToRemove.forEach(key => sessionStorage.removeItem(key));
         }
-        
+
         function refreshCurrentSectionData() {
             const section = getCurrentSection();
-            
+
             // Trigger section-specific refresh based on current page
             switch (section) {
                 case 'admin':
@@ -496,14 +286,14 @@
                     break;
             }
         }
-        
+
         // Global function to force refresh current page data
         window.forceRefreshData = function() {
             clearSectionCache();
             refreshCurrentSectionData();
         };
     </script>
-    
+
     <script>
         // Authentication state management functions - defined first before calling
         async function checkAuthenticationState() {
@@ -516,17 +306,17 @@
                         'Pragma': 'no-cache'
                     }
                 });
-                
+
                 if (response.ok) {
                     const user = await response.json();
                     showAuthenticatedState(user);
-                    
+
                     // Store user data in session storage for quick access
                     sessionStorage.setItem('user_data', JSON.stringify(user));
                     sessionStorage.setItem('auth_status', 'authenticated');
                 } else {
                     showUnauthenticatedState();
-                    
+
                     // Clear stored user data
                     sessionStorage.removeItem('user_data');
                     sessionStorage.setItem('auth_status', 'unauthenticated');
@@ -534,28 +324,28 @@
             } catch (error) {
                 console.error('Error checking authentication state:', error);
                 showUnauthenticatedState();
-                
+
                 // Clear stored user data on error
                 sessionStorage.removeItem('user_data');
                 sessionStorage.setItem('auth_status', 'unauthenticated');
             }
         }
-        
+
         // Quick authentication check using cached data
         function getAuthStatus() {
             return sessionStorage.getItem('auth_status') === 'authenticated';
         }
-        
+
         function getCachedUser() {
             const userData = sessionStorage.getItem('user_data');
             return userData ? JSON.parse(userData) : null;
         }
-        
+
         // Session refresh - check auth status periodically
         function startSessionRefresh() {
             // Check authentication every 5 minutes
             setInterval(checkAuthenticationState, 5 * 60 * 1000);
-            
+
             // Also check when page becomes visible (user returns to tab)
             document.addEventListener('visibilitychange', function() {
                 if (!document.hidden) {
@@ -563,31 +353,31 @@
                 }
             });
         }
-        
+
         function showAuthenticatedState(user) {
             // Hide sign in link
             const signInLink = document.getElementById('sign-in-link');
             if (signInLink) signInLink.style.display = 'none';
-            
+
             // Show My Playlists link
             const playlistsLink = document.getElementById('my-playlists-link');
             if (playlistsLink) playlistsLink.style.display = 'inline-block';
-            
+
             // Show user menu
             const userMenu = document.getElementById('user-menu');
             if (userMenu) {
                 userMenu.style.display = 'inline-block';
-                
+
                 // Update user info in menu toggle
                 const userName = document.getElementById('user-name');
                 const userAvatar = document.getElementById('user-avatar');
-                
+
                 const displayName = user.display_name || user.email.split('@')[0];
-                
+
                 if (userName) {
                     userName.textContent = displayName;
                 }
-                
+
                 if (userAvatar) {
                     if (user.profile_picture_url) {
                         userAvatar.innerHTML = `<img src="${user.profile_picture_url}" alt="Profile">`;
@@ -597,24 +387,24 @@
                         userAvatar.textContent = initials;
                     }
                 }
-                
+
                 // Update user info in dropdown header
                 const dropdownName = document.getElementById('user-dropdown-name');
                 const dropdownEmail = document.getElementById('user-dropdown-email');
-                
+
                 if (dropdownName) {
                     dropdownName.textContent = displayName;
                 }
-                
+
                 if (dropdownEmail) {
                     dropdownEmail.textContent = user.email;
                 }
             }
-            
+
             // Setup logout handler - attach AFTER user menu is shown
             setupLogoutHandler();
         }
-        
+
         function setupLogoutHandler() {
             // Clear session storage when logout link is clicked
             const logoutBtn = document.getElementById('logout-btn');
@@ -626,7 +416,7 @@
                 });
             }
         }
-        
+
         function getInitials(name) {
             if (!name) return '?';
             const parts = name.trim().split(' ');
@@ -635,36 +425,36 @@
             }
             return name.substring(0, 2).toUpperCase();
         }
-        
+
         function showUnauthenticatedState() {
             // Show sign in link
             const signInLink = document.getElementById('sign-in-link');
             if (signInLink) signInLink.style.display = 'inline-block';
-            
+
             // Hide My Playlists link
             const playlistsLink = document.getElementById('my-playlists-link');
             if (playlistsLink) playlistsLink.style.display = 'none';
-            
+
             // Hide user menu
             const userMenu = document.getElementById('user-menu');
             if (userMenu) userMenu.style.display = 'none';
         }
-        
+
         function setupUserMenu() {
             const userMenuToggle = document.getElementById('user-menu-toggle');
             const userDropdown = document.getElementById('user-dropdown');
-            
+
             if (userMenuToggle && userDropdown) {
                 userMenuToggle.addEventListener('click', function(e) {
                     e.stopPropagation();
                     userDropdown.classList.toggle('show');
                 });
-                
+
                 // Close dropdown when clicking outside
                 document.addEventListener('click', function() {
                     userDropdown.classList.remove('show');
                 });
-                
+
                 // Prevent dropdown from closing when clicking inside it
                 // BUT allow links to work normally
                 userDropdown.addEventListener('click', function(e) {
@@ -676,7 +466,7 @@
                 });
             }
         }
-        
+
         // Initialize authentication on page load
         document.addEventListener('DOMContentLoaded', function() {
             // Check if we just came from a logout (URL might have been /auth/logout)
@@ -685,18 +475,18 @@
                 sessionStorage.removeItem('user_data');
                 sessionStorage.removeItem('auth_status');
             }
-            
+
             checkAuthenticationState();
             setupUserMenu();
             startSessionRefresh();
-            
+
             // Make auth functions globally available
             window.getAuthStatus = getAuthStatus;
             window.getCachedUser = getCachedUser;
             window.checkAuthenticationState = checkAuthenticationState;
         });
     </script>
-    
+
     {% block scripts %}{% endblock %}
 </body>
 </html>
