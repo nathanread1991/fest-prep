@@ -77,3 +77,46 @@ Rebrand the Festival Playlist Generator web UI from bright indigo to a dark, sta
     - Replace all hardcoded colours with token references: `#6366f1` → `var(--accent)`, white backgrounds → `var(--bg-secondary)`, `#1f2937` → `var(--text-primary)`, `#e2e8f0` → `var(--border)`
     - Remove the `<style>` and `</style>` tags from `base.html`
     - _Requirements: 11.1, 11.2, 11.3_
+
+
+- [x] 3. Update `base.html` template (head, nav, footer)
+  - [x] 3.1 Update `<head>` meta tags and favicon references
+    - Replace `<link rel="icon" type="image/x-icon" href="/static/favicon.ico">` with brand favicon references: `brand/ico/favicon.ico` (sizes="any"), `brand/png/sigil-32.png`, `brand/png/sigil-16.png`
+    - Add Apple touch icon: `brand/png/icon-dark-180.png`
+    - Replace manifest link from `/static/manifest.json` to `/static/brand/site.webmanifest`
+    - Update `<meta name="theme-color" content="#6366f1">` to `content="#0A0A0A"`
+    - Add Open Graph image meta tag pointing to `brand/png/og-image-1200x630.jpg`
+    - _Requirements: 3.5, 5.1, 5.2, 5.3, 5.4, 5.5_
+
+  - [x] 3.2 Replace emoji logo with SVG logo in header
+    - Replace `<h1 class="logo"><a href="/">🎵 Festival Playlists</a></h1>` with `<a href="/" class="logo"><img src="/static/brand/svg/logo.svg" alt="GIG-PREP" height="36"></a>`
+    - _Requirements: 4.1, 13.1, 13.2_
+
+  - [x] 3.3 Update footer copyright text
+    - Change footer text from "Festival Playlist Generator" to "GIG-PREP"
+    - _Requirements: 9.1, 13.1_
+
+
+- [x] 4. Update `index.html` template (DEV banner, hero, content grid)
+  - [x] 4.1 Replace DEV banner inline styles with `.dev-banner` class
+    - Change `<div style="background-color: #dc3545; ...">` to `<div class="dev-banner">`
+    - _Requirements: 10.1, 10.2, 10.3_
+
+  - [x] 4.2 Update welcome banner styles to use dark theme tokens
+    - Replace `linear-gradient(135deg, #667eea 0%, #764ba2 100%)` with `var(--bg-secondary)` or `var(--accent)`
+    - Update text colours and button styles to use token references
+    - _Requirements: 3.4_
+
+
+- [x] 5. Add cache-busting to static asset URLs
+  - [x] 5.1 Update `AssetManager.asset_url()` to append a cache-busting query parameter
+    - In dev mode, append `?v={timestamp}` to all asset URLs
+    - In production mode, continue using the manifest-based approach
+    - Update `web/utils.py` with the change
+    - _Requirements: N/A (operational fix)_
+
+  - [x] 5.2 Invalidate CloudFront cache for `/static/*` path after deployment
+    - Added CloudFront invalidation step to `.github/workflows/deploy.yml` after ALB health check
+    - Resolves distribution ID via AWS CLI with Terraform output fallback
+    - Invalidates `/static/*` path automatically on every deploy
+    - _Requirements: N/A (operational fix)_

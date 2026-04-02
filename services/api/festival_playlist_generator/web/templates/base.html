@@ -16,15 +16,21 @@
     <link rel="stylesheet" href="{{ css_url('main.css') }}">
 
     <!-- PWA Manifest -->
-    <link rel="manifest" href="/static/manifest.json">
+    <link rel="manifest" href="/static/brand/site.webmanifest">
 
     <!-- Theme colors -->
-    <meta name="theme-color" content="#6366f1">
+    <meta name="theme-color" content="#0A0A0A">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
-    <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <!-- Open Graph -->
+    <meta property="og:image" content="/static/brand/png/og-image-1200x630.jpg">
+
+    <!-- Favicons -->
+    <link rel="icon" href="/static/brand/ico/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/brand/png/sigil-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/brand/png/sigil-16.png">
+    <link rel="apple-touch-icon" href="/static/brand/png/icon-dark-180.png">
 
     {% block head %}{% endblock %}
 </head>
@@ -33,9 +39,7 @@
     <header class="header">
         <div class="container">
             <div class="header-content">
-                <h1 class="logo">
-                    <a href="/">🎵 Festival Playlists</a>
-                </h1>
+                <a href="/" class="logo"><img src="/static/brand/svg/logo.svg" alt="GIG-PREP" height="36"></a>
                 <nav class="nav">
                     <a href="/" class="nav-link" data-section="home">Home</a>
                     <a href="/festivals" class="nav-link" data-section="festivals">Festivals</a>
@@ -109,7 +113,7 @@
     <!-- Footer -->
     <footer class="footer">
         <div class="container">
-            <p>&copy; 2024 Festival Playlist Generator. Made for music lovers.</p>
+            <p>&copy; 2024 GIG-PREP. Made for music lovers.</p>
         </div>
     </footer>
 

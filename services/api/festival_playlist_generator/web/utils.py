@@ -2,6 +2,7 @@
 
 import json
 import os
+import time
 from pathlib import Path
 from typing import Dict, Optional
 
@@ -32,7 +33,7 @@ class AssetManager:
         """Get the URL for an asset with cache busting."""
         # Always use original files in development or if manifest doesn't exist
         if not self._is_production or not self._manifest_path.exists():
-            return f"/static/{asset_path}"
+            return f"/static/{asset_path}?v={int(time.time())}"
 
         # In production, use minified and cache-busted files
         manifest = self._load_manifest()
