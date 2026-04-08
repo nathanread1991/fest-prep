@@ -78,6 +78,9 @@ resource "aws_elasticache_replication_group" "main" {
   num_cache_clusters = var.num_cache_nodes
   port               = 6379
 
+  # Pin to eu-west-2a to avoid AZ capacity issues with t4g.micro
+  preferred_cache_cluster_azs = [for _ in range(var.num_cache_nodes) : var.preferred_availability_zone]
+
   # Network configuration
   subnet_group_name  = aws_elasticache_subnet_group.main.name
   security_group_ids = [var.redis_security_group_id]

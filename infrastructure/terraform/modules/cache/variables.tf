@@ -178,3 +178,9 @@ variable "replication_lag_alarm_threshold" {
   type        = number
   default     = 30
 }
+
+variable "preferred_availability_zone" {
+  description = "Preferred AZ for cache nodes (avoids capacity issues in certain AZs)"
+  type        = string
+  default     = "eu-west-2a"
+}

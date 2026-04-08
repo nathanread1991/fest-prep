@@ -86,6 +86,30 @@ jobs:
       - name: Terraform Init
         run: terraform init -backend=true
 
+      - name: Cleanup stuck ElastiCache replication groups
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: |
+          RG_ID="${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-redis"
+          STATUS=$(aws elasticache describe-replication-groups \
+            --replication-group-id "$RG_ID" \
+            --query 'ReplicationGroups[0].Status' \
+            --output text 2>/dev/null || echo "not-found")
+
+          if [ "$STATUS" = "create-failed" ]; then
+            echo "Found stuck replication group in create-failed state — deleting..."
+            aws elasticache delete-replication-group \
+              --replication-group-id "$RG_ID" \
+              --no-retain-primary-cluster
+            echo "Waiting for deletion..."
+            aws elasticache wait replication-group-deleted \
+              --replication-group-id "$RG_ID" 2>/dev/null || true
+            echo "Cleanup complete"
+          elif [ "$STATUS" = "not-found" ]; then
+            echo "No existing replication group found — clean slate"
+          else
+            echo "Replication group status: ${STATUS} — no cleanup needed"
+          fi
+
       - name: Terraform Apply
         run: |
           RESTORE="${{ needs.find-snapshot.outputs.restore_from_snapshot }}"
